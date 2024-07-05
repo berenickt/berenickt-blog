@@ -1,0 +1,2003 @@
+---
+title: '02-구조 패턴'
+date: 2024/06/29
+---
+
+## 1. 어댑터(Adapter) 패턴
+
+### 1.1 패턴 소개
+
+![gof_2_1](https://raw.githubusercontent.com/berenickt/image-server/main/img/gof_2_1.png)
+
+**기존 코드를 클라이언트가 사용하는 인터페이스의 구현체로 바꿔주는 패턴**
+
+- 클라이언트가 사용하는 인터페이스를 따르지 않는 기존 코드를 재사용할 수 있게 해준다.
+- 즉, **서로 다른 인터페이스를 가진 두 객체를 연결해주는 디자인 패턴**이다.
+
+![gof_2_2](https://raw.githubusercontent.com/berenickt/image-server/main/img/gof_2_2.png)
+
+e.g. `110v용 콘센트`를 `220v용 콘센트`에 꽂는다던가, 반대로 `220v용 콘센트`를 `110v용 콘센트`에 꽂을 때,
+
+- 이 중간에 쓰이는 `어댑터(돼지코)`가 바로 일상에서 볼 수 있는 어댑터 패턴이다.
+
+---
+
+### 1.2 예시 - 기존
+
+```java
+// UserDetails.java
+package me.whiteship.designpatterns._02_structural_patterns._06_adapter._01_before.security;
+
+public interface UserDetails {
+
+    String getUsername();
+
+    String getPassword();
+
+}
+```
+
+```java
+// UserDetailsService.java
+package me.whiteship.designpatterns._02_structural_patterns._06_adapter._01_before.security;
+
+public interface UserDetailsService {
+
+    UserDetails loadUser(String username);
+
+}
+```
+
+```java
+// LoginHandler.java
+package me.whiteship.designpatterns._02_structural_patterns._06_adapter._01_before.security;
+
+public class LoginHandler {
+
+    UserDetailsService userDetailsService;
+
+    public LoginHandler(UserDetailsService userDetailsService) {
+        this.userDetailsService = userDetailsService;
+    }
+
+    public String login(String username, String password) {
+        UserDetails userDetails = userDetailsService.loadUser(username);
+        if (userDetails.getPassword().equals(password)) {
+            return userDetails.getUsername();
+        } else {
+            throw new IllegalArgumentException();
+        }
+    }
+}
+```
+
+```java
+// Account.java
+package me.whiteship.designpatterns._02_structural_patterns._06_adapter._01_before;
+
+public class Account {
+
+    private String name;
+
+    private String password;
+
+    private String email;
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+}
+```
+
+```java
+// AccountService.java
+package me.whiteship.designpatterns._02_structural_patterns._06_adapter._01_before;
+
+public class AccountService {
+
+    public Account findAccountByUsername(String username) {
+        Account account = new Account();
+        account.setName(username);
+        account.setPassword(username);
+        account.setEmail(username);
+        return account;
+    }
+
+    public void createNewAccount(Account account) {
+
+    }
+
+    public void updateAccount(Account account) {
+
+    }
+
+}
+```
+
+---
+
+### 1.3 예시 - 변경
+
+```java
+// AccountUserDetails.java
+package me.whiteship.designpatterns._02_structural_patterns._06_adapter._02_after;
+
+import me.whiteship.designpatterns._02_structural_patterns._06_adapter._02_after.security.UserDetails;
+
+public class AccountUserDetails implements UserDetails {
+
+    private Account account;
+
+    public AccountUserDetails(Account account) {
+        this.account = account;
+    }
+
+    @Override
+    public String getUsername() {
+        return account.getName();
+    }
+
+    @Override
+    public String getPassword() {
+        return account.getPassword();
+    }
+}
+```
+
+```java
+// AccountUserDetailsService.java
+package me.whiteship.designpatterns._02_structural_patterns._06_adapter._02_after;
+
+import me.whiteship.designpatterns._02_structural_patterns._06_adapter._02_after.security.UserDetails;
+import me.whiteship.designpatterns._02_structural_patterns._06_adapter._02_after.security.UserDetailsService;
+
+public class AccountUserDetailsService implements UserDetailsService {
+
+    private AccountService accountService;
+
+    public AccountUserDetailsService(AccountService accountService) {
+        this.accountService = accountService;
+    }
+
+    @Override
+    public UserDetails loadUser(String username) {
+        return new AccountUserDetails(accountService.findAccountByUsername(username));
+    }
+}
+```
+
+```java
+// App.java
+package me.whiteship.designpatterns._02_structural_patterns._06_adapter._02_after;
+
+import me.whiteship.designpatterns._02_structural_patterns._06_adapter._02_after.security.LoginHandler;
+import me.whiteship.designpatterns._02_structural_patterns._06_adapter._02_after.security.UserDetailsService;
+
+public class App {
+
+    public static void main(String[] args) {
+        AccountService accountService = new AccountService();
+        UserDetailsService userDetailsService = new AccountUserDetailsService(accountService);
+        LoginHandler loginHandler = new LoginHandler(userDetailsService);
+        String login = loginHandler.login("keesun", "keesun");
+        System.out.println(login);
+    }
+}
+```
+
+---
+
+### 1.4 장단점
+
+- 장점
+  - **기존 코드를 변경하지 않고, 원하는 인터페이스 구현체를 만들어 재사용**할 수 있다.
+  - 기존 코드가 하던 일과 특정 인터페이스 구현체로 변환하는 작업을 **각기 다른 클래스로 분리하여 관리**할 수 있다.
+- 단점
+  - **새 클래스가 생겨 복잡도가 증가**할 수 있다.
+  - 경우에 따라서는 기존 코드가 해당 인터페이스를 구현하도록 수정하는 것이 좋은 선택이 될 수도 있다
+
+---
+
+### 1.5 실무에서는 어떻게 쓰이나?
+
+자바
+
+- java.util.Arrays#asList(T…)
+- java.util.Collections#list(Enumeration), java.util.Collections#enumeration()
+- java.io.InputStreamReader(InputStream)
+- java.io.OutputStreamWriter(OutputStream)
+
+```java
+// AdapterInJava.java
+package me.whiteship.designpatterns._02_structural_patterns._06_adapter._03_java;
+
+import java.io.*;
+import java.util.*;
+
+public class AdapterInJava {
+
+  public static void main(String[] args) {
+    // collections
+    List<String> strings = Arrays.asList("a", "b", "c");
+    Enumeration<String> enumeration = Collections.enumeration(strings);
+    ArrayList<String> list = Collections.list(enumeration);
+
+    // io
+    try (
+      InputStream is = new FileInputStream("input.txt");
+      InputStreamReader isr = new InputStreamReader(is);
+      BufferedReader reader = new BufferedReader(isr)
+    ) {
+      while (reader.ready()) {
+        System.out.println(reader.readLine());
+      }
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+}
+```
+
+스프링
+
+- HandlerAdpter: 우리가 작성하는 다양한 형태의 핸들러 코드를 스프링 MVC가 실행할 수 있는 형태로 변환해주는 어댑터용 인터페이스
+
+```java
+// AdapterInSpring.java
+package me.whiteship.designpatterns._02_structural_patterns._06_adapter._03_java;
+
+import org.springframework.web.servlet.DispatcherServlet;
+import org.springframework.web.servlet.HandlerAdapter;
+import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter;
+
+public class AdapterInSpring {
+
+  public static void main(String[] args) {
+    DispatcherServlet dispatcherServlet = new DispatcherServlet();
+    HandlerAdapter handlerAdapter = new RequestMappingHandlerAdapter();
+  }
+}
+```
+
+---
+
+## 2. 브릿지(Bridge) 패턴
+
+### 2.1 패턴 소개
+
+![gof_2_3](https://raw.githubusercontent.com/berenickt/image-server/main/img/gof_2_3.png)
+
+**추상적인 것**과 **구체적인 것**을 분리하여 연결하는 패턴
+
+- 하나의 계층 구조일 때 보다 각기 나누었을 때 독립적인 계층 구조로 발전 시킬 수 있다.
+- `어댑터 패턴`이 **서로 상이한 두 인터페이스를 연결하는 것**이라면,
+
+  - `브릿지 패턴`은 **추상적인 것과 구체적인 것 사이를 연결**하는 브릿지를 만들기 위해 상속이 아닌, 컴포지트를 사용
+  - 그래서 나눠서 연결한다는 의미로 bridge(다리)를 사용한다.
+
+- 위 그림의 중간 `Abstration은 추상적인 부분`, 위 그림의 가장 오른쪽 `Implementation은 구체적인 부분`이다.
+  - 여기서 중요한 건 추상적인 부분과 구체적인 부분을 연결해주는 `다리 역할을 하는 화살표`이다.
+  - 어떤 동작들만 있는 것, 상태만 모아놓은 어떤 프론트엔드, 백엔드만 모아놓은 것과 같이
+  - 서로 성격이 상이한 것들을 분리해서, 그것들을 대칭 구조가 아닌 서로 분리하고, **그 둘 사이를 연결하는 다리를 놓아주는 것**
+
+![gof_2_4](https://raw.githubusercontent.com/berenickt/image-server/main/img/gof_2_4.png)
+
+e.g. 게임 롤 캐릭터인 아리와 아칼리가 있고, 그들의 스킨인 수영복과 KDA 스킨이 있다.
+
+- 챔피언은 게임 내에서 플레이어가 조종하는 주요 캐릭터이고,
+  - 스킨은 챔피언의 외모를 변경하지만, 챔피언의 기본 능력이나 게임 플레이에는 영향을 주지 않는다.
+- 브릿지 패턴을 이용하여 이를 모델링한다면, "챔피언"을 추상화로, "스킨"을 구현으로 볼 수 있다.
+- 이렇게 하면,`챔피언(아리, 아칼리)`과 `스킨(수영복, KDA)`을 독립적으로 확장할 수 있다.
+
+> 1. **추상화(Abstraction) 층**: 이 층에서는 챔피언의 추상적인 개념을 정의.
+>    - e.g. 챔피언 클래스는 모든 챔피언이 공통으로 가지고 있는 특성(예: 이름, 기본 공격)을 정의할 수 있다.
+>    - 그리고 이 추상화 층에서는 스킨을 적용하는 메소드를 포함할 수 있다.
+> 2. **구현(Implementation) 층**: 이 층에서는 스킨의 구체적인 구현을 정의
+>    - 수영복 스킨, KDA 스킨 등 각각의 스킨은 이 구현 층에서 정의된다.
+>    - 각 스킨은 챔피언의 외모를 변경하는 방법을 구체적으로 구현한다.
+
+이러한 구조를 통해, 새로운 챔피언이나 스킨을 추가할 때 기존 코드를 변경하지 않고도 확장이 가능하다.
+
+- e.g. 새로운 챔피언을 추가하려면, `추상화 층`에 새로운 챔피언 클래스를 추가하기만 하면 되고,
+- e.g. 새로운 스킨을 추가하려면, `구현 층`에 새로운 스킨 클래스를 추가하면 된다.
+
+브릿지 패턴을 사용함으로써, 챔피언과 스킨의 결합도를 낮추고, 각각을 독립적으로 확장할 수 있는 유연성을 확보할 수 있다
+
+---
+
+### 2.2 예시 - 기존
+
+```java
+// Skin.java
+package me.whiteship.designpatterns._02_structural_patterns._07_bridge._02_after;
+
+public interface Skin {
+  String getName();
+}
+```
+
+```java
+// Champion.java
+package me.whiteship.designpatterns._02_structural_patterns._07_bridge._01_before;
+
+import me.whiteship.designpatterns._02_structural_patterns._07_bridge._02_after.Skin;
+
+public interface Champion extends Skin {
+  void move();
+
+  void skillQ();
+
+  void skillW();
+
+  void skillE();
+
+  void skillR();
+}
+```
+
+```java
+// KDA아리.java
+package me.whiteship.designpatterns._02_structural_patterns._07_bridge._01_before;
+
+public class KDA아리 implements Champion {
+
+  @Override
+  public void move() {
+    System.out.println("KDA 아리 move");
+  }
+
+  @Override
+  public void skillQ() {
+    System.out.println("KDA 아리 Q");
+  }
+
+  @Override
+  public void skillW() {
+    System.out.println("KDA 아리 W");
+  }
+
+  @Override
+  public void skillE() {
+    System.out.println("KDA 아리 E");
+  }
+
+  @Override
+  public void skillR() {
+    System.out.println("KDA 아리 R");
+  }
+
+  @Override
+  public String getName() {
+    return null;
+  }
+}
+```
+
+```java
+// PoolParty아리.java
+package me.whiteship.designpatterns._02_structural_patterns._07_bridge._01_before;
+
+public class PoolParty아리 implements Champion {
+
+  @Override
+  public void move() {
+    System.out.println("PoolParty move");
+  }
+
+  @Override
+  public void skillQ() {
+    System.out.println("PoolParty Q");
+  }
+
+  @Override
+  public void skillW() {
+    System.out.println("PoolParty W");
+  }
+
+  @Override
+  public void skillE() {
+    System.out.println("PoolParty E");
+  }
+
+  @Override
+  public void skillR() {
+    System.out.println("PoolParty R");
+  }
+
+  @Override
+  public String getName() {
+    return null;
+  }
+}
+```
+
+```java
+// App.java
+package me.whiteship.designpatterns._02_structural_patterns._07_bridge._01_before;
+
+public class App {
+
+  public static void main(String[] args) {
+    Champion kda아리 = new KDA아리();
+    kda아리.skillQ();
+    kda아리.skillR();
+  }
+}
+```
+
+---
+
+### 2.3 예시 - 변경
+
+```java
+// DefaultChampion.java
+package me.whiteship.designpatterns._02_structural_patterns._07_bridge._02_after;
+
+import me.whiteship.designpatterns._02_structural_patterns._07_bridge._01_before.Champion;
+
+public class DefaultChampion implements Champion {
+
+  private Skin skin;
+
+  private String name;
+
+  public DefaultChampion(Skin skin, String name) {
+    this.skin = skin;
+    this.name = name;
+  }
+
+  @Override
+  public void move() {
+    System.out.printf("%s %s move\n", skin.getName(), this.name);
+  }
+
+  @Override
+  public void skillQ() {
+    System.out.printf("%s %s Q\n", skin.getName(), this.name);
+  }
+
+  @Override
+  public void skillW() {
+    System.out.printf("%s %s W\n", skin.getName(), this.name);
+  }
+
+  @Override
+  public void skillE() {
+    System.out.printf("%s %s E\n", skin.getName(), this.name);
+  }
+
+  @Override
+  public void skillR() {
+    System.out.printf("%s %s R\n", skin.getName(), this.name);
+  }
+
+  @Override
+  public String getName() {
+    return null;
+  }
+}
+```
+
+```java
+// KDA.java
+package me.whiteship.designpatterns._02_structural_patterns._07_bridge._02_after;
+
+public class KDA implements Skin {
+
+  @Override
+  public String getName() {
+    return "KDA";
+  }
+}
+```
+
+```java
+// PoolParty.java
+package me.whiteship.designpatterns._02_structural_patterns._07_bridge._02_after;
+
+public class PoolParty implements Skin {
+
+  @Override
+  public String getName() {
+    return "PoolParty";
+  }
+}
+```
+
+```java
+// 아리.java
+package me.whiteship.designpatterns._02_structural_patterns._07_bridge._02_after;
+
+public class 아리 extends DefaultChampion {
+
+  public 아리(Skin skin) {
+    super(skin, "아리");
+  }
+}
+```
+
+```java
+// 아칼리.java
+package me.whiteship.designpatterns._02_structural_patterns._07_bridge._02_after;
+
+public class 아칼리 extends DefaultChampion {
+
+  public 아칼리(Skin skin) {
+    super(skin, "아칼리");
+  }
+}
+```
+
+```java
+// App.java
+package me.whiteship.designpatterns._02_structural_patterns._07_bridge._02_after;
+
+import me.whiteship.designpatterns._02_structural_patterns._07_bridge._01_before.Champion;
+
+public abstract class App implements Champion {
+
+  public static void main(String[] args) {
+    Champion kda아리 = new 아리(new KDA());
+    kda아리.skillQ();
+    kda아리.skillW();
+
+    Champion poolParty아리 = new 아리(new PoolParty());
+    poolParty아리.skillR();
+    poolParty아리.skillW();
+  }
+}
+```
+
+---
+
+### 2.4 장단점
+
+- 장점
+  - `추상적인 코드`를 **구체적인 코드 변경 없이도 독립적으로 확장할 수 있다**.
+  - `추상적인 코드`과 `구체적인 코드`를 분리하여 수 있다.
+- 단점
+  - 계층 구조가 늘어나 **복잡도가 증가**할 수 있다
+
+---
+
+### 2.5 실무에서 어떻게 쓰이나?
+
+자바
+
+- JDBC API, DriverManger와 Driver
+
+```java
+// JdbcExample.java
+package me.whiteship.designpatterns._02_structural_patterns._07_bridge._03_java;
+
+import java.sql.*;
+
+public class JdbcExample {
+
+  public static void main(String[] args) throws ClassNotFoundException {
+    Class.forName("org.h2.Driver");
+
+    try (
+      Connection conn = DriverManager.getConnection(
+        "jdbc:h2:mem:~/test",
+        "sa",
+        ""
+      )
+    ) {
+      String sql =
+        "CREATE TABLE  ACCOUNT " +
+        "(id INTEGER not NULL, " +
+        " email VARCHAR(255), " +
+        " password VARCHAR(255), " +
+        " PRIMARY KEY ( id ))";
+
+      Statement statement = conn.createStatement();
+      statement.execute(sql);
+      //   PreparedStatement statement1 = conn.prepareStatement(sql);
+      //   ResultSet resultSet = statement.executeQuery(sql);
+    } catch (SQLException e) {
+      throw new RuntimeException(e);
+    }
+  }
+}
+```
+
+Java의 SLF4J, 로깅 퍼사드와 로거
+
+```java
+// Slf4jExample.java
+package me.whiteship.designpatterns._02_structural_patterns._07_bridge._03_java;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class Slf4jExample {
+
+  private static Logger logger = LoggerFactory.getLogger(Slf4jExample.class);
+
+  public static void main(String[] args) {
+    logger.info("hello logger");
+  }
+}
+```
+
+스프링의 Portable Service Abstraction
+
+```java
+// BridgeInSpring.java
+package me.whiteship.designpatterns._02_structural_patterns._07_bridge._03_java;
+
+import org.springframework.jdbc.support.JdbcTransactionManager;
+import org.springframework.mail.MailSender;
+import org.springframework.mail.javamail.JavaMailSenderImpl;
+import org.springframework.transaction.PlatformTransactionManager;
+
+public class BridgeInSpring {
+
+  public static void main(String[] args) {
+    MailSender mailSender = new JavaMailSenderImpl();
+
+    PlatformTransactionManager platformTransactionManager = new JdbcTransactionManager();
+  }
+}
+```
+
+---
+
+## 3. 컴포짓(Composite) 패턴
+
+### 3.1 패턴 소개
+
+![gof_2_5](https://raw.githubusercontent.com/berenickt/image-server/main/img/gof_2_5.png)
+
+**그룹 전체**와 **개별 객체**를 동일하게 처리할 수 있는 패턴.
+
+- `클라이언트 입장`에서는 ‘전체’나 ‘부분’이나 모두 동일한 컴포넌트로 인식하는 계층 구조를 만든다. (Part-Whole Hierarchy)
+- 이는 `트리 구조`**로 구성해야만 컴포짓 패턴을 구현**할 수 있다.
+
+![gof_2_6](https://raw.githubusercontent.com/berenickt/image-server/main/img/gof_2_6.png)
+
+e.g. 게임에서 도란검(450원), 체력물약(50원)이 있다. 그리고 이 아이템들을 가방에 넣어놨다.
+
+- 게임에서 아이템은 단일 아이템일 수도 있고, 여러 아이템이 조합된 세트 아이템일 수도 있습니다.
+- 클라이언트 입장에서는 아이템의 가격을 개별로 출력하고 싶을 떄도 있고,
+  - 반대로 가방 전체에 들어있는 아이템 가격을 알고 싶을 떄도 있을 것이다.
+  - 아이템 가격은 그냥 출력하면 되는데, 가방의 아이템은 모든 아이템들을 순회하면서 출력해야 한다.
+  - 이러면 가방의 모든 값을 구하는 로직이 클라이언트 측에 남는데, 이것이 객체지향적으로 올바른가에 대한 고민이 생긴다.
+- 이는 컴포짓 패턴을 적용하면 이 문제를 쉽게 해결할 수 있다.
+  - 값을 구할 수 있는 모든 컴포넌트들의 공통 인터페이스를 정의한다.
+    - 그래서 클라이언트는 컴포넌트라는 인터페이스 타입만 본다.
+  - 우리가 만들 아이템, 백, 캐릭터 등은 leaf 또는 composite 객체가 된다.
+    - leaf 객체는 가장 기본적인 단위가 되고,
+    - 여러 기본적인 단위 타입들을 그룹으로 가져가는 composite 타입의 객체가 있다.
+  - composite 객체는 여러 개의 컴포넌트들을 배열 또는 리스트로 가지고 있다.
+    - 하지만 이떄도 타입은 절대 leaf 타입이 아니다. 컴포넌트 타입이다.
+    - 그래서 컴포짓을 써도 컴포넌트 타입으로 leaf 또는 bag 또는 composite를 참조할 수 있는 것이다.
+
+> 1. **컴포넌트(Component) 인터페이스**:
+>    - 인터페이스는 개별 아이템(도란검, 체력물약)과 세트 아이템 모두가 구현해야 하는 공통의 메서드를 정의
+>    - e.g. `getPrice()` 메서드는 아이템의 가격을 반환.
+> 2. **리프(Leaf) 클래스**:
+>    - 이 클래스는 개별 아이템을 나타낸다.
+>    - 도란검과 체력물약은 각각 리프 클래스의 인스턴스로 표현될 수 있으며, `getPrice()` 메서드를 통해 자신의 가격을 반환한다.
+> 3. **컴포지트(Composite) 클래스**:
+>    - 이 클래스는 여러 개의 아이템(리프 또는 다른 컴포지트)을 포함할 수 있는 컨테이너 역할을 한다.
+>    - e.g. "초기 게임 세트"라는 세트 아이템이 도란검 하나와 체력물약 두 개로 구성되어 있다면,
+>    - 이 세트는 컴포지트 클래스의 인스턴스로 표현됩니다.
+>    - `getPrice()` 메서드는 포함된 모든 아이템의 가격을 합산하여 반환합니다.
+
+클라이언트는 개별 아이템과 세트 아이템을 구분하지 않고 동일한 방식으로 처리할 수 있다.
+
+- e.g. 아이템의 **총 가격을 계산**하거나, **아이템을 구매**하는 등의 작업을
+  - `단일 아이템`과 `세트 아이템`에 대해 동일한 메서드 호출로 수행할 수 있습니다.
+- 컴포지트 패턴은 게임 아이템 관리뿐만 아니라, **파일 시스템의 폴더와 파일 관리** 등 다양한 분야에서 유용하게 사용됩니다.
+
+---
+
+### 3.2 예시 - 기존
+
+```java
+// Bag.java
+package me.whiteship.designpatterns._02_structural_patterns._08_composite._01_before;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class Bag {
+
+  private List<Item> items = new ArrayList<>();
+
+  public void add(Item item) {
+    items.add(item);
+  }
+
+  public List<Item> getItems() {
+    return items;
+  }
+}
+```
+
+```java
+// Item.java
+package me.whiteship.designpatterns._02_structural_patterns._08_composite._01_before;
+
+public class Item {
+
+  private String name;
+
+  private int price;
+
+  public Item(String name, int price) {
+    this.name = name;
+    this.price = price;
+  }
+
+  public int getPrice() {
+    return this.price;
+  }
+}
+```
+
+```java
+// Client.java
+package me.whiteship.designpatterns._02_structural_patterns._08_composite._01_before;
+
+import java.util.stream.Collectors;
+
+public class Client {
+
+  public static void main(String[] args) {
+    Item doranBlade = new Item("도란검", 450);
+    Item healPotion = new Item("체력 물약", 50);
+
+    Bag bag = new Bag();
+    bag.add(doranBlade);
+    bag.add(healPotion);
+
+    Client client = new Client();
+    client.printPrice(doranBlade);
+    client.printPrice(bag);
+  }
+
+  private void printPrice(Item item) {
+    System.out.println(item.getPrice());
+  }
+
+  private void printPrice(Bag bag) {
+    int sum = bag.getItems().stream().mapToInt(Item::getPrice).sum();
+    System.out.println(sum);
+  }
+}
+```
+
+---
+
+### 3.3 예시 - 변경
+
+```java
+// Component.java
+package me.whiteship.designpatterns._02_structural_patterns._08_composite._02_after;
+
+public interface Component {
+  int getPrice();
+}
+```
+
+```java
+// Item.java
+package me.whiteship.designpatterns._02_structural_patterns._08_composite._02_after;
+
+public class Item implements Component {
+
+  private String name;
+
+  private int price;
+
+  public Item(String name, int price) {
+    this.name = name;
+    this.price = price;
+  }
+
+  @Override
+  public int getPrice() {
+    return this.price;
+  }
+}
+```
+
+```java
+// Character.java
+package me.whiteship.designpatterns._02_structural_patterns._08_composite._02_after;
+
+public class Character implements Component {
+
+  private Bag bag;
+
+  @Override
+  public int getPrice() {
+    return bag.getPrice();
+  }
+}
+```
+
+```java
+// Bag.java
+package me.whiteship.designpatterns._02_structural_patterns._08_composite._02_after;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.IntStream;
+
+public class Bag implements Component {
+
+  private List<Component> components = new ArrayList<>();
+
+  public void add(Component component) {
+    components.add(component);
+  }
+
+  public List<Component> getComponents() {
+    return components;
+  }
+
+  @Override
+  public int getPrice() {
+    return components.stream().mapToInt(Component::getPrice).sum();
+  }
+}
+```
+
+```java
+// Client.java
+package me.whiteship.designpatterns._02_structural_patterns._08_composite._02_after;
+
+public class Client {
+
+  public static void main(String[] args) {
+    Item doranBlade = new Item("도란검", 450);
+    Item healPotion = new Item("체력 물약", 50);
+
+    Bag bag = new Bag();
+    bag.add(doranBlade);
+    bag.add(healPotion);
+
+    Client client = new Client();
+    client.printPrice(doranBlade);
+    client.printPrice(bag);
+  }
+
+  private void printPrice(Component component) {
+    System.out.println(component.getPrice());
+  }
+}
+```
+
+---
+
+### 3.4 장단점
+
+- 장점
+  - **복잡한 트리 구조를 편리하게 사용**할 수 있다.
+  - 다형성과 재귀를 활용할 수 있다.
+  - 클라이언트 코드를 변경하지 않고, 새로운 엘리먼트 타입을 추가할 수 있다.
+- 단점
+  - **트리를 만들어야 하기 때문에** (공통된 인터페이스를 정의해야 하기 때문에)
+    - **지나치게 일반화 해야 하는 경우도 생길 수 있**다
+
+---
+
+### 3.5 실무에서 어떻게 쓰이나?
+
+자바
+
+- Swing 라이브러리
+- JSF (JavaServer Faces) 라이브러리
+
+```java
+package me.whiteship.designpatterns._02_structural_patterns._08_composite._03_java;
+
+import javax.swing.*;
+
+public class SwingExample {
+
+  public static void main(String[] args) {
+    JFrame frame = new JFrame();
+
+    JTextField textField = new JTextField();
+    textField.setBounds(200, 200, 200, 40);
+    frame.add(textField);
+
+    JButton button = new JButton("click");
+    button.setBounds(200, 100, 60, 40);
+    button.addActionListener(e -> textField.setText("Hello Swing"));
+    frame.add(button);
+
+    frame.setSize(600, 400);
+    frame.setLayout(null);
+    frame.setVisible(true);
+  }
+}
+```
+
+---
+
+## 4. 데코레이터(Decorator) 패턴
+
+### 4.1 패턴 소개
+
+![gof_2_7](https://raw.githubusercontent.com/berenickt/image-server/main/img/gof_2_7.png)
+
+**기존 코드를 변경하지 않고, 부가 기능을 추가**하는 패턴
+
+- 상속이 아닌 위임을 사용해서, 보다 유연하게(런타임에) 부가 기능을 추가하는 것도 가능하다.
+- 어떤 컴퓨터 관련 문서에서 **동적이고, 유연하다**는 표현이 있으면, 그건 **런타임에 뭔가를 변경할 수 있다**는 의미로,
+  - `데코레이터 패턴`은 **런타임에 기존 코드를 확장하는 방법**이다.
+
+![gof_2_8](https://raw.githubusercontent.com/berenickt/image-server/main/img/gof_2_8.png)
+
+e.g. 댓글을 남기는 서비스가 있다면, 댓글 서비스를 확장해서 새로운 서비스를 만들어 나갈 수 있다.
+
+- 스팸 걸러주는 기능, 이모티콘 등 댓글을 꾸며주는 기능인 트리밍(trimming) 기능 등을 추가
+- 또는 나중에 광고를 제거해주는 기능을 추가
+- 이떄부터 상속이 문제가 있단 것을 알게 되는데, 스팸 필터링, 트리밍 코멘트 서비스를
+  - 둘 다 상속받아 하나로 만들고 싶지만, 대부분의 프로그래밍 언어에서는 다중 상속을 허용하지 않는다.
+
+e.g. 실생활에서 빵집에서 빵을 만들고 있다.
+
+- 빵에 초콜릿을 바르면 초콜릿 케이크, 치즈를 바르면 치즈케이크, 과일을 많이 올려놓으면 과일 케이크가 된다.
+- 이처럼 기본 토대에서 `decorate(장식, 포장)`하는 패턴을 데코레이터 패턴이라 부른다.
+
+---
+
+### 4.2 예시 - 기존
+
+```java
+// CommentService.java
+package me.whiteship.designpatterns._02_structural_patterns._09_decorator._01_before;
+
+public class CommentService {
+
+  public void addComment(String comment) {
+    System.out.println(comment);
+  }
+}
+```
+
+```java
+// SpamFilteringCommentService.java
+package me.whiteship.designpatterns._02_structural_patterns._09_decorator._01_before;
+
+public class SpamFilteringCommentService extends CommentService {
+
+  @Override
+  public void addComment(String comment) {
+    boolean isSpam = isSpam(comment);
+    if (!isSpam) {
+      super.addComment(comment);
+    }
+  }
+
+  private boolean isSpam(String comment) {
+    return comment.contains("http");
+  }
+}
+```
+
+```java
+// TrimmingCommentService.java
+package me.whiteship.designpatterns._02_structural_patterns._09_decorator._01_before;
+
+public class TrimmingCommentService extends CommentService {
+
+  @Override
+  public void addComment(String comment) {
+    super.addComment(trim(comment));
+  }
+
+  private String trim(String comment) {
+    return comment.replace("...", "");
+  }
+}
+```
+
+```java
+// Client.java
+package me.whiteship.designpatterns._02_structural_patterns._09_decorator._01_before;
+
+public class Client {
+
+  private CommentService commentService;
+
+  public Client(CommentService commentService) {
+    this.commentService = commentService;
+  }
+
+  private void writeComment(String comment) {
+    commentService.addComment(comment);
+  }
+
+  public static void main(String[] args) {
+    Client client = new Client(new SpamFilteringCommentService());
+    client.writeComment("오징어게임");
+    client.writeComment("보는게 하는거 보다 재밌을 수가 없지...");
+    client.writeComment("http://whiteship.me");
+  }
+}
+```
+
+---
+
+### 4.3 예시 - 변경
+
+```java
+// CommentService.java
+package me.whiteship.designpatterns._02_structural_patterns._09_decorator._02_after;
+
+public interface CommentService {
+  void addComment(String comment);
+}
+```
+
+```java
+// DefaultCommentService.java
+package me.whiteship.designpatterns._02_structural_patterns._09_decorator._02_after;
+
+public class DefaultCommentService implements CommentService {
+
+  @Override
+  public void addComment(String comment) {
+    System.out.println(comment);
+  }
+}
+```
+
+```java
+// CommentDecorator.java
+package me.whiteship.designpatterns._02_structural_patterns._09_decorator._02_after;
+
+public class CommentDecorator implements CommentService {
+
+  private CommentService commentService;
+
+  public CommentDecorator(CommentService commentService) {
+    this.commentService = commentService;
+  }
+
+  @Override
+  public void addComment(String comment) {
+    commentService.addComment(comment);
+  }
+}
+```
+
+```java
+// SpamFilteringCommentDecorator.java
+package me.whiteship.designpatterns._02_structural_patterns._09_decorator._02_after;
+
+public class SpamFilteringCommentDecorator extends CommentDecorator {
+
+  public SpamFilteringCommentDecorator(CommentService commentService) {
+    super(commentService);
+  }
+
+  @Override
+  public void addComment(String comment) {
+    if (isNotSpam(comment)) {
+      super.addComment(comment);
+    }
+  }
+
+  private boolean isNotSpam(String comment) {
+    return !comment.contains("http");
+  }
+}
+```
+
+```java
+// TrimmingCommentDecorator.java
+package me.whiteship.designpatterns._02_structural_patterns._09_decorator._02_after;
+
+public class TrimmingCommentDecorator extends CommentDecorator {
+
+  public TrimmingCommentDecorator(CommentService commentService) {
+    super(commentService);
+  }
+
+  @Override
+  public void addComment(String comment) {
+    super.addComment(trim(comment));
+  }
+
+  private String trim(String comment) {
+    return comment.replace("...", "");
+  }
+}
+```
+
+```java
+// Client.java
+package me.whiteship.designpatterns._02_structural_patterns._09_decorator._02_after;
+
+public class Client {
+
+  private CommentService commentService;
+
+  public Client(CommentService commentService) {
+    this.commentService = commentService;
+  }
+
+  public void writeComment(String comment) {
+    commentService.addComment(comment);
+  }
+}
+```
+
+```java
+// App.java
+package me.whiteship.designpatterns._02_structural_patterns._09_decorator._02_after;
+
+public class App {
+
+  private static boolean enabledSpamFilter = true;
+
+  private static boolean enabledTrimming = true;
+
+  public static void main(String[] args) {
+    CommentService commentService = new DefaultCommentService();
+
+    if (enabledSpamFilter) {
+      commentService = new SpamFilteringCommentDecorator(commentService);
+    }
+
+    if (enabledTrimming) {
+      commentService = new TrimmingCommentDecorator(commentService);
+    }
+
+    Client client = new Client(commentService);
+    client.writeComment("오징어게임");
+    client.writeComment("보는게 하는거 보다 재밌을 수가 없지...");
+    client.writeComment("http://whiteship.me");
+  }
+}
+```
+
+---
+
+### 4.4 장단점
+
+- 장점
+  - **새로운 클래스를 만들지 않고 기존 기능을 조합**할 수 있다.
+  - 컴파일 타임이 아닌 **런타임에 동적으로 기능을 변경할** 수 있다.
+- 단점
+  - **데코레이터를 조합하는 코드가 복잡**할 수 있다
+
+---
+
+### 4.5 실무에서는 어떻게 쓰이나?
+
+자바
+
+- InputStream, OutputStream, Reader, Writer의 생성자를 활용한 랩퍼
+- java.util.Collections가 제공하는 메소드들 활용한 랩퍼
+- javax.servlet.http.HttpServletRequest/ResponseWrapper
+
+```java
+package me.whiteship.designpatterns._02_structural_patterns._09_decorator._03_java;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import javax.servlet.http.HttpServletRequestWrapper;
+import javax.servlet.http.HttpServletResponseWrapper;
+
+public class DecoratorInJava {
+
+  public static void main(String[] args) {
+    // Collections가 제공하는 데코레이터 메소드
+    ArrayList list = new ArrayList<>();
+    list.add(new Book());
+
+    List books = Collections.checkedList(list, Book.class);
+
+    // books.add(new Item());
+
+    List unmodifiableList = Collections.unmodifiableList(list);
+    list.add(new Item());
+    unmodifiableList.add(new Book());
+
+    // 서블릿 요청 또는 응답 랩퍼
+    HttpServletRequestWrapper requestWrapper;
+    HttpServletResponseWrapper responseWrapper;
+  }
+
+  private static class Book {}
+
+  private static class Item {}
+}
+```
+
+스프링
+
+- ServerHttpRequestDecorator
+
+```java
+package me.whiteship.designpatterns._02_structural_patterns._09_decorator._03_java;
+
+import org.springframework.beans.factory.xml.BeanDefinitionDecorator;
+import org.springframework.http.server.reactive.ServerHttpRequestDecorator;
+import org.springframework.http.server.reactive.ServerHttpResponseDecorator;
+import org.springframework.web.server.WebFilter;
+
+public class DecoratorInSpring {
+
+  public static void main(String[] args) {
+    // 빈 설정 데코레이터
+    BeanDefinitionDecorator decorator;
+
+    // 웹플럭스 HTTP 요청 /응답 데코레이터
+    ServerHttpRequestDecorator httpRequestDecorator;
+    ServerHttpResponseDecorator httpResponseDecorator;
+  }
+}
+```
+
+---
+
+## 5. 퍼샤드(Facade) 패턴
+
+### 5.1 패턴 소개
+
+![gof_2_9](https://raw.githubusercontent.com/berenickt/image-server/main/img/gof_2_9.png)
+
+**복잡한 서브 시스템 의존성을 최소화하는 방법.**
+
+- 클라이언트가 사용해야 하는 `복잡한 서브 시스템` 의존성을 간단한 **인터페이스로 추상화**할 수 있다.
+- cf. `facade`는 불어로 '건물의 앞쪽 정면(전면)'이란 뜻이다.
+- `파샤드(Facade) 패턴`은 **복잡한 시스템에 대한 간단한 인터페이스를 제공**하는 디자인 패턴
+  - 이 패턴은 **시스템의 복잡성을 숨기고, 클라이언트가 더 쉽게 시스템을 사용**할 수 있도록 한다.
+
+![gof_2_10](https://raw.githubusercontent.com/berenickt/image-server/main/img/gof_2_10.png)
+
+e.g. 이메일을 보내는 과정은 상당히 복잡하다.
+
+- 이메일을 보내기 위해서는 SMTP 서버 설정, 메시지 포맷팅, 첨부 파일 처리, 메시지 전송 등 여러 단계를 거쳐야 한다.
+- `EmailSender` 클래스는 `sendEmail` 메서드를 제공할 수 있다.
+  - 클라이언트는 이 메서드에 수신자 주소, 이메일 제목, 본문 내용 등을 파라미터로 전달하기만 하면 된다.
+  - `sendEmail` 메서드 내부에서는 이메일을 보내는 데 필요한 모든 복잡한 과정을 처리한다.
+- 이렇게 파사드 패턴을 사용함으로써, 클라이언트는 이메일 시스템의 내부 구조나 복잡한 과정을 몰라도 간단하게 이메일을 보낼 수 있다.
+
+의존성이 높을 수록 변경하기 어렵고, 그 코드를 테스트하기도 어렵기 때문에, 여러모로 단점이 많다.
+
+- 가급적 유연하게 `느슨한 결합(loosely coupled)`을 사용하기 위해 SOLID와 같은 객체지향 원칙이나 디자인 패턴 등을 적용한다.
+
+---
+
+### 5.2 예시 - 기존
+
+```java
+// Client.java
+package me.whiteship.designpatterns._02_structural_patterns._10_facade._01_before;
+
+import java.util.Properties;
+import javax.mail.Message;
+import javax.mail.MessagingException;
+import javax.mail.Session;
+import javax.mail.Transport;
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeMessage;
+
+public class Client {
+
+  public static void main(String[] args) {
+    String to = "keesun@whiteship.me";
+    String from = "whiteship@whiteship.me";
+    String host = "127.0.0.1";
+
+    Properties properties = System.getProperties();
+    properties.setProperty("mail.smtp.host", host);
+
+    Session session = Session.getDefaultInstance(properties);
+
+    try {
+      MimeMessage message = new MimeMessage(session);
+      message.setFrom(new InternetAddress(from));
+      message.addRecipient(Message.RecipientType.TO, new InternetAddress(to));
+      message.setSubject("Test Mail from Java Program");
+      message.setText("message");
+
+      Transport.send(message);
+    } catch (MessagingException e) {
+      e.printStackTrace();
+    }
+  }
+}
+```
+
+---
+
+### 5.3 예시 - 변경
+
+```java
+// EmailMessage.java
+package me.whiteship.designpatterns._02_structural_patterns._10_facade._02_after;
+
+public class EmailMessage {
+
+  private String from;
+
+  private String to;
+  private String cc;
+  private String bcc;
+
+  private String subject;
+
+  private String text;
+
+  public String getFrom() {
+    return from;
+  }
+
+  public void setFrom(String from) {
+    this.from = from;
+  }
+
+  public String getTo() {
+    return to;
+  }
+
+  public void setTo(String to) {
+    this.to = to;
+  }
+
+  public String getSubject() {
+    return subject;
+  }
+
+  public void setSubject(String subject) {
+    this.subject = subject;
+  }
+
+  public String getText() {
+    return text;
+  }
+
+  public void setText(String text) {
+    this.text = text;
+  }
+
+  public String getCc() {
+    return cc;
+  }
+
+  public void setCc(String cc) {
+    this.cc = cc;
+  }
+
+  public String getBcc() {
+    return bcc;
+  }
+
+  public void setBcc(String bcc) {
+    this.bcc = bcc;
+  }
+}
+```
+
+```java
+// EmailSettings.java
+package me.whiteship.designpatterns._02_structural_patterns._10_facade._02_after;
+
+public class EmailSettings {
+
+  private String host;
+
+  public String getHost() {
+    return host;
+  }
+
+  public void setHost(String host) {
+    this.host = host;
+  }
+}
+```
+
+```java
+// EmailSender.java
+package me.whiteship.designpatterns._02_structural_patterns._10_facade._02_after;
+
+import java.util.Properties;
+import javax.mail.Message;
+import javax.mail.MessagingException;
+import javax.mail.Session;
+import javax.mail.Transport;
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeMessage;
+
+public class EmailSender {
+
+  private EmailSettings emailSettings;
+
+  public EmailSender(EmailSettings emailSettings) {
+    this.emailSettings = emailSettings;
+  }
+
+  /**
+   * 이메일 보내는 메소드
+   * @param emailMessage
+   */
+  public void sendEmail(EmailMessage emailMessage) {
+    Properties properties = System.getProperties();
+    properties.setProperty("mail.smtp.host", emailSettings.getHost());
+
+    Session session = Session.getDefaultInstance(properties);
+
+    try {
+      MimeMessage message = new MimeMessage(session);
+      message.setFrom(new InternetAddress(emailMessage.getFrom()));
+      message.addRecipient(
+        Message.RecipientType.TO,
+        new InternetAddress(emailMessage.getTo())
+      );
+      message.addRecipient(
+        Message.RecipientType.CC,
+        new InternetAddress(emailMessage.getCc())
+      );
+      message.setSubject(emailMessage.getSubject());
+      message.setText(emailMessage.getText());
+
+      Transport.send(message);
+    } catch (MessagingException e) {
+      e.printStackTrace();
+    }
+  }
+}
+```
+
+```java
+// Client.java
+package me.whiteship.designpatterns._02_structural_patterns._10_facade._02_after;
+
+public class Client {
+
+  public static void main(String[] args) {
+    EmailSettings emailSettings = new EmailSettings();
+    emailSettings.setHost("127.0.0.1");
+
+    EmailSender emailSender = new EmailSender(emailSettings);
+
+    EmailMessage emailMessage = new EmailMessage();
+    emailMessage.setFrom("keesun");
+    emailMessage.setTo("whiteship");
+    emailMessage.setCc("일남");
+    emailMessage.setSubject("오징어게임");
+    emailMessage.setText("밖은 더 지옥이더라고..");
+
+    emailSender.sendEmail(emailMessage);
+  }
+}
+```
+
+---
+
+### 5.4 장단점
+
+- 장점 : 서브 시스템에 대한 의존성을 한곳으로 모을 수 있다.
+- 단점 : 퍼사드 클래스가 서브 시스템에 대한 모든 의존성을 가지게 된다
+
+---
+
+### 5.5 실무에서는 어떻게 쓰이나?
+
+스프링
+
+- Spring MVC
+- 스프링이 제공하는 대부분의 기술 독립적인 인터페이스와 그 구현체
+
+```java
+package me.whiteship.designpatterns._02_structural_patterns._10_facade._03_java;
+
+import org.springframework.jdbc.support.JdbcTransactionManager;
+import org.springframework.mail.MailSender;
+import org.springframework.mail.javamail.JavaMailSenderImpl;
+import org.springframework.transaction.PlatformTransactionManager;
+
+public class FacadeInSpring {
+
+  public static void main(String[] args) {
+    MailSender mailSender = new JavaMailSenderImpl();
+
+    PlatformTransactionManager platformTransactionManager = new JdbcTransactionManager();
+  }
+}
+```
+
+---
+
+## 6. 플라이웨이트(Flyweight) 패턴
+
+### 6.1 패턴 소개
+
+![gof_2_11](https://raw.githubusercontent.com/berenickt/image-server/main/img/gof_2_11.png)
+
+**객체를 가볍게 만들어 메모리 사용을 줄이는 패턴**.
+
+- `자주 변하는 속성(또는 외적인 속성, extrinsit)`과 `변하지 않는 속성(또는 내적인 속성,  intrinsit)`을 분리하고,
+  - 재사용하여 메모리 사용을 줄일 수 있다.
+- 애플리케이션에서 **굉장히 많은 인스턴스를 만드는 특징을 가지고 있는 애플리케이션에서 주로 사용**한다.
+- 많은 인스턴스를 만들다보면, 메모리 사용을 많이 하게 되서, 메모리가 부족해지는 현상이 발생한다.
+  - flyweight 패턴을 적용해, **공통되는 부분을 따로 모아서 재사용하는 패턴**이다.
+
+즉, `자주 변하는 속성(또는 외적인 속성, extrinsit)`과 `자주 변하지 않는 속성(또는 내적인 속성, intrinsit)`을 분리해서 **자주 변하지 않는 속성을 재사용하는 방법**이다.
+
+- cf. flyweight는 ‘가벼운‘이란 뜻으로, 복싱에서 체급을 나눌 떄, flywight라는 체급이 있다.
+
+![gof_2_12](https://raw.githubusercontent.com/berenickt/image-server/main/img/gof_2_12.png)
+
+e.g. 문서에 수천 개의 글자가 있고, 모든 글자가 동일한 폰트 스타일을 사용한다면,
+
+- 각 글자마다 폰트 스타일 정보를 별도로 저장하는 것은 메모리 낭비가 될 수 있다.
+- 특정 폰트 스타일(예: 글꼴, 크기, 색상 등)과 같이 반복되는 정보를 공유 객체로 만들어 메모리 사용을 줄일 수 있다.
+- 결과적으로 문서 내의 모든 텍스트가 동일한 폰트 스타일을 사용할 경우,
+  - 단 하나의 폰트 스타일 객체만 메모리에 존재하게 된다.
+
+---
+
+### 6.2 예시 - 기존
+
+```java
+// Character.java
+package me.whiteship.designpatterns._02_structural_patterns._11_flyweight._01_before;
+
+public class Character {
+
+  private char value;
+
+  private String color;
+
+  private String fontFamily;
+
+  private int fontSize;
+
+  public Character(char value, String color, String fontFamily, int fontSize) {
+    this.value = value;
+    this.color = color;
+    this.fontFamily = fontFamily;
+    this.fontSize = fontSize;
+  }
+}
+```
+
+```java
+// Client.java
+package me.whiteship.designpatterns._02_structural_patterns._11_flyweight._01_before;
+
+public class Client {
+
+  public static void main(String[] args) {
+    Character c1 = new Character('h', "white", "Nanum", 12);
+    Character c2 = new Character('e', "white", "Nanum", 12);
+    Character c3 = new Character('l', "white", "Nanum", 12);
+    Character c4 = new Character('l', "white", "Nanum", 12);
+    Character c5 = new Character('o', "white", "Nanum", 12);
+  }
+}
+```
+
+---
+
+### 6.3 예시 - 변경
+
+```java
+// Font.java
+package me.whiteship.designpatterns._02_structural_patterns._11_flyweight._02_after;
+
+public final class Font {
+
+  final String family;
+
+  final int size;
+
+  public Font(String family, int size) {
+    this.family = family;
+    this.size = size;
+  }
+
+  public String getFamily() {
+    return family;
+  }
+
+  public int getSize() {
+    return size;
+  }
+}
+```
+
+```java
+// FontFactory.java
+package me.whiteship.designpatterns._02_structural_patterns._11_flyweight._02_after;
+
+import java.util.HashMap;
+import java.util.Map;
+
+public class FontFactory {
+
+  private Map<String, Font> cache = new HashMap<>();
+
+  public Font getFont(String font) {
+    if (cache.containsKey(font)) {
+      return cache.get(font);
+    } else {
+      String[] split = font.split(":");
+      Font newFont = new Font(split[0], Integer.parseInt(split[1]));
+      cache.put(font, newFont);
+      return newFont;
+    }
+  }
+}
+```
+
+```java
+// Character.java
+package me.whiteship.designpatterns._02_structural_patterns._11_flyweight._02_after;
+
+public class Character {
+
+  private char value;
+
+  private String color;
+
+  private Font font;
+
+  public Character(char value, String color, Font font) {
+    this.value = value;
+    this.color = color;
+    this.font = font;
+  }
+}
+```
+
+```java
+// Client.java
+package me.whiteship.designpatterns._02_structural_patterns._11_flyweight._02_after;
+
+public class Client {
+
+  public static void main(String[] args) {
+    FontFactory fontFactory = new FontFactory();
+    Character c1 = new Character('h', "white", fontFactory.getFont("nanum:12"));
+    Character c2 = new Character('e', "white", fontFactory.getFont("nanum:12"));
+    Character c3 = new Character('l', "white", fontFactory.getFont("nanum:12"));
+  }
+}
+```
+
+---
+
+### 6.4 장단점
+
+- 장점 : 애플리케이션에서 사용하는 메모리를 줄일 수 있다.
+- 단점 : 코드의 복잡도가 증가한다.
+
+---
+
+### 6.5 실무에서는 어떻게 쓰이나?
+
+자바
+
+- Integer.valueOf(int)
+- 캐시를 제공한다.
+- https://docs.oracle.com/javase/8/docs/api/java/lang/Integer.html#valueOf-int-
+
+```java
+// FlyweightInJava.java
+package me.whiteship.designpatterns._02_structural_patterns._11_flyweight._03_java;
+
+public class FlyweightInJava {
+
+  public static void main(String[] args) {
+    Integer i1 = Integer.valueOf(10);
+    Integer i2 = Integer.valueOf(10);
+    System.out.println(i1 == i2);
+  }
+}
+```
+
+---
+
+## 7. 프록시(Proxy) 패턴
+
+### 7.1 패턴 소개
+
+![gof_2_13](https://raw.githubusercontent.com/berenickt/image-server/main/img/gof_2_13.png)
+
+**특정 객체에 대한 접근을 제어하거나 기능을 추가할 수 있는 패턴**.
+
+- 초기화 지연, 접근 제어, 로깅, 캐싱 등 다양하게 응용해 사용 할 수 있다.
+- 특정 객체의 어떤 오퍼레이션들을 접근하기 전에, 이 프록시 객체를 먼저 지나서 접근하는 패턴이다
+- cf. `proxy`가 사전적으로 ‘대리, 대리인’이라는 뜻
+- 쉽게말해, 클라이언트가 **원래 사용하려는 객체를 직접 쓰는게 아니라, 대리인을 거쳐서 쓰는 패턴**이다.
+
+![gof_2_14](https://raw.githubusercontent.com/berenickt/image-server/main/img/gof_2_14.png)
+
+cf. 클라이언트가 게임 서비스를 사용해서 게임을 시작한다.
+
+- 게임 클라이언트가 게임 서버에 직접 접근하는 대신, Proxy 서버를 통해 접근한다.
+- 이 Proxy 서버는 클라이언트의 요청을 검증하고, 적절한 경우에만 게임 서버로 요청을 전달한다.
+
+---
+
+### 7.2 예시 - 기존
+
+```java
+// GameService.java
+package me.whiteship.designpatterns._02_structural_patterns._12_proxy._01_before;
+
+public class GameService {
+
+  public void startGame() {
+    System.out.println("이 자리에 오신 여러분을 진심으로 환영합니다.");
+  }
+}
+```
+
+```java
+// Client.java
+package me.whiteship.designpatterns._02_structural_patterns._12_proxy._01_before;
+
+public class Client {
+
+  public static void main(String[] args) throws InterruptedException {
+    GameService gameService = new GameService();
+    gameService.startGame();
+  }
+}
+```
+
+---
+
+### 7.3 예시 - 변경(상속 사용)
+
+기존을 코드를 변경하지 않고 적용하는 방법
+
+```java
+// GameService.java
+public class GameService {
+
+  public void startGame() throws InterruptedException {
+    System.out.println("이 자리에 오신 여러분을 진심으로 환영합니다.");
+    Thread.sleep(1000L);
+  }
+
+}
+```
+
+```java
+// GameServiceProxy.java
+public class GameServiceProxy extends GameService {
+
+    @Override
+    public void startGame() throws InterruptedException {
+        long before = System.currentTimeMillis();
+        super.startGame();
+        System.out.println(System.currentTimeMillis() - before);
+    }
+}
+```
+
+```java
+// Client.java
+package me.whiteship.designpatterns._02_structural_patterns._12_proxy._02_after;
+
+public class Client {
+
+  public static void main(String[] args) {
+    GameService gameService = new GameServiceProxy();
+    gameService.startGame();
+  }
+}
+```
+
+---
+
+### 7.4 예시 - 변경(인터페이스 사용)
+
+```java
+// GameService.java
+package me.whiteship.designpatterns._02_structural_patterns._12_proxy._02_after;
+
+public interface GameService {
+  void startGame();
+}
+```
+
+```java
+// DefaultGameService.java
+package me.whiteship.designpatterns._02_structural_patterns._12_proxy._02_after;
+
+public class DefaultGameService implements GameService {
+
+  @Override
+  public void startGame() {
+    System.out.println("이 자리에 오신 여러분을 진심으로 환영합니다.");
+  }
+}
+```
+
+```java
+// GameServiceProxy.java
+package me.whiteship.designpatterns._02_structural_patterns._12_proxy._02_after;
+
+public class GameServiceProxy implements GameService {
+
+  private GameService gameService;
+
+  @Override
+  public void startGame() {
+    long before = System.currentTimeMillis();
+    if (this.gameService == null) {
+      this.gameService = new DefaultGameService();
+    }
+
+    gameService.startGame();
+    System.out.println(System.currentTimeMillis() - before);
+  }
+}
+```
+
+```java
+// Client.java
+package me.whiteship.designpatterns._02_structural_patterns._12_proxy._02_after;
+
+public class Client {
+
+  public static void main(String[] args) {
+    GameService gameService = new GameServiceProxy();
+    gameService.startGame();
+  }
+}
+```
+
+---
+
+### 7.5 장단점
+
+- 장점
+  - **기존 코드를 변경하지 않고, 새로운 기능을 추가할** 수 있다.
+  - 기존 코드가 해야 하는 일만 유지할 수 있다.
+  - 기능 추가 및 초기화 지연 등으로 다양하게 활용할 수 있다.
+- 단점 : 코드의 복잡도가 증가한다
+
+---
+
+### 7.6 실무에서 어떻게 쓰이나?
+
+특정 객체에 대한 접근을 제어하거나 기능을 추가할 수 있는 패턴.
+
+- 자바 : 다이나믹 프록시, java.lang.reflect.Proxy
+
+```java
+// ProxyInJava.java
+package me.whiteship.designpatterns._02_structural_patterns._12_proxy._03_java;
+
+import java.lang.reflect.Proxy;
+import me.whiteship.designpatterns._02_structural_patterns._12_proxy._02_after.DefaultGameService;
+import me.whiteship.designpatterns._02_structural_patterns._12_proxy._02_after.GameService;
+
+public class ProxyInJava {
+
+  public static void main(String[] args) {
+    ProxyInJava proxyInJava = new ProxyInJava();
+    proxyInJava.dynamicProxy();
+  }
+
+  private void dynamicProxy() {
+    GameService gameServiceProxy = getGameServiceProxy(
+      new DefaultGameService()
+    );
+    gameServiceProxy.startGame();
+  }
+
+  private GameService getGameServiceProxy(GameService target) {
+    return (GameService) Proxy.newProxyInstance(
+      this.getClass().getClassLoader(),
+      new Class[] { GameService.class },
+      (proxy, method, args) -> {
+        System.out.println("O");
+        method.invoke(target, args);
+        System.out.println("ㅁ");
+        return null;
+      }
+    );
+  }
+}
+```
+
+- 스프링 : 스프링 AOP
+
+```java
+// PerfAspect.java
+package me.whiteship.designpatterns._02_structural_patterns._12_proxy._03_java;
+
+import org.aspectj.lang.ProceedingJoinPoint;
+import org.aspectj.lang.annotation.Around;
+import org.aspectj.lang.annotation.Aspect;
+import org.springframework.stereotype.Component;
+
+@Aspect
+@Component
+public class PerfAspect {
+
+  @Around("bean(gameService)")
+  public void timestamp(ProceedingJoinPoint point) throws Throwable {
+    long before = System.currentTimeMillis();
+    point.proceed();
+    System.out.println(System.currentTimeMillis() - before);
+  }
+}
+```
+
+```java
+// GameService.java
+package me.whiteship.designpatterns._02_structural_patterns._12_proxy._03_java;
+
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+public class GameService {
+
+  public void startGame() {
+    System.out.println("이 자리에 오신 여러분을 진심으로 환영합니다.");
+  }
+}
+```
+
+```java
+// App.java
+package me.whiteship.designpatterns._02_structural_patterns._12_proxy._03_java;
+
+import org.springframework.boot.ApplicationRunner;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.WebApplicationType;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Bean;
+
+@SpringBootApplication
+public class App {
+
+  public static void main(String[] args) {
+    SpringApplication app = new SpringApplication(App.class);
+    app.setWebApplicationType(WebApplicationType.NONE);
+    app.run(args);
+  }
+
+  @Bean
+  public ApplicationRunner applicationRunner(GameService gameService) {
+    return args -> {
+      gameService.startGame();
+    };
+  }
+}
+```

@@ -1,0 +1,284 @@
+---
+title: '200-01-스택'
+date: 2024/01/02
+---
+
+# 스택(Stack)
+
+- 스택은 한쪽 끝에서만 자료를 넣고 뺄 수 있는 자료구조
+- 마지막으로 넣은 것이 가장 먼저 나오기 때문에 Last In Frist Out (LIFO) 라고도 한다.
+- `push` : 스택에 자료를 넣는 연산
+- `pop` : 스택에서 자료를 빼는 연산
+- `top` : 스택의 가장 위에 있는 자료를 보는 연산
+- `empty` : 스택이 비어있는지 아닌지를 알아보는 연산
+- `size` : 스택에 저장되어있는 자료의 개수를 알아보는 연산
+
+일차원 배열 하나로 구현할 수 있다 .
+
+```c
+int stack[10000];
+int size = 0;
+```
+
+---
+
+## 1. 스택 - 10828
+
+- 스택 📚 https://www.acmicpc.net/problem/10828
+
+### python
+
+```py
+"""
+파이썬은 따로 stack 구조를 제공하지 않는다.
+기본 클래스 list를 이용하여 stack을 표현할 수 있다.
+"""
+import sys
+
+# 입력을 빠르게 받기 위해 sys.stdin.readline을 input으로 사용
+input = sys.stdin.readline
+
+n = int(input())  # 정수 n을 입력받습니다. 이것은 명령의 개수를 의미
+stack = []  # 스택을 생성, 스택은 나중에 사용될 리스트
+
+for _ in range(n):  # n번 반복
+    s = input().split()  # 공백을 기준으로 문자열을 분리
+    cmd = s[0]  # 리스트 s의 첫 번째 요소를 명령어로 설정
+
+    if cmd == "push":
+        num = int(s[1])  # 문자열을 정수로 변환하여 숫자를 얻음
+        stack.append(num)  # 스택에 숫자를 추가
+
+    elif cmd == "top":
+        # 스택이 있으면, 가장 위에 있는 숫자를 출력
+        if stack:
+            print(stack[-1])
+        # 스택이 비어있으면, -1 출력
+        else:
+            print(-1)
+
+    # 스택의 크기(길이)를 출력
+    elif cmd == "size":
+        print(len(stack))
+
+    # 스택이 비어있으면 1, 아니면 0을 출력
+    elif cmd == "empty":
+        print(0 if stack else 1)
+
+    elif cmd == "pop":
+        # 스택이 있으면, 가장 위에 있는 숫자를 꺼내고 출력
+        if stack:
+            print(stack.pop())
+        # 스택이 비어있으면, -1을 출력
+        else:
+            print(-1)
+```
+
+---
+
+## 2. 단어 뒤집기 - 9093
+
+- 단어 뒤집기 📚 https://www.acmicpc.net/problem/9093
+
+### python
+
+```py
+"""
+N개의 글자를 스택에 넣었다가 빼면 순서가 역순이 된다.
+알파벳을 스택에 넣고, 공백이나 문자열의 끝이면 스택에서 모두 빼내서 역순을 만든다.
+
+📌 [::-1] : 리스트를 처음부터 끝까지 거꾸로 스텝하라는 의미
+            -> 파이썬 리스트에서 슬라이싱을 사용하여 역순으로 된 리스트를 생성
+📌 join() : 문자열 리스트의 각 요소들을 하나의 문자열로 이어붙이는 역할
+"""
+import sys
+
+input = sys.stdin.readline
+
+TEST_CASE = int(input())
+
+
+for _ in range(TEST_CASE):
+    inputSentence = input()  # 한 줄을 읽어들여 변수에 저장
+    stack = []
+
+    # 문자열 inputSentence에 대해 한 문자씩 반복
+    for charactor in inputSentence:
+        if charactor == " " or charactor == "\n":
+            # stack에 저장된 문자들을 역순으로 이어붙여서 출력하고, 마지막의 개행 문자를 제거
+            print("".join(stack[::-1]), end="")
+            stack.clear()
+
+            # 공백(' ') 또는 개행 문자('\n')를 출력
+            print(charactor, end="")
+        # 문자 ch가 공백 또는 개행 문자가 아니라면, stack에 문자를 추가
+        else:
+            stack.append(charactor)
+```
+
+---
+
+## 3. 괄호 - 9012
+
+- 괄호 📚 https://www.acmicpc.net/problem/9012
+
+### python
+
+```py
+def getIsParentheses(s):
+    count = 0  # 괄호 쌍을 유지하기 위한 카운트 변수 초기화
+
+    for ch in s:
+        # 여는 괄호일 경우 카운트 증가 (괄호 쌍 시작)
+        if ch == "(":
+            count += 1
+        # 닫는 괄호일 경우 카운트 감소 (괄호 쌍 끝)
+        else:
+            count -= 1
+        # 중간에 닫는 괄호가 더 많을 경우
+        if count < 0:
+            return "NO"
+    # 모든 괄호가 쌍을 이루었을 경우
+    if count == 0:
+        return "YES"
+    # 괄호 쌍이 다 맞지 않는 경우
+    else:
+        return "NO"
+
+
+TEST_CASE = int(input())
+
+for _ in range(TEST_CASE):
+    print(getIsParentheses(input()))
+```
+
+---
+
+## 4. 스택 수열 - 1874
+
+- 스택 수열 📚 https://www.acmicpc.net/problem/1874
+
+### python
+
+```py
+"""
+스택에 수를 push 할 때는 반드시 오름차순으로만 push할 수 있다.
+
+e.g., 8을 push해야 한다면 앞의 1~7까지를 모두 push하고 8을 push할 수 있다.
+그리고 스택을 쌓다가 필요한 타이밍에 pop을 하게 되는데, 이 pop을 한 수들을 쭉 나열했을 때,
+N줄에 걸쳐 입력한 수열과 같아야 한다.
+
+e.g. N=8이고 다음줄부터 4, 3, 6, 8, 7, 5, 2, 1을 입력한 상황을 보면
+스택을 쌓다가 중간에 한번씩 pop을 한 데이터들을 나열한 순서도 4, 3, 6, 8, 7, 5, 2, 1이 되어야 한다
+
+처음으로 4를 입력했다.
+즉, 내가 첫 번째로 pop한 숫자가 4가 되어야 한다. 그러기 위해서는 1,2,3,4가 이미 스택안에 있어야 한다.
+그래서 입력한 수를 만날 때 까지는 계속 push를 해서 1,2,3,4가 스택에 있도록 해야한다
+
+그리고 나서 4를 꺼내 스택은 현재 1,2,3인 상황이다.
+그 다음으로 3이 주어졌기 때문에 push없이 현재 스택에서 pop을 하면 된다. 그리고 스택은 1,2가 된다.
+그다음 입력으로 6이 주어졌기 때문에, 다시 6을 만날 때 까지 이전의 숫자들을 push 해준다. ( 즉 5, 6 push )
+
+----------
+이 때, stack에서 pop할 숫자(TOP)가 입력한 숫자가 아닐 경우(작을 경우) 정답을 완성할 수 없다.
+왜냐하면 TOP 값이 입력한 숫자보다 크면, 입력한 수를 꺼내기 위해 계속 POP을 해야 하기 때문에
+그 과정에서 POP한 수들의 수열이 정답과 일치하지 않게 되기 때문이다.
+
+e.g. 1, 2, 5, 3, 4가 입력으로 주어졌다고 하자.
+1을 입력했을 때 스택은 [1]       -> pop -> 1
+2을 입력했을 때 스택은 [2]       -> pop -> 2
+5을 입력했을 때 스택은 [3, 4, 5] -> pop -> 5
+3을 입력했을 때 스택은 [3, 4]    -> pop -> 4 가 된다.
+3이 먼저 나와야 하는데 4가 먼저 나와버린 것이다
+"""
+import sys
+
+n = int(input())
+stack = []
+result = []
+
+# n개의 숫자를 입력받아 수열 리스트에 저장
+progression = [int(input()) for _ in range(n)]
+
+# 스택에 push할 오름차순 자연수, 맨 처음에 들어간 것이 없으니 0으로 초기화
+currentNum = 0
+
+for el in progression:
+    # 입력된 숫자가 현재 최댓값보다 큰 경우
+    if el > currentNum:
+        # el와 같아질 때까지, currentNum의 값을 1씩 올리면서 push를 반복, '+' 기호를 추가하여 push 동작을 표시
+        while el > currentNum:
+            currentNum += 1
+            stack.append(currentNum)
+            result += ["+"]
+
+        # el와 같아져서 반복이 끝난 후, 스택에서 값을 제거하고, '-' 기호를 추가하여 pop 동작을 표시
+        stack.pop()
+        result += ["-"]
+
+    # 입력된 숫자가 현재 최댓값보다 작거나 같은 경우
+    else:
+        # 스택의 맨 위 값과 입력된 숫자가 다른 경우 'NO' 출력
+        if stack[-1] != el:
+            print("NO")
+            sys.exit(0)  # 프로그램 종료
+        # 스택의 맨 위 값과 입력된 숫자가 같은 경우, 스택에서 값을 제거하여 pop 동작 표시
+        stack.pop()
+        result += ["-"]
+
+# 결과 리스트의 내용을 개행문자와 함께 출력
+print("\n".join(result) + "\n")
+```
+
+---
+
+## 5. 에디터 - 1406
+
+- 에디터 📚 https://www.acmicpc.net/problem/1406
+
+### python
+
+```py
+"""
+'L'은 커서를 왼쪽으로 옮김
+'D'는 커서를 오른쪽으로 옮김
+'P'는 커서 왼쪽에 문자를 추가
+'B'는 커서 왼쪽에 문자를 삭제
+모든 명령어를 수행하고 난 후 편집기에 입력되어 있는 문자열을 구하는 프로그램
+
+커서를 기준으로 커서의 왼쪽 스택(left)와 오른쪽 스택(right)로 나눠서 문제를 풀 수 있다.
+e.g. abc | xyz (|는 커서를 의미)
+"""
+import sys
+
+input = sys.stdin.readline
+
+left = list(input().strip())  # 왼쪽 문자열 초기화
+right = []  # 오른쪽 문자열을 위한 빈 리스트 생성
+
+M = int(input())  # 수행할 명령어 개수 입력
+
+for _ in range(M):
+    line = input().strip().split()  # 공백을 기준으로 입력을 나눠 리스트에 저장
+    command = line[0]  # 명령어의 첫 번째 요소 (어떤 작업을 할지)
+
+    if command == "L":
+        # 왼쪽 문자열에 남아있는 문자가 있는 경우, 왼쪽 문자열의 마지막 문자를 오른쪽 문자열로 이동
+        if left:
+            right.append(left.pop())
+    elif command == "D":
+        # 오른쪽 문자열에 남아있는 문자가 있는 경우, 오른쪽 문자열의 마지막 문자를 왼쪽 문자열로 이동
+        if right:
+            left.append(right.pop())
+    elif command == "P":
+        # 두 번째 요소로 주어진 문자를 왼쪽 문자열에 추가
+        left.append(line[1])
+    elif command == "B":
+        # 왼쪽 문자열에 남아있는 문자가 있는 경우, 왼쪽 문자열의 마지막 문자 삭제
+        if left:
+            left.pop()
+
+left += right[::-1]  # 남은 문자열을 모두 왼쪽 문자열에 추가 (오른쪽 문자열을 뒤집어서)
+
+print("".join(left))  # 왼쪽 문자열을 하나의 문자열로 합쳐서 출력
+```

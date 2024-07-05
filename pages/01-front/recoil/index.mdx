@@ -1,0 +1,186 @@
+---
+title: 'Recoil'
+date: 2022/12/30
+---
+
+## 1. Recoil 이란?
+
+- React 애플리케이션 상태 관리를 위한 라이브러리
+- Facebook (메타)에서 개발한 상태 관리 라이브러리로, Atom 이라는 단위로 상태를 정의하고 이를 이용해 컴포넌트 사이에서 데이터를 공유하며 상태를 업데이트함
+- Recoil 공식문서 https://recoiljs.org/ko/
+
+---
+
+### 1.1 왜 Recoil를 사용하는가?
+
+- 간편한 상태관리: 간편하게 상태를 정의하고 관리할 수 있음 (전역 상태)
+- 최적화된 리렌더링: 내부적으로 최적화되어 필요한 경우에만 리렌더링
+- 복잡한 애플리케이션에 적합: 복잡한 상태 관리를 효과적으로 다루는데 적합함
+
+---
+
+### 1.2 설치 및 세팅
+
+> cf. https://recoiljs.org/ko/docs/introduction/installation
+
+(1) 설치
+
+```bash
+yarn add recoil
+```
+
+(2) 루트 컴포넌트에 RecoilRoot 세팅
+
+```tsx
+import React from 'react'
+import { RecoilRoot } from 'recoil'
+
+function App() {
+  return (
+    <RecoilRoot>
+      <div>앱 내용</div>
+    </RecoilRoot>
+  )
+}
+```
+
+(3) Atom 및 Selector 함수 정의
+
+```tsx
+export const counterState = atom({
+  key: 'counterState', // 고유한 키값
+  default: 0, // 초기값
+})
+```
+
+---
+
+## 2. Recoil 기능
+
+### 2.1 Atom
+
+```tsx
+import { atom } from 'recoil'
+
+export const counterState = atom({
+  key: 'counterState', // 고유한 키값
+  default: 0, // 초기값
+})
+```
+
+- `Atom`: Recoil에서 상태를 나타내는 단일 단순한 상태 조각
+- 전역 상태를 정의하고 관리할 수 있음
+- 해당 상태를 여러 컴포넌트에서 읽거나 쓸 수 있음
+
+---
+
+### 2.2 Selector
+
+```tsx
+import { Selector } from 'recoil'
+import { counterState } from './atoms'
+
+export const squaredCounterState = selector({
+  key: 'squaredCounterState', // 고유한 키값
+  get: ({ get }) => {
+    const counter = get(counterState)
+    return counter ** 2
+  },
+})
+```
+
+- `Selector`: Recoil에서 파생된 상태
+- 다른 atom 또는 selector의 값을 기반으로 계산된 값을 제공
+- 비동기 작업이나 복잡한 계산에 사용
+
+---
+
+## 3. Recoil Hooks
+
+### 3.1 useRecoilState
+
+- atom 또는 selector의 상태와 해당 상태를 변경하는 함수를 반환
+
+```tsx
+import React from 'react'
+import { useRecoilState } from 'recoil'
+import { counterState } from './atoms'
+
+export default function Counter() {
+  // counterState를 사용해 전역 상태값 counter를 가져와 사용
+  const [counter, setCounter] = useRecoilState(counterState)
+
+  const increment = () => setCounter(counter + 1)
+  const decrement = () => setCounter(counter - 1)
+
+  return (
+    <div>
+      <h1>카운트 : {counter}</h1>
+      <button onClick={increment}>증가</button>
+      <button onClick={decrement}>감소</button>
+    </div>
+  )
+}
+```
+
+---
+
+### 3.2 useRecoilValue
+
+- atom 또는 selector의 현재 상태 값을 반환
+
+```tsx
+import React from 'react'
+import { useRecoilValue } from 'recoil'
+import { squardCounterState } from './selectors'
+
+export default function SquaredCounter() {
+  // useRecoilValue 훅으로 계산되는 selector 값 가져와서 사용
+  const squaredCounter = useRecoilValue(squardCounterState)
+  return <p>제곱 카운트 값 : {counter}</p>
+}
+```
+
+---
+
+### 3.3 useSetRecoilState
+
+- atom 또는 selector의 현재 상태 값을 반환
+
+```tsx
+import React from 'react'
+import { useRecoilValue } from 'recoil'
+import { counterState } from './atoms'
+
+export default function ResetCounter() {
+  // useSetRecoilState 훅으로 카운터 값을 원하는 값으로 변경 (setter 함수)
+  const setCounter = useSetRecoilState(counterState)
+  const reset = () => setCounter(0)
+  return <button onClick={reset}>초기화</button>
+}
+```
+
+---
+
+### 3.4 useResetRecoilState
+
+- atom 또는 selector의 현재 상태 값을 반환
+
+```tsx
+import React from 'react'
+import { useResetRecoilState } from 'recoil'
+import { counterState } from './atoms'
+
+export default function ResetCounter() {
+  // useResetRecoilState 훅으로 counter 값 초기화
+  const resetCounter = useResetRecoilState(counterState)
+  const reset = () => resetCounter()
+  return <button onClick={reset}>초기화</button>
+}
+```
+
+---
+
+## 4. 참고
+
+- Recoil 공식문서 : https://recoiljs.org/ko/

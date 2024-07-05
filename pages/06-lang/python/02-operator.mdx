@@ -1,0 +1,169 @@
+---
+title: '02-연산자'
+date: 2023/09/23
+---
+
+## 1. 연산자 종류
+
+### 1.1 사칙연산
+
+```py
+print(1 + 1)  # 2
+print(3 - 2)  # 1
+print(5 * 2)  # 10
+print(6 / 3)  # 2
+
+
+print(2**3)  # 2^3 = 8
+print(10 % 3)  # 나머지 구하기 1
+print(10 // 3)  # 몫 구하기 3
+```
+
+---
+
+### 1.2 비교 연산
+
+```py
+print(10 > 3)  # True
+print(4 >= 7)
+print(10 < 3)
+print(5 <= 5)
+
+print(3 == 3)
+print(4 == 2)
+print(3 + 4 == 7)
+print(1 != 3)
+
+print((3 > 0) and (3 > 5))  # False
+print((3 > 0) & (3 > 5))  # False
+
+print((3 > 0) or (3 > 5))  # True
+print((3 > 0) | (3 > 5))  # True
+
+print(not (1 != 3))  # False
+
+print(5 > 4 > 3)  # True
+print(4 > 5 > 3)  # False
+```
+
+---
+
+## 2. 연산자 우선순위
+
+```py
+print(2 + 3 * 4)  # 14
+print((2 + 3) * 4)  # 20
+```
+
+---
+
+## 3. 변수로 연산
+
+```py
+number = 2 + 3 * 4
+print(number)
+number = number + 2  # 2 + 3 * 4 + 2
+print(number)
+
+
+number = 2 + 3 * 4
+print(number)
+# number = number + 2
+# print(number)
+
+number += 2  # number = number + 2와 동일
+print(number)
+
+number -= 2  # number = number - 2와 동일
+print(number)
+
+number *= 2  # number = number * 2와 동일
+print(number)
+
+number /= 2  # number = number / 2와 동일
+print(number)
+
+number **= 2  # number = number ** 2와 동일
+print(number)
+
+number //= 2  # number = number // 2와 동일
+print(number)
+
+number %= 2  # number = number % 2와 동일
+print(number)
+```
+
+---
+
+## 4. 함수로 연산
+
+### 4.1 숫자처리 함수
+
+```py
+print(abs(-5))  # -5의 절대값 = 5
+print(pow(4, 2))  # 4를 제곱한 값 = 4^2 = 16
+print(max(5, 12))  # 5와 12 중 큰 값 = 12
+print(min(5, 12))  # 5와 12 중 작은 값 = 5
+print(round(3.14))  # 3.14를 소수점 이하 첫째 자리에서 반올림한 정수 = 3
+print(round(4.678, 2))  # 4.678을 소수점 이하 셋째 자리에서 반올림한 값 = 4.68
+```
+
+---
+
+### 4.2 내림올림제곱근
+
+```py
+from math import *  # math 모듈의 모든 기능을 가져다 쓰겠다는 의미
+
+result = floor(4.99)
+print(result)  # 4.99의 내림, 4
+
+result = ceil(3.14)
+print(result)  # 3.14의 올림, 4
+
+result = sqrt(16)
+print(result)  # 16의 제곱근, 4
+```
+
+---
+
+### 4.3 랜덤 함수
+
+```py
+from random import *  # random 모듈의 모든 기능을 가져다 쓰겠다는 의미
+
+print(random())  # 0.0 ~ 1.0 미만의 임의의 값 생성
+print(random() * 10)  # 0.0 ~ 10.0 미만의 임의의 값 생성
+
+print(int(random() * 10))  # 0 ~ 10 미만의 임의의 값 생성
+print(int(random() * 10) + 1)  # 1 ~ 10 이하의 임의의 값 생성
+print(int(random() * 45) + 1)  # 1 ~ 45 이하의 임의의 값 생성
+
+print(randrange(1, 46))  # 1 이상 46 미만에서 난수 생성
+print(randint(1, 45))  # 1 이상 45 이하에서 난수 생성
+```
+
+---
+
+## 5. 퀴즈. 스터디 날짜 정하기
+
+```py
+"""
+Quiz) 최근 코딩 스터디 모임을 새로 만들었습니다.
+월 4회 스터디를 하는데
+3번은 온라인
+1번은 오프라인으로 합니다.
+아래 조건에 맞는 오프라인 모임 날짜를 정해주는 프로그램을 작성하시오.
+
+조건1 : 랜덤으로 숫자를 뽑아야 함
+조건2 : 월별 날짜는 다음을 감안하여 최소 일수인 28 이내로 정함
+조건3 : 매월 1~3일은 스터디 준비를 해야 하므로 제외
+
+출력문 예제)
+오프라인 스터디 모임 날짜는 매월 x일로 선정되었습니다.
+"""
+from random import *
+
+date = randint(4, 28)  # 4~28일 중에서 무작위 날짜 뽑기
+print("오프라인 스터디 모임 날짜는 매월 " + str(date) + "일로 선정됐습니다.")
+```

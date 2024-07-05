@@ -1,0 +1,359 @@
+---
+title: '코드 포맷터 & 린터 설정'
+date: 2024/04/10
+---
+
+# 코드 포멧터 & 린터
+
+## 1. 코드 포멧터 & 린터
+
+팀단위로 코딩을 하면, 각자의 코드 스타일이 다르게 됩니다.
+다양한 사람들고 협업을 할 떄, 일정한 규칙을 정하게 되면, 일이 조금 더 수월하게 진행이 가능합니다.
+
+---
+
+### 1.1 코드 린터
+
+- 문법에서 에러는 아니지만 에러로 약속하자고 규칙을 정하는 것
+- 에러는 아니라 규칙에 어긋나는가를 검사하기 때문에 vscode에서 빨간 줄이 그여도 실행하는데는 아무 문제가 없다.
+  - e.g. import 순서, ==금지 등
+- 또한 eslint자체에 포메터 기능도 어느정도 가지고 있다.
+
+---
+
+### 1.2 코드 포메터
+
+- 코드를 보기 좋게 만들어주는 것
+- e.g. 띄어쓰기 2칸,-길이 넘으면 줄바꿈 하기 등
+
+---
+
+## 2. ESLint
+
+1. VSCode에서 ESLint를 설치
+2. next.js는 `packge.json`에 들어가보면, eslint가 같이 설치된다.
+
+```bash
+# ESLint 패키지 설치
+$ yarn add eslint --dev
+# ESLint 초기화
+$ npx eslint --lint
+## .eslintrc.json 파일에 원하는 ESLint rules 적용
+
+# eslint를 어떤식으로 사용할지에 대한 질문
+How would you like to use ESlint ? => syntax, problems, code style
+# 자바스크립트 뭐쓰고 있는지 묻는것
+Waht type of modiles does your project use? => Javascript modules (import/export)
+# react를 선택
+Which framework does your project use? => react
+# 타입스크립트 사용유무
+Does your project use TypeScript? => Yes
+# 어디서 실행하는지 확인
+Where does your code run? => Browser
+# 인기있는 가이드를 할지, 커스텀을 할 지 선택
+How would you like to define a style for your project? => Use a popular style guide
+Which style guide do you want to follow? => standard
+# 설정파일을 뭘로 만들지 물어보는 질문
+What format do you want your config file to be in? => Javascript
+# 어떤 패키지 매니저로 설치할지
+Which package manager do you want to use? => yarn
+```
+
+> 💡 `npx` : 기능을 실행하기 위한 도구를 다운로드 받고, 기능을 실행 후 다운로드 받았던 도구를 삭제하는 명령어
+
+`eslintrc.js`에 들어가서, rules에 불편한 규칙을 추가하고, 해당 규칙을 off 해주시면 된다.
+
+```json
+// 필요없는 규칙은 off해서 끄면 된다.
+rules: {
+  'react/react-in-jsx-scope': 'off',
+  'react/prop-types': 'off'
+ }
+```
+
+---
+
+### 2.1 ESLint에 잡힌 오류 확인
+
+```bash
+# .은 모든 파일을 의미
+$ npx eslint .
+
+# . 이 안될 경우에는, ""안의 형태로 끝나는 파일을 모두 검사하는 명령어로 입력
+npx eslint "**/*.{ts,tsx}"
+```
+
+---
+
+### 2.2 .eslintignore 파일
+
+Typescript의 type 파일같은 eslint에서 제외해야 하는 경우에 사용
+
+---
+
+### 2.3 ESLint 설정 예시
+
+```json
+{
+  "extends": [
+    "next/core-web-vitals",
+    "plugin:prettier/recommended", // Next.js에 Prettier 적용
+    "plugin:storybook/recommended" // Storybook ESLint 규칙 적용
+  ],
+  "plugins": ["prettier"],
+  /**
+   * @see https://github.com/import-js/eslint-plugin-import/blob/main/docs/rules/order.md
+   */
+  "rules": {
+    "prettier/prettier": "error",
+    "react-hooks/rules-of-hooks": "warn",
+    "react/display-name": "warn",
+    // “Import/order “ ESLint Rule 설정
+    "import/order": [
+      "error",
+      {
+        // Import group 사이에 개행 항상 추가
+        "newlines-between": "always",
+        // Import 순서는 알파벳 오름차순으로 정렬
+        "alphabetize": {
+          "order": "asc",
+          "caseInsensitive": true // 대소문자 구분 없이 정렬
+        }
+      }
+    ]
+  }
+}
+```
+
+- 프로젝트 루트 디렉토리에 .eslintrc.json 파일에 위와 같이 입력
+- 다음 명령어로 전체 프로젝트 lint 검사: `yarn lint`
+- Error 내용만 보고싶다면 다음과 같이 입력: `yarn lint —quiet`
+
+---
+
+## 3. Prettier
+
+### 3.1 VScode 설정
+
+- VScode extension에서 Prettier를 설치
+- Format on Save 확인
+  - vscode 설정에서 format on save를 입력하고 나오는 설정에 체크되어 있는 지 확인
+- Default Formatter 확인
+  - 설정이 prettier format (esbenp.prettier-vscode) 로 설정되어 있는 지 확인
+
+---
+
+### 3.2 prettier 프로젝트 설치 및 세팅
+
+```bash
+# prettier 패키지 설치
+yarn add --dev --exact prettier
+
+# 루트 디렉토리에 .prettierrc 파일 생성
+node --eval "fs.writeFileSync('.prettierrc','{}\n')"
+
+# 모든 파일에 prettier 적용
+yarn prettier . —write
+```
+
+`echo {}> .prettierrc.json` 명령어로 `.prettierrc.json` 설정파일을 생성
+
+> cf. https://prettier.io/docs/en/install.html
+
+---
+
+### 3.3 VScode 설정을 파일로 관리
+
+```json
+{
+	"editor.formatOnSave":ture,
+	"editor.defultFormatter": "esbenp.prettier-vscode"
+}
+```
+
+- 최상단 경로에 `.vscode` 폴더를 생성해 준 후 안쪽에 `settings.json` 파일 생성
+- 파일까지 채워주고 나면, 코드의 정렬을 맞추지 않아도 자동으로 코드의 정렬함
+
+---
+
+### 3.4 ESLint와 Prettier 연결
+
+각 패키지 매니저에 따라 아래의 명령어로 `eslint-config-prettier`를 설치
+
+```bash
+$ npm install --save-dev eslint-config-prettier
+$ yarn add eslint-config-prettier --dev
+```
+
+`.eslintrc.js` 파일 안에서 "extends" 배열에 "prettier"를 추가
+
+```json
+{
+  "extends": ["plugin:react/recommended", "standard-with-typescript", "prettier"]
+}
+```
+
+---
+
+### 3.5 prettier 설정대로 수정
+
+```bash
+# 모든 폴더 prettier 적용
+$ npx prettier . --write
+```
+
+---
+
+## 4. 자주 사용하는 ESLint & Prettier
+
+### 4.1 ESLint
+
+주석 설명
+
+```json .eslintrc.json
+{
+  "extends": [
+    "next/core-web-vitals",
+    "plugin:prettier/recommended", // Next.js에 Prettier 적용
+    "plugin:storybook/recommended" // Storybook ESLint 규칙 적용
+  ],
+  "plugins": ["prettier"],
+  /**
+   * @see https://github.com/import-js/eslint-plugin-import/blob/main/docs/rules/order.md
+   */
+  "rules": {
+    "prettier/prettier": "error",
+    "react-hooks/rules-of-hooks": "warn",
+    "react/display-name": "warn",
+    // “Import/order “ ESLint Rule 설정
+    "import/order": [
+      "error",
+      {
+        // Import group 사이에 개행 항상 추가
+        "newlines-between": "always",
+        // Import 순서는 알파벳 오름차순으로 정렬
+        "alphabetize": {
+          "order": "asc",
+          "caseInsensitive": true // 대소문자 구분 없이 정렬
+        }
+      }
+    ]
+  }
+}
+```
+
+주석 제거
+
+```json .eslintrc.json
+{
+  "extends": [
+    "next/core-web-vitals",
+    "plugin:prettier/recommended",
+    "plugin:storybook/recommended"
+  ],
+  "plugins": ["prettier"],
+
+  "rules": {
+    "prettier/prettier": "error",
+    "react-hooks/rules-of-hooks": "warn",
+    "react/display-name": "warn",
+    "import/order": [
+      "error",
+      {
+        "newlines-between": "always",
+        "alphabetize": {
+          "order": "asc",
+          "caseInsensitive": true
+        }
+      }
+    ]
+  }
+}
+```
+
+---
+
+### 4.2 Prettier
+
+주석 설명
+
+```json .prettierrc
+{
+  // 1. 홑따옴표
+  "singleQuote": true,
+  // 2. 한 줄 최대 글자수
+  "printWidth": 80,
+  // 3. 세미콜론
+  "semi": false,
+  // 4. 배열이나 객체, 매개변수가 작성된 경우 마지막 요소 뒤에도 ,기호(쉼표)를 붙여주기
+  // 기본값 : all
+  "trailingComma": "all",
+  // 5. 화살표 함수 매개변수가 하나일 때는 굳이 () 기호를 사용하고 싶지 않다면
+  "arrowParens": "avoid",
+  // 6. 탭 문자 대신에 여러 개의 공백 문자를 사용 여부
+  "useTabs": false,
+  // 7. 탭 너비
+  "tabWidth": 2,
+  // 8. 객체 리터럴 사용시 괄호에 공백 삽입 여부 (default: true)
+  "bracketSpacing": true,
+  // 9. JSX의 마지막 `>`를 다음 줄로 내릴지 여부
+  "jsxBracketSameLine": true,
+  // 10. vue 파일의 script와 style태그 들여쓰기 여부
+  "vueIndentScriptAndStyle": false,
+  // 11. 맨마지막 줄 넣는지 여부
+  "endOfLine": "auto",
+  // 12. 이 확장 기능을 비활성화 할 언어 ID 목록
+  "disableLanguages": ["vue"]
+}
+```
+
+- cf. 그 외 옵션 : https://prettier.io/docs/en/options
+
+주석 제거
+
+```json .prettierrc
+{
+  "singleQuote": true,
+  "printWidth": 80,
+  "semi": false,
+  "trailingComma": "all",
+  "arrowParens": "avoid",
+  "useTabs": false,
+  "tabWidth": 2,
+  "bracketSpacing": true,
+  "jsxBracketSameLine": true,
+  "vueIndentScriptAndStyle": false,
+  "endOfLine": "auto"
+}
+```
+
+---
+
+## 5. Husky
+
+- `Husky` : git에 commit 하기 전에, 기존의 규칙(typescript, eslint, prettier 등)을 지켜가면서 코딩을 진행하였는지 검증해 주는 도구
+- 규칙에 어긋나는 코드가 있다면 commit을 강제로 거절
+
+```bash
+yarn add -D husky@4
+yarn add --dev lint-staged
+```
+
+package.json 파일에 husky와 lint-staged 내용을 작성
+
+```json
+{
+  // ...
+  "devDependencies": {
+    // ...
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "**/*.{ts,tsx}": ["npx eslint ."]
+  }
+}
+```

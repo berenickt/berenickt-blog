@@ -1,0 +1,110 @@
+---
+title: '스크랩핑과 크롤링'
+date: 2024/01/19
+---
+
+# 스크래핑과 크롤링
+
+## 1. 스크래핑
+
+- Scraping(스크래핑) : 한 번 가져오기
+  - (한 번) 긁다
+  - 도구 : Cherrio
+- Crawling(크롤링) : 꾸준히, 여러 번 가져오기
+  - 헤엄치다
+  - 도구 : Puppeteer
+
+---
+
+### 1.1 Scraping(스크래핑)
+
+스크래핑은 말 그대로 스크랩하는 것입니다.
+시스템이나 웹사이트에 있는 데이터 중 필요한 데이터만 추출 및 가공하여 제공하게 되는 기술입니다.
+
+즉, 어떤 특정한 웹 사이트에 가서 그 사이트의 HTML을 긁어오는 것을 말합니다.
+긁어온 정보를 잘 정리해서 DB에 저장할 수 있겠죠?
+
+> 💡 언제 쓰이나요?
+>
+> 카카오톡이나 슬랙을 사용할 때, 링크를 공유하면 밑에 자동으로 사이트의 소개와 이미지가 나옵니다!
+> 프론트엔드나 백엔드에서 직접 사이트에 가서 정보를 가져오는 것입니다.
+
+글의 내용에 http가 포함된 URL이 있다면, 그 사이트에 접속해서 `open graph`가 있는 내용을 긁어와서 저장합니다.
+나중에 글의 상세보기를 할 때, 사이트 소개를 같이 보여주게 됩니다.
+
+네이버에 들어가서 개발자 도구를 열어보면,
+`<head>` 태그 안에 `<meta>` 태그들이 있고, 그 중에서 property가 og로 시작하는 태그들이 보입니다.
+
+> 💡 The Open Graph protocol?
+>
+> 페이스북에서 시작해서 유명해진 것으로, 아래의 정보들을 **html**에 **head** 안에 **meta** 태그로 넣어줍니다.
+>
+> - `og:title` - The title of your object as it should appear within the graph, e.g., "The Rock".
+> - `og:type` - The [type](https://ogp.me/#types) of your object, e.g., "video.movie". Depending on the type you specify, other properties may also be required.
+> - `og:image` - An image URL which should represent your object within the graph.
+> - `og:url` - The canonical URL of your object that will be used as its permanent ID in the graph,
+>   - e.g., "https://www.imdb.com/title/tt0117500/".
+>   - [출처](https://ogp.me/)
+
+---
+
+### 1.2 크롤링
+
+크롤링은 스크래핑을 정기적으로 주기적으로 여러번하는 것을 말합니다.
+다른 사이트를 크롤링하는 것은 **주의**해야 한다!
+
+- cf. [&#39;여기어때&#39;의 &#39;야놀자&#39; 크롤링 법적 이슈](https://biz.chosun.com/topics/law_firm/2021/09/29/OOBWHWT5ZBF7DESIRKNPYIODLA/)
+
+---
+
+## 3. og 태그 스크래핑
+
+### 3.1 cheerio
+
+- 공식 사이트 : [cheerio](https://cheerio.js.org/)
+- npm cheerio
+
+`cheerio`를 사용하기 위해 `yarn add cheerio`를 설치해 주세요.
+우리가 받아온 html 데이터를 cheerio에 넘겨줍니다.
+
+```jsx
+const $ = cheerio.load(html.data)
+```
+
+URL의 HTML 코드를 보면 `meta` 태그에는 `property`와 `content` 속성이 있습니다.
+
+`property`와 `content`를 걸러내기 위한 코드를 추가해 주세요.
+
+```jsx
+import axios from 'axios'
+import cheerio from 'cheerio'
+
+const createMessage = async () => {
+  // 입력된 메시지: "안녕하세요~ https://www.naver.com 에 방문해 주세요!"
+
+  // 1. 입력된 메시지에서 http로 시작하는 문장이 있는지 먼저 찾기!(.find() 등의 알고리즘 사용하기)
+  const url = 'https://www.daum.net'
+
+  // 2. axios.get으로 요청해서 html코드 받아오기 => 스크래핑
+  const result = await axios.get(url)
+  console.log(result.data)
+
+  // 3. 스크래핑 결과(result)에서 OG(오픈그래프) 코드 골라내서 변수에 저장하기
+  const $ = cheerio.load(result.data)
+  $('meta').each((index, element) => {
+    if (
+      $(element).attr('property') &&
+      $(element).attr('property').includes('og:')
+    ) {
+      const key = $(element).attr('property') // og:title, og:description, ...
+      const value = $(element).attr('content') // 네이버, 네이버 메인에서 ~~~
+      console.log(key, value)
+    }
+  })
+}
+
+createMessage()
+```
+
+- cf. [attr 함수](https://cheerio.js.org/classes/Cheerio.html#attr)
+- cf. [each 함수](https://cheerio.js.org/classes/Cheerio.html#each)

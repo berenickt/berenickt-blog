@@ -1,0 +1,1402 @@
+---
+title: '14-다양한 Hooks'
+date: 2022/12/22
+---
+
+# 1. Common Hooks (Hooks 종류)
+
+- React는 더 효율적인 React 코드를 작성할 수 있는 많은 Hooks를 지원함
+- [React Hooks Reference](https://reactjs.org/docs/hooks-reference.html#usereducer)
+  - Basic Hooks (useState, useEffect) → 09에서 다룸
+  - useRef → 10에서 다룸
+  - useContext & Context API
+  - useMemo
+  - useCallback
+  - useReducer...
+  - Custom Hook 만들기
+
+---
+
+# 2. useContext & Context API
+
+React로 만든 앱은 여러 개의 컴포넌트로 구성됩니다.
+
+![React_14_1](https://raw.githubusercontent.com/berenickt/image-server/main/img/React_14_1.png)
+
+- 최상위 App 컴포넌트
+- 그 아래 Tree 형태로 컴포넌트들이 구성되며, 데이터 흐름은 위에서 아래로
+- 부모 컴포넌트에서 자식 컴포넌트로 **prop를 통해 데이터가 전달**됨
+
+```jsx
+// App 컴포넌트
+<Header user={user} />
+
+// ---------------------------
+// Header 컴포넌트
+<SearchBar user={user} />
+```
+
+![React_14_2](https://raw.githubusercontent.com/berenickt/image-server/main/img/React_14_2.png)
+
+그러다 모든 컴포넌트에서 사용하는 전역적인 데이터가 필요할 수 있습니다. (e.g. 현재 로그인된 사용자 정보, 테마, 언어)
+props로 일일히 단계별로 데이터를 전달해여 한다면, 매우 고통스러울 겁니다. (이를 `Prop Drilling`이라고 함)
+코드도 복잡해지고, 뭐 하나 바뀌면 일일히 컴포넌트를 찾아가서 수정해줘야 할 겁니다.
+
+---
+
+## 2.1 Context API
+
+![React_14_3](https://raw.githubusercontent.com/berenickt/image-server/main/img/React_14_3.png)
+
+React는 Context를 제공하면서 위 문제를 해결해줍니다.
+
+- Context = 앱 안에서 전역적으로 사용되는 데이터들을 여러 컴포넌트끼리 쉽게 공유하는 방법을 제공
+- 맨 아래 C, E 컴포넌트에만 데이터가 필요하면, `useContext` 사용하면 됨
+- `Context는 꼭 필요할 떄만 사용!`
+  - Context를 사용하면 컴포넌트를 재사용하기 어려워 질 수 있음
+  - Prop Drilling을 피하기 위한 목적이라면, `Component Composition(컴포넌트 합성)`을 먼저 고려
+
+---
+
+## 2.2 예제1 : Context 사용 전
+
+### 2.2.1 폴더구조
+
+```sh
+📦 src
+├─ components
+│  ├─ Content.jsx
+│  ├─ Footer.jsx
+│  ├─ Header.jsx
+│  └─ Page.jsx
+├─ App.css
+└─ App.js
+```
+
+---
+
+### 2.2.2 Content.jsx
+
+```jsx
+import React from 'react'
+
+export default function Content({ isDark }) {
+  return (
+    <div
+      className="content"
+      style={{
+        backgroundColor: isDark ? 'black' : 'lightgray',
+        color: isDark ? 'white' : 'black',
+      }}
+    >
+      <p>메시님, 안녕하세요!</p>
+    </div>
+  )
+}
+```
+
+---
+
+### 2.2.3 Footer.jsx
+
+```jsx
+import React from 'react'
+
+export default function Footer({ isDark, setIsDark }) {
+  const toggleTheme = () => {
+    setIsDark(!isDark)
+  }
+  return (
+    <footer
+      className="footer"
+      style={{ backgroundColor: isDark ? 'black' : 'lightgray' }}
+    >
+      <button className="button" onClick={toggleTheme}>
+        Dark Mode
+      </button>
+    </footer>
+  )
+}
+```
+
+---
+
+### 2.2.4 Header.jsx
+
+```jsx
+import React from 'react'
+
+export default function Header({ isDark }) {
+  return (
+    <header
+      className="header"
+      style={{
+        backgroundColor: isDark ? 'black' : 'lightgray',
+        color: isDark ? 'white' : 'black',
+      }}
+    >
+      <h1>Welcom 메시!</h1>
+    </header>
+  )
+}
+```
+
+---
+
+### 2.2.5 Page.jsx
+
+```jsx
+import React from 'react'
+import Header from './Header'
+import Content from './Content'
+import Footer from './Footer'
+
+export default function Page({ isDark, setIsDark }) {
+  return (
+    <div className="page">
+      <Header isDark={isDark} />
+      <Content isDark={isDark} />
+      <Footer isDark={isDark} setIsDark={setIsDark} />
+    </div>
+  )
+}
+```
+
+---
+
+### 2.2.6 App.css
+
+```css
+* {
+  box-sizing: border-box;
+  margin: 0;
+  font-family: sans-serif;
+}
+
+.page {
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  width: 100%;
+  height: 80px;
+  border-bottom: 2px solid gray;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.content {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 30px;
+}
+
+.footer {
+  width: 100%;
+  height: 80px;
+  border-top: 2px solid gray;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.button {
+  padding: 10px;
+  margin-right: 30px;
+}
+```
+
+---
+
+### 2.2.7 App.js
+
+```jsx
+import React, { useState } from 'react'
+import './App.css'
+import Page from './components/Page'
+
+function App() {
+  const [isDark, setIsDark] = useState(false)
+
+  return <Page isDark={isDark} setIsDark={setIsDark} />
+}
+
+export default App
+```
+
+---
+
+## 2.3 예제1 : Context 사용 후
+
+### 2.3.1 폴더 구조
+
+```sh
+📦 src
+├─ components
+│  ├─ Content.jsx
+│  ├─ Footer.jsx
+│  ├─ Header.jsx
+│  └─ Page.jsx
+├─ context # 추가
+│  ├─ ThemeContext.jsx
+│  └─ UserContext.jsx
+├─ App.css
+└─ App.js
+```
+
+### 2.3.2 Context
+
+```jsx
+// ThemeContext.jsx
+import { createContext } from 'react'
+
+export const ThemeContext = createContext(null)
+
+// -------------------------------------------------------
+// UserContext.jsx
+import { createContext } from 'react'
+
+export const UserContext = createContext(null)
+```
+
+### 2.3.3 Context 적용 : App.js
+
+```jsx
+import { ThemeContext } from './context/ThemeContext'
+import { UserContext } from './context/UserContext'
+
+export default function App() {
+  const [isDark, setIsDark] = useState(false)
+
+  return (
+    // 모든 하위 컴포넌트에 value의 값을 전달
+    <UserContext.Provider value={'사용자'}>
+      <ThemeContext.Provider value={{ isDark, setIsDark }}>
+        <Page />
+      </ThemeContext.Provider>
+    </UserContext.Provider>
+  )
+}
+```
+
+---
+
+### 2.3.4 Context 적용 : components들
+
+```jsx
+export default function Content() {
+  const { isDark } = useContext(ThemeContext)
+  const user = useContext(UserContext)
+
+  return (
+    <div
+      className="content"
+      style={{
+        backgroundColor: isDark ? 'black' : 'lightgray',
+        color: isDark ? 'white' : 'black',
+      }}
+    >
+      <p>{user}님, 안녕하세요!</p>
+    </div>
+  )
+}
+```
+
+```jsx
+export default function Footer() {
+  const { isDark, setIsDark } = useContext(ThemeContext)
+
+  const toggleTheme = () => {
+    setIsDark(!isDark)
+  }
+
+  return (
+    <footer
+      className="footer"
+      style={{ backgroundColor: isDark ? 'black' : 'lightgray' }}
+    >
+      <button className="button" onClick={toggleTheme}>
+        Dark Mode
+      </button>
+    </footer>
+  )
+}
+```
+
+```jsx
+export default function Header() {
+  const { isDark } = useContext(ThemeContext)
+  const user = useContext(UserContext)
+
+  // console.log(user);
+
+  return (
+    <header
+      className="header"
+      style={{
+        backgroundColor: isDark ? 'black' : 'lightgray',
+        color: isDark ? 'white' : 'black',
+      }}
+    >
+      <h1>Welcom {user}!</h1>
+    </header>
+  )
+}
+```
+
+```jsx
+export default function Page() {
+  return (
+    <div className="page">
+      <Header />
+      <Content />
+      <Footer />
+    </div>
+  )
+}
+```
+
+---
+
+# 3. useMemo
+
+컴포넌트의 성능 최적화(Optimization)에 사용되는 대표적인 Hook은 다음과 같습니다.
+
+- useMemo
+- useCallback
+
+---
+
+## 3.1 개념
+
+useMemo에서 `memo`는 Memoization(메모이제이션)을 의미
+
+- `Memoization`
+  - 동일한 값을 리턴하는 함수를 반복적으로 호출해야 한다면,
+  - 맨 처음 값을 계산할 떄, 해당 값을 메모리에 저장해서, 필요할 때마다 또 다시 계산하지 않고
+  - **메모리에서 꺼내서 재사용**을 하는 기법
+  - 쉽게 말해, **자주 사용하는 값을 캐싱을 해둬서 그 값이 필요할 떄마다 다시 계산하는게 아니라 꺼내서 쓰는 것**
+
+### 3.1.1 함수형 컴포넌트의 문제점
+
+렌더링 될 때마다, Component 함수를 호출 → 모든 내부 변수 초기화
+
+```jsx
+function Component() {
+  const value = calculate() // 렌더링될 떄마다, calculate가 반복호출됨 -> 성능이 느려짐(비효율적)
+  return <div>{value}</div>
+}
+
+function calculate() {
+  return 10
+}
+```
+
+useMemo를 사용하면, 위 문제를 해결할 수 있습니다.
+
+- 렌더링 → `Component 함수 호출, Memoization` → 렌더링 → `Component 함수 호출, Memoize된 값을 재사용`
+
+```jsx
+// 렌더링
+function Component() {
+  const value = useMemo(() => calculate(), [])
+  return <div>{value}</div>
+}
+
+function calculate() {
+  return 10
+}
+```
+
+---
+
+### 3.1.2 useMemo 구조
+
+```jsx
+// useMemo(콜백함수, 의존성배열)
+// - 콜백함수 : 메모이제이션해서 리턴해줄 함수
+// - 의존성 배열 : 요소의 값이 업데이트될 떄만 콜백함수를 다시 호출
+// -- 메모이제이션된 값을 업데이트해서 다시 메모이제이션해줌
+// -- 빈 배열을 넘겨주면, 컴포넌트가 mount되었을 때만 값을 계산하고, 이후에는 항상 메모이제이션된 값을 꺼내씀
+const value = useMemo(() => {
+  return calculate()
+}, [item])
+```
+
+useMemo 역시 무분별하게 사용하면, 오히려 성능에 무리가 갑니다. 꼭 필요할 떄만 씁시다.
+useMemo를 쓴다는 건, 값을 재활용하기 위해, 따로 메모리를 소비해서 저장해놓는 것을 의미하기 때문에,
+불필요한 값까지 메모이제이션을 한다면, 오히려 성능이 악화될 수 있음
+
+---
+
+## 3.2 예제1
+
+```jsx
+import React, { useMemo, useState } from 'react'
+
+const hardCalculate = number => {
+  console.log('어려운 계산!')
+  for (let i = 0; i < 999999; i++) {} // 생각하는 시간
+  return number + 10000
+}
+
+const eashCalculate = number => {
+  console.log('짱 쉬운 계산!')
+  return number + 1
+}
+
+export default function App() {
+  const [hardNumber, setHardNumber] = useState(1)
+  const [easyNumber, setEashNumber] = useState(1)
+
+  // const hardSum = hardCalculate(hardNumber);
+
+  // 1. hardNumber가 변경될 떄만 hardCalculate가 다시 호출됨
+  // 2. hardNumber가 변경되지 않으면, 그 전에 갖고있던 hardNumber의 값을 재사용함
+  const hardSum = useMemo(() => {
+    return hardCalculate(hardNumber)
+  }, [hardNumber])
+  const easySum = eashCalculate(hardNumber)
+
+  return (
+    <div>
+      <h3>어려운 계산기</h3>
+      <input
+        type="number"
+        value={hardNumber}
+        onChange={e => setHardNumber(parseInt(e.target.value))}
+      />
+      <span>+ 10000 = {hardSum}</span>
+      <h3>쉬운 계산기</h3>
+      <input
+        type="number"
+        value={easyNumber}
+        onChange={e => setEashNumber(parseInt(e.target.value))}
+      />
+      <span>+ 1 = {easySum}</span>
+    </div>
+  )
+}
+```
+
+---
+
+## 3.3 예제2
+
+```jsx
+import React, { useEffect, useMemo, useState } from 'react'
+
+export default function App() {
+  const [number, setNumber] = useState(0)
+  const [isKorea, setIsKorea] = useState(true)
+
+  // 1. JS 타입 종류 : 원시타입 | 객체타입(원시타입을 제외한 모든 것, Object, Array)
+  // - 어떤 변수에 객체타입을 할당하면, 객체타입이 크기가 크기 때문에
+  // - 메모리 상에 공간이 할당되어 저장되고, 변수에는 메모리 주소가 할당됨
+  // - 똑같은 객체를 할당해도, 두 메모리 주소가 다르기 때문에 ===을 하면 false 나옴
+  const location = useMemo(() => {
+    return {
+      country: isKorea ? '한국' : '외국',
+      // 뭔가 오래걸리는 작업을 해야한다면, 꼭 필요할 떄만 호출
+    }
+  }, [isKorea])
+
+  useEffect(() => {
+    console.log('useEffect 호출')
+  }, [location])
+
+  return (
+    <div>
+      <h2>하루에 몇끼 먹어요?</h2>
+      <input
+        type="number"
+        value={number}
+        onChange={e => setNumber(e.target.value)}
+      />
+      <hr />
+      <h2>어느 나라에 있어요?</h2>
+      <p>나라 : {location.country}</p>
+      <button onClick={() => setIsKorea(!isKorea)}>비행기 타자</button>
+    </div>
+  )
+}
+```
+
+---
+
+# 4. useCallback
+
+컴포넌트의 성능 최적화(Optimization)에 사용되는 대표적인 Hook은 다음과 같습니다.
+
+- `useMemo` = 특정 함수를 새로 만들지 않고 재사용하고 싶을 때 사용하는 함수
+- `useCallback` = 특정 함수를 새로 만들지 않고 재사용하고 싶을 때 사용하는 함수
+
+`Memoization`
+
+- 동일한 값을 리턴하는 함수를 반복적으로 호출해야 한다면,
+- 맨 처음 값을 계산할 떄, 해당 값을 메모리에 저장해서, 필요할 때마다 또 다시 계산하지 않고
+- **메모리에서 꺼내서 재사용**을 하는 기법
+- 쉽게 말해, **자주 사용하는 값을 캐싱을 해둬서 그 값이 필요할 떄마다 다시 계산하는게 아니라 꺼내서 쓰는 것**
+
+---
+
+## 4.1 개념
+
+> useMemo 복습
+>
+> ```jsx
+> // useMemo(콜백함수, 배열)
+> // - 콜백함수 : 메모이제이션해서 리턴해줄 함수
+> // - 배열 : 의존성 배열이라고 불림, 요소의 값이 업데이트될 떄만 콜백함수를 다시 호출
+> // -- 메모이제이션된 값을 업데이트해서 다시 메모이제이션해줌
+> // -- 빈 배열을 넘겨주면, 컴포넌트가 mount되었을 때만 값을 계산하고, 이후에는 항상 메모이제이션된 값을 꺼내씀
+> useMemo(() => {
+>   return value
+> }, [item])
+> ```
+
+useMemo와 비슷하지만, `useCallback`은 인자로 전달한 콜백함수 그 자체를 메모이제이션해줌
+
+- `useMemo` = 콜백함수가 리턴하는 값을 메모이제이션해줌
+- `useCallback` = 인자로 전달한 콜백함수 그 자체를 메모이제이션해줌
+
+```jsx
+const calculate = useCallback(
+  num => {
+    return num + 1
+  },
+  [item],
+)
+// calculate()를 메모이제이션해준다면, useCallback으로 감싸주면 됨
+// 그러면 calculate()가 필요할 때마다 함수를 새로 생성하는 것이 아니라,
+// 필요할 떄마다 메모리에서 가져와서 재사용함
+```
+
+참고로 JS에서 함수는 사실 객체의 한 종류입니다.
+
+- React에서 함수형 컴포넌트는 말 그대로 함수이기 때문에,
+- `렌더링 → Component 함수 호출 → 컴포넌트의 모든 내부 변수 초기화`
+
+```jsx
+// 함수형 컴포넌트 안에
+// calculate변수에 num을 인자로 받는 함수(객체)가 할당되어 있는 형태
+function Component() {
+  const calculate = num => {
+    return num + 1
+  }
+  return <div>{value}</div>
+}
+```
+
+`useCallback으로 메모이제이션`을 해주면,
+
+- `렌더링 → Component 함수 호출 → Memoize된 함수를 재사용`
+- 즉, 컴포넌트가 다시 렌더링되더라도 calculate가 초기화되는 것을 막을 수 있음
+  - 컴포넌트가 맨 처음 렌더링될 떄만 함수를 만들어서 calculate를 초기화해주고,
+  - 이후에 렌더링될 떄는 calculate 변수가 새로운 함수 객체를 할당받는게 아니라,
+  - 이전에 받은 함수 객체를 계속 갖고있으면서 재사용함
+
+```jsx
+function Component() {
+  const calculate = useCallback(
+    num => {
+      return num + 1
+    },
+    [item],
+  )
+  return <div>{value}</div>
+}
+```
+
+---
+
+### 4.1.1 useCallback 구조
+
+```jsx
+// useCallback(메모이제이션해줄 콜백함수, 의존성배열)
+const calculate = useCallback(
+  num => {
+    return num + 1
+  },
+  [item],
+)
+// calculate는 메모이제이션된 함수(객체)르 갖게됨
+// 의존성배열의 값(=item)이 변경되지 않는 이상 다시 초괴화되지 않음
+```
+
+---
+
+## 4.2 예시1
+
+```jsx
+import React, { useCallback, useEffect, useState } from 'react'
+
+export default function App() {
+  const [number, setNumber] = useState(0)
+  const [toggle, setToggle] = useState(true)
+
+  const someFunction = useCallback(() => {
+    console.log(`someFunc: number: ${number}`)
+    return
+  }, [number])
+
+  useEffect(() => {
+    console.log('someFunction이 변경되었습니다.')
+  }, [someFunction])
+
+  return (
+    <div>
+      <input
+        type="number"
+        value={number}
+        onChange={e => setNumber(e.target.value)}
+      />
+      <button onClick={() => setToggle(!toggle)}>{toggle.toString()}</button>
+
+      <button onClick={someFunction}>Call someFunc</button>
+    </div>
+  )
+}
+```
+
+---
+
+## 4.3 예시2
+
+```jsx
+import React, { useEffect, useState } from 'react'
+
+export default function Box({ createBoxStyle }) {
+  const [style, setStyle] = useState({})
+
+  useEffect(() => {
+    console.log('박스 키우기')
+    setStyle(createBoxStyle())
+  }, [createBoxStyle])
+
+  return <div style={style}></div>
+}
+```
+
+```jsx
+import React, { useCallback, useState } from 'react'
+import Box from './Box'
+
+export default function App() {
+  const [size, setSize] = useState(100)
+  const [isDark, setIsDark] = useState(false)
+
+  const createBoxStyle = useCallback(() => {
+    return {
+      backgroundColor: 'pink',
+      width: `${size}px`,
+      height: `${size}px`,
+    }
+  }, [size])
+
+  return (
+    <div style={{ background: isDark ? 'black' : 'white' }}>
+      <input
+        type="number"
+        value={size}
+        onChange={e => setSize(e.target.value)}
+      />
+      <button onClick={() => setIsDark(!isDark)}>Change Theme</button>
+      <Box createBoxStyle={createBoxStyle} />
+    </div>
+  )
+}
+```
+
+---
+
+# 5. useReducer
+
+`useReducer` : 여러 개의 복잡한 하위 state를 다뤄야 할 때, useState대신 useReducer를 사용하면 편리
+
+- 다양한 컴포넌트 상황에 따라 다양한 상태를 다른 값으로 업데이트해주고 싶을 때 사용하는 Hook
+
+![React_14_4](https://raw.githubusercontent.com/berenickt/image-server/main/img/React_14_4.png)
+
+useReducer는 다음 3가지로 구성됨
+
+- `Reducer` : state를 업데이트 해주는 역할
+  - e.g. 거내내역(state)를 업데이트해주는 은행
+- `Dispatch` : Reducer에게 요구를 하는 역할
+  - e.g. 은행에 거래내역을 업데이트해달라고 요청하는 고객
+- `Action` : Reducer에게 요구하는 내용
+  - e.g. 고객이 은행에게 “만원을 출금해달라”라는 행동
+
+![React_14_5](https://raw.githubusercontent.com/berenickt/image-server/main/img/React_14_5.png)
+
+이를 컴포넌트 관점에서 보면 위 그림과 같습니다.
+
+---
+
+## 5.1 예제 1 : 은행
+
+```jsx
+import React, { useReducer, useState } from 'react'
+
+// reducer - state를 업데이트하는 역할(은행)
+// dispatch - state를 업데이트하는 요구
+// action - 요구하는 내용
+
+const ACTION_TYPES = {
+  deposit: 'deposit',
+  withdraw: 'withdraw',
+}
+
+const reducer = (state, action) => {
+  console.log('reducer가 일을 합니다!', state, action)
+  switch (action.type) {
+    case ACTION_TYPES.deposit:
+      return state + action.payload
+    case ACTION_TYPES.withdraw:
+      return state - action.payload
+    default:
+      return state
+  }
+}
+
+export default function App() {
+  const [number, setNumber] = useState(0)
+  const [money, dispatch] = useReducer(reducer, 0) // reducer, 초기값
+
+  return (
+    <div>
+      <h2>useReducer 은행에 오신 것을 환영합니다.</h2>
+      <p>잔고: {money}원</p>
+      <input
+        type="number"
+        value={number}
+        onChange={e => setNumber(parseInt(e.target.value))}
+        step="1000"
+      />
+      <button
+        onClick={() =>
+          dispatch({ type: ACTION_TYPES.deposit, payload: number })
+        }
+      >
+        예금
+      </button>
+      <button
+        onClick={() =>
+          dispatch({ type: ACTION_TYPES.withdraw, payload: number })
+        }
+      >
+        출금
+      </button>
+    </div>
+  )
+}
+```
+
+---
+
+## 5.2 예제 2 : 출석부(복잡한 state)
+
+```jsx
+import React from 'react'
+
+export default function Student({ name, dispatch, id, isHere }) {
+  return (
+    <div>
+      <span
+        style={{
+          textDecoration: isHere ? 'line-through' : 'none',
+          color: isHere ? 'grey' : 'black',
+        }}
+        onClick={() => dispatch({ type: 'mark-student', payload: { id } })}
+      >
+        {name}
+      </span>
+      <button
+        onClick={() => dispatch({ type: 'delete-student', payload: { id } })}
+      >
+        삭제
+      </button>
+    </div>
+  )
+}
+```
+
+```jsx
+import React, { useReducer, useState } from 'react'
+import Student from './Student'
+
+const reducer = (state, action) => {
+  switch (action.type) {
+    case 'add-student':
+      const name = action.payload.name
+      const newStudent = {
+        id: Date.now(),
+        name,
+        isHere: false,
+      }
+      return {
+        count: state.count + 1,
+        students: [...state.students, newStudent],
+      }
+    case 'delete-student':
+      return {
+        count: state.count - 1,
+        students: state.students.filter(
+          student => student.id !== action.payload.id,
+        ),
+      }
+    case 'mark-student':
+      return {
+        count: state.count,
+        students: state.students.map(student => {
+          if (student.id === action.payload.id) {
+            return { ...student, isHere: !student.isHere }
+          }
+          return student
+        }),
+      }
+    default:
+      return state
+  }
+}
+
+const initialState = {
+  count: 0,
+  students: [],
+}
+
+export default function App() {
+  const [name, setName] = useState('')
+  const [studentsInfo, dispatch] = useReducer(reducer, initialState)
+
+  return (
+    <div>
+      <h1>출석부</h1>
+      <p>총 학생 수 : {studentsInfo.count}</p>
+      <input
+        type="text"
+        placeholder="이름을 입력하세요"
+        value={name}
+        onChange={e => setName(e.target.value)}
+      />
+      <button
+        onClick={() => dispatch({ type: 'add-student', payload: { name } })}
+      >
+        추가
+      </button>
+      {studentsInfo.students.map(student => {
+        return (
+          <Student
+            key={student.id}
+            name={student.name}
+            dispatch={dispatch}
+            id={student.id}
+            isHere={student.isHere}
+          />
+        )
+      })}
+    </div>
+  )
+}
+```
+
+---
+
+# 6. React.memo로 컴포넌트 최적화
+
+굳이 렌더링될 필요없는 Component가 계속 반복적으로 렌더링된다면,
+또 그 반복적으로 렌더링된 Component가 복잡한 로직이라면, Component 성능이 최악일 것입니다.
+
+이를 해결하기 위해 React.memo(ft. useMemo, useCallback)를 활용할 수 있습니다.
+Reaec는 기본적으로 **부모 컴포넌트가 렌더링되면, 모든 자식 컴포넌트들도 자동으로 렌더링**됩니다.
+만약 부모 컴포넌트가 자주 렌더링되는 컴포넌트라면, 자식 컴포넌트는 렌더링될 필요가 없음에도 렌더링됩니다.
+그래서 렌더링 횟수를 제한해줄 필요가 있습니다. 여기서 React.memo를 사용하면 됩니다.
+
+- `고차 컴포넌트(Higher-Order Component; HOC)`
+  - 어떤 컴포넌트를 인자로 받아서, 새로운 컴포넌트를 반환해주는 함수
+- `React.memo` = React에서 제공하는 고차 컴포넌트
+  - 보통 컴포넌트를 React.memo에 인자로 받아, UI나 기능은 똑같으면서, 최적화된 컴포넌트를 반환해주는 함수
+- 최적화된 컴포넌트는 렌더링될 상황마다 `Props Check`를 통해, **자신이 받는 Props가 변화가 있는지 없는지 체크**함
+  - 변화가 있다면 → 렌더링
+  - 변화가 없다면 → 렌더링X, 기존 렌더링된 내용을 재사용
+- React.memo의 memo는? **Memoization(메모이제이션)을 의미**
+  - 맨 처음 값을 계산할 떄, 해당 값을 메모리에 저장해서, 필요할 때마다 또 다시 계산하지 않고
+  - **메모리에서 꺼내서 재사용**을 하는 기법
+- React.memo는 잘 사용하면 성능이 향상되지만, 무분별하게 사용한다면 오히려 성능이 저하됨!
+  - 왜냐하면 컴포넌트를 메모이징할 떄, 렌더링된 결과를 어딘가에 저장해야 되는데,
+  - 이떄 메모리를 추가적으로 소비하기 떄문
+- React.memo를 사용하는 경우
+  - 컴포넌트가 **같은 Props로 자주 렌더링 될 떄**
+  - 컴포넌트가 렌더링될 떄마다 **복잡한 로직을 처리해야 한다면**
+- React.memo는 **오직 Props 변화에만 의존**하는 최적화 방법
+  - 컴포넌트가 useState, useReducer, useContext같은 상태 관련 Hook이라면,
+  - Props 변화가 없더라도 state, context가 변할 떄마다 다시 렌더링됨
+
+---
+
+## 6.1 예제 1 : momo 사용 전
+
+```jsx
+import React from 'react'
+
+export default function Child({ name, age }) {
+  console.log('👶자녀  컴포넌트가 렌더링이 되었어요.')
+
+  return (
+    <div style={{ border: '2px solid powderblue', padding: '10px' }}>
+      <h3>👶자녀</h3>
+      <p>name: {name}</p>
+      <p>age: {age}</p>
+    </div>
+  )
+}
+```
+
+```jsx
+import { useState } from 'react'
+import Child from './Child'
+
+export default function App() {
+  const [parentAge, setParentAge] = useState(0)
+  const [childAge, setChildAge] = useState(0)
+
+  const incrementParentAge = () => {
+    setParentAge(parentAge + 1)
+  }
+
+  const incrementChildAge = () => {
+    setChildAge(childAge + 1)
+  }
+
+  console.log('🧑부모 컴포넌트가 렌더링이 되었어요.')
+
+  return (
+    <div style={{ border: '2px solid orange', padding: '10px' }}>
+      <h1>🧑부모</h1>
+      <p>age: {parentAge}</p>
+      <button onClick={incrementParentAge}>부모 나이 증가</button>
+      <button onClick={incrementChildAge}>자녀 나이 증가</button>
+      <Child name={'홍길동'} age={childAge} />
+    </div>
+  )
+}
+```
+
+브라우저 콘솔 창을 확인해보면,
+
+- 부모 나이가 증가(부모 컴포넌트가 렌더링)하면, 자식 컴포넌트도 렌더링됨
+- 자식 나이가 증가(자식 컴포넌트가 렌더링)하면, 부모 컴포넌트도 렌더링됨
+- 문제점: **렌더링할 필요없는 컴포넌트도 렌더링되고 있음**
+  - 이를 React.memo로 해결할 수 있음
+
+---
+
+## 6.2 예제 1: momo 사용 후
+
+- React.memo 사용법
+  - 최적화하려는 컴포넌트를 memo()로 감싸주면 됨
+
+```jsx
+import React, { memo } from 'react'
+
+function Child({ name, age }) {
+  console.log('👶자녀  컴포넌트가 렌더링이 되었어요.')
+
+  return (
+    <div style={{ border: '2px solid powderblue', padding: '10px' }}>
+      <h3>👶자녀</h3>
+      <p>name: {name}</p>
+      <p>age: {age}</p>
+    </div>
+  )
+}
+
+export default memo(Child) // React.memo 사용법 : 최적화하려는 컴포넌트 memo()로 감싸주기
+// memo() : react에서 제공하는 고차 컴포넌트
+// - 컴포넌트를 인자로 받아, props체크하는 최적화된 컴포넌트를 반환
+```
+
+---
+
+## 6.3 예제 2 : useMemo + React.memo
+
+useCallback + useMemo + React.memo를 사용하면 폭 넓은 최적화를 할 수 있음
+
+### 6.3.1 React.memo만 적용한 경우
+
+```jsx
+import React, { memo } from 'react'
+
+function Child({ name }) {
+  console.log('👶자녀  컴포넌트가 렌더링이 되었어요.')
+
+  return (
+    <div style={{ border: '2px solid powderblue', padding: '10px' }}>
+      <h3>👶자녀</h3>
+      <p>성: {name.lastName}</p>
+      <p>이름: {name.firstName}</p>
+    </div>
+  )
+}
+
+export default memo(Child)
+```
+
+```jsx
+import { useState } from 'react'
+import Child from './Child'
+
+export default function App() {
+  const [parentAge, setParentAge] = useState(0)
+
+  const incrementParentAge = () => {
+    setParentAge(parentAge + 1)
+  }
+
+  console.log('🧑부모 컴포넌트가 렌더링이 되었어요.')
+
+  // JS에서 오브젝트는 참조형 데이터로 메모리의 주소를 가리키고 있다.
+  // 함수안의 모든 변수는 렌더링될 떄, 초기화됨
+  // 그래서 name이라는 변수는 새로운 메모리 주소를 가리키고 있음
+  // Child 컴포넌트는 name이라는 변수가 새로운 메모리 주소를 가리키고 있기 때문에
+  // React.memo입장에서는 name이라는 변수가 변경되었다고 판단하고 렌더링을 한다.
+  const name = {
+    lastName: '홍',
+    firstName: '길동',
+  }
+
+  return (
+    <div style={{ border: '2px solid orange', padding: '10px' }}>
+      <h1>🧑부모</h1>
+      <p>age: {parentAge}</p>
+      <button onClick={incrementParentAge}>부모 나이 증가</button>
+      <Child name={name} />
+    </div>
+  )
+}
+```
+
+### 6.3.2 useMemo + React.memo 적용한 경우
+
+- 어떠한 값을 메모이징하는 경우 사용
+
+```jsx
+import { useMemo, useState } from 'react'
+import Child from './Child'
+
+export default function App() {
+  const [parentAge, setParentAge] = useState(0)
+
+  const incrementParentAge = () => {
+    setParentAge(parentAge + 1)
+  }
+
+  console.log('🧑부모 컴포넌트가 렌더링이 되었어요.')
+
+  // useMemo를 사용하면, name이라는 변수가 새로운 메모리 주소를 가리키고 있어도
+  // name이라는 변수의 값이 같다면, React.memo는 name이라는 변수가 변경되지 않았다고 판단 후 렌더링을 하지 않는다.
+  // 즉, React.memo는 name이라는 변수가 변경되었는지를 판단하는 것이 아니라,
+  // name이라는 변수가 가리키고 있는 메모리 주소가 변경되었는지를 판단한다.
+  // 그래서 name이라는 변수가 가리키고 있는 메모리 주소가 변경되지 않았다면, React.memo는 렌더링을 하지 않는다.
+  const name = useMemo(() => {
+    return {
+      lastName: '홍',
+      firstName: '길동',
+    }
+  }, [])
+
+  return (
+    <div style={{ border: '2px solid orange', padding: '10px' }}>
+      <h1>🧑부모</h1>
+      <p>age: {parentAge}</p>
+      <button onClick={incrementParentAge}>부모 나이 증가</button>
+      <Child name={name} />
+    </div>
+  )
+}
+```
+
+---
+
+## 6.4 예제 3 : useCallback + React.memo
+
+### 6.4.1 React.memo만 적용한 경우
+
+```jsx
+import React, { memo } from 'react'
+
+function Child({ name, tellMe }) {
+  console.log('👶자녀  컴포넌트가 렌더링이 되었어요.')
+
+  return (
+    <div style={{ border: '2px solid powderblue', padding: '10px' }}>
+      <h3>👶자녀</h3>
+      <p>이름: {name}</p>
+      <button onClick={tellMe}>엄마 나 사랑해?</button>
+    </div>
+  )
+}
+
+export default memo(Child)
+```
+
+```jsx
+import { useState } from 'react'
+import Child from './Child'
+
+export default function App() {
+  const [parentAge, setParentAge] = useState(0)
+
+  const incrementParentAge = () => {
+    setParentAge(parentAge + 1)
+  }
+
+  console.log('🧑부모 컴포넌트가 렌더링이 되었어요.')
+
+  // 부모 컴포넌트가 렌더링이 되면 자식 컴포넌트도 렌더링이 되는데,
+  // JS에서 함수는 객체의 한 종류입니다.
+  // 마찬가지로 tellMe()는 객체이기 때문에 메모리 주소가 들어있습니다.
+  // 그래서 컴포넌트가 렌더링될 떄마다, 자식 컴포넌트로 tellMe()를 다른 메모리 주소가 전달됩니다.
+  const tellMe = () => {
+    console.log('길동아 사랑해')
+  }
+
+  return (
+    <div style={{ border: '2px solid orange', padding: '10px' }}>
+      <h1>🧑부모</h1>
+      <p>age: {parentAge}</p>
+      <button onClick={incrementParentAge}>부모 나이 증가</button>
+      <Child name={'홍길동'} tellMe={tellMe} />
+    </div>
+  )
+}
+```
+
+---
+
+### 6.4.2 useCallback + React.memo 적용한 경우
+
+- useMemo : 어떠한 값을 메모이징하는 경우 사용
+- useCallback : 어떠한 함수를 메모이징하는 경우 사용
+
+```jsx
+import { useCallback, useState } from 'react'
+import Child from './Child'
+
+export default function App() {
+  const [parentAge, setParentAge] = useState(0)
+
+  const incrementParentAge = () => {
+    setParentAge(parentAge + 1)
+  }
+
+  console.log('🧑부모 컴포넌트가 렌더링이 되었어요.')
+
+  // useCallback을 사용하면 자식 컴포넌트가 렌더링이 되지 않는다.
+  const tellMe = useCallback(() => {
+    console.log('길동아 사랑해')
+  }, [])
+
+  return (
+    <div style={{ border: '2px solid orange', padding: '10px' }}>
+      <h1>🧑부모</h1>
+      <p>age: {parentAge}</p>
+      <button onClick={incrementParentAge}>부모 나이 증가</button>
+      <Child name={'홍길동'} tellMe={tellMe} />
+    </div>
+  )
+}
+```
+
+---
+
+# 7. Custom Hook (커스텀 훅)
+
+React에서 제공해주는 Hook을 조합해서 사용하다보면, 중복된 코드들이 생길 수 있습니다.
+그래서 이런 중복을 제거하기 위해서 개발자들은 자신들만의 입맛대로 Custom Hook을 만들 수 있습니다.
+Custom Hook안에서는 기존 React Hook들을 가져다 쓸 수 있습니다.
+
+여기서는 `useInput, useFetch`라는 Custom Hook을 만들어 볼 것임. 자기 마음대로 Hook을 만들어 쓰세요.
+
+---
+
+## 7.1 Custom Hook만들기 : useInput
+
+### 7.1.1 Custom Hook 적용 전
+
+```jsx
+import { useState } from 'react'
+
+export default function App() {
+  const [inputValue, setInputValue] = useState('')
+
+  const handleChange = e => {
+    setInputValue(e.target.value)
+  }
+
+  const handleSubmit = e => {
+    alert(inputValue)
+    setInputValue('')
+  }
+
+  return (
+    <>
+      <h1>useInput</h1>
+      <input type="text" value={inputValue} onChange={handleChange} />
+      <button onClick={handleSubmit}>확인</button>
+    </>
+  )
+}
+```
+
+만약 여러 개의 컴포넌트가 있고, 컴포넌트마다 input값을 처리해줘야 한다면, 로직을 여러 컴포넌트마다 복사붙여넣기해야 합니다.
+그렇게 되면 중복코드가 발생합니다. 그래서 로직을 Custom Hook으로 만들어 놓으면, 재사용성이 올라갑니다.
+
+---
+
+### 7.1.2 Custom Hook 만들기
+
+`hook/useInput.js`를 만들어 원하는 로직을 함수 안에서 넣어줍니다.
+
+```jsx
+import { useState } from 'react'
+
+export default function useInput(initialValue, submitAction) {
+  const [inputValue, setInputValue] = useState(initialValue)
+
+  const handleChange = e => {
+    setInputValue(e.target.value)
+  }
+
+  const handleSubmit = () => {
+    setInputValue('')
+    submitAction(inputValue)
+  }
+
+  return [inputValue, handleChange, handleSubmit]
+}
+```
+
+만든 Hook을 App컴포넌트에 적용하기
+
+```jsx
+import useInput from './hooks/useInput'
+
+function displayMessage(message) {
+  alert(message)
+}
+
+export default function App() {
+  const [inputValue, handleChange, handleSubmit] = useInput('', displayMessage)
+
+  return (
+    <>
+      <h1>useInput</h1>
+      <input type="text" value={inputValue} onChange={handleChange} />
+      <button onClick={handleSubmit}>확인</button>
+    </>
+  )
+}
+```
+
+---
+
+## 7.2 Custom Hook 만들기 : useFetch
+
+### 7.2.1 Custom Hook 적용 전
+
+```jsx
+import { useEffect, useState } from 'react'
+
+// 더미 데이터 반환해주는 API - jsonplaceholder
+const baseURL = 'https://jsonplaceholder.typicode.com'
+
+export default function App() {
+  const [data, setData] = useState(null)
+
+  const fetchUrl = type => {
+    fetch(baseURL + '/' + type)
+      .then(res => res.json())
+      .then(res => setData(res))
+  }
+
+  useEffect(() => {
+    fetchUrl('users')
+  }, [])
+
+  return (
+    <>
+      <h1>useFetch</h1>
+      <button onClick={() => fetchUrl('users')}>Users</button>
+      <button onClick={() => fetchUrl('Posts')}>Posts</button>
+      <button onClick={() => fetchUrl('Todos')}>Todos</button>
+      <pre>{JSON.stringify(data, null, 2)}</pre>
+    </>
+  )
+}
+```
+
+---
+
+### 7.2.2 Custom Hook 만들기
+
+`hook/useFetch.js`를 만들어 원하는 로직을 함수 안에서 넣어줍니다.
+
+```jsx
+import { useEffect, useState } from 'react'
+
+export default function useFetch(baseURL, initialType) {
+  const [data, setData] = useState(null)
+
+  const fetchUrl = type => {
+    fetch(baseURL + '/' + type)
+      .then(res => res.json())
+      .then(res => setData(res))
+  }
+
+  useEffect(() => {
+    fetchUrl(initialType)
+  }, [])
+
+  return {
+    data,
+    fetchUrl,
+  }
+}
+```
+
+만든 Hook을 App컴포넌트에 적용하기
+
+```jsx
+import useFetch from './hooks/useFetch'
+
+// 더미 데이터 반환해주는 API - jsonplaceholder
+const baseURL = 'https://jsonplaceholder.typicode.com'
+
+export default function App() {
+  const { data: userData } = useFetch(baseURL, 'users')
+  const { data: postData } = useFetch(baseURL, 'posts')
+
+  return (
+    <>
+      <h1>User</h1>
+      {userData && <pre>{JSON.stringify(userData[0], null, 2)}</pre>}
+      <h1>Post</h1>
+      {postData && <pre>{JSON.stringify(postData[0], null, 2)}</pre>}
+    </>
+  )
+}
+```
+
+---
+
+# [참고]
+
+- [React 공식문서 Hooks API Referece](Hooks API Reference)
+- 별코딩 유튜브

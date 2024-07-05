@@ -1,0 +1,274 @@
+---
+title: '소개'
+date: 2024/04/01
+---
+
+## 1. Prisma란?
+
+- Prisma: Node.js 기반의 ORM(Object-Relational Mapping) 도구로,
+  - 데이터베이스와의 상호 작용을 단순화하고 개발 생산성을 높이는 데 도움을 주는 도구
+- SQL 쿼리를 직접 작성하는 대신 자바스크립트 코드로 쿼리를 작성할 수 있게 해주며,
+  - 타입 세이프한 쿼리 작성을 통해 런타임 에러를 방지
+- `타입 세이프 쿼리`: 쿼리를 자바스크립트 코드로 작성하므로 타입 에러를 사전에 방지
+- `자동 마이그레이션`: 데이터베이스 스키마 변경을 감지하고 자동으로 마이그레이션을 처리하여 스키마 관리를 간소화
+- `강력한 문법`: 복잡한 쿼리 및 데이터베이스 관계를 다루기 위한 강력한 문법 제공
+
+---
+
+## 2. Prisma 개념 (구성 요소)
+
+- `Prisma Client`: Node.js & TypeScript용 쿼리 작성 클라이언트
+- `Prisma Migrate`: 마이그레이션 시스템
+- `Prisma Studio`: 데이터베이스의 데이터를 보고 편집하는 GUI
+- 개발자가 직접 SQL문을 작성하지 않아도, 데이터베이스와 상호작용할 수 있는 ORM
+- 타 ORM과는 달리, 자체적인 스키마 문법 제공하여 직접 DB 마이그레이션, 클라이언트 코드 생성 등 작업 가능
+- 위에 언급한 간편한 CLI, Prisma Studio등 편리한 GUI 도구 제공하여 생산성 향상
+
+---
+
+## 3. Prisma 기능
+
+- `Prisma Client`: 데이터베이스와 상호 작용하기 위한 자바스크립트 코드를 자동으로 생성해주는 도구
+- `스키마 정의`: 데이터베이스 스키마를 정의하고 관리
+- `DB 마이그레이션`: 데이터베이스 스키마 변경을 추적하고 적용할 수 있는 마이그레이션 기능 제공
+- `DB 관계 정의`: 복잡한 데이터베이스 관계를 정의하고 쿼리 기능 제공
+
+---
+
+## 4. Prisma 스키마 알아보기
+
+```ts
+// 모델
+model Post {
+	// 필드  : 타입
+	id     Int
+	title  String
+	author User? @relation(fields: [authorId], refrences: [id]) // 관계
+}
+```
+
+- `모델 (Model)`: 모델은 데이터베이스의 특정 테이블이나 컬렉션과 대응.
+  - Prisma에서 모델을 정의하면 해당 모델에 대한 데이터베이스 테이블이나 컬렉션이 생성됨
+- `필드 (Field)`: 모델 내에서 필드는 해당 모델이 가지는 데이터 속성을 나타냄.
+  - 각 필드는 데이터 타입과제약 조건을 가질 수 있음
+- `관계 (Relation)`: Prisma에서 관계는 모델 간의 연결을 나타냄.
+  - 두 테이블 간의 외래 키(Foreign Key)를 관리하고 연관된 데이터를 쿼리 가능
+
+---
+
+### 4.1 Prisma로 데이터 모델 정의
+
+```tsx
+// schema.prisma
+model User {
+  id          Int        @id @default(autoincrement())
+  email       String     @unique
+  name        String     @unique
+  posts       Post[]
+}
+
+model Post {
+  id          Int        @id @default(autoincrement())
+  title       String
+  content     String
+  userId      Int
+  user        User       @relation(fields: [userId], references: [id])
+}
+```
+
+- Prisma에서는 데이터 모델을 정의하여 데이터베이스 테이블과 관련된 개체를 생성함.
+- 데이터 모델은 schema.prisma파일에 정의됨
+- `model User, model Post`: 데이터베이스의 테이블을 나타냄
+- `@id`: 기본 키
+- `@unique`: 데이터 유일성을 나타냄
+- `@relation`: 테이블간의 관계 정의
+
+---
+
+## 5. Prisma 세팅
+
+> cf. https://www.prisma.io/docs/orm/prisma-client/setup-and-configuration/generating-prisma-client
+
+Prisma 설치 후, Prisma Client 인스턴스화 해야함. 세팅은 아래 단계를 따라서 적용
+
+(1) Prisma Schema에 generator 정의
+
+```tsx
+generator client {
+	provider = "prisma-client-js"
+}
+```
+
+(2) prisma/client 패키지 설치 후 prisma 생성
+
+```bash
+yarn add @prisma/client
+prisma generate
+```
+
+(3) Prisma Client를 인스턴스화해서 사용
+
+```tsx
+import { PrismaClient } from '@prisma/client'
+const prisma = new PrismaClient()
+// use `prisma` in your application to read and write data in your DB
+```
+
+---
+
+## 6. Prisma 문법 예시: CRUD
+
+> cf. https://www.prisma.io/docs/orm/prisma-client/queries/crud
+
+### 6.1 Create
+
+```tsx
+import { PrismaClient } from '@prisma/client'
+
+const prisma = new PrismaClient()
+
+// 사용자 생성
+const user = await prisma.user.create({
+  data: {
+    email: 'elsa@prisma.io',
+    name: 'Elsa Prisma',
+  },
+})
+```
+
+Prisma로 데이터를 생성하기 위해서는 create API를 사용
+
+---
+
+### 6.2 Read
+
+```tsx
+// 특정 사용자 가져오기
+const user = await prisma.user.findUnique({
+  where: {
+    email: 'elsa@prisma.io',
+  },
+})
+
+// 조건에 맞는 사용자 모두 가져오기
+const users = await prisma.user.findMany({
+  where: {
+    OR: [
+      {
+        name: {
+          startsWith: 'E',
+        },
+      },
+      {
+        AND: {
+          profileViews: {
+            gt: 0,
+          },
+          role: {
+            equals: 'ADMIN',
+          },
+        },
+      },
+    ],
+  },
+})
+```
+
+- Prisma로 데이터를 조회하기 위해서 는 findaMany 또는 findUnique와 같은 메서드 사용.
+- where, orderBy, include, select 등의 옵션으로 쿼리 조절 가능
+
+---
+
+#### 6.2.1 Pagination 및 정렬
+
+```tsx
+const paginatiedUsers = await prisma.user,findMany({
+  skip : 0,
+  take : 10,
+  orderBy : {
+    username : 'asc',
+  },
+})
+```
+
+- Prisma를 사용하여 쿼리 결과를 페이지항고 정렬할 수 있음
+- 아래 명령어로 원하는 데이터들을 페이징 & 정렬할 수 있음
+- `skip`: 쿼리 결과에서 처음 몇 개의 항목을 건너뛰고 그 이후의 항목을 반환하는 데 사용
+- `take`: 쿼리 결과에서 가져올 항목의 개수를 지정하는 데 사용
+- `orderBy`: 쿼리 결과를 특정 기준으로 정렬하는 데 사용
+
+---
+
+### 6.3 Update
+
+```tsx
+// 사용자 업데이트
+const updateUser = await prisma.user.update({
+  where: {
+    email: 'viola@prisma.io',
+  },
+  data: {
+    name: 'Viola the Magnificent',
+  },
+})
+```
+
+- 데이터를 수정하기 위해서 update 메서드 사용
+- 하나만 수정하기 위해서는 update 메서드 를 사용하고, 여러 레코드를 한번에 업데이 트 하려면 updateMany 사용
+
+---
+
+### 6.4 Delete
+
+```tsx
+// 사용자 삭제
+const deleteUser = await prisma.user.delete({
+  where: {
+    email: 'bert@prisma.io',
+  },
+})
+
+// 여러 사용자 삭제
+const deleteUsers = await prisma.user.deleteMany({
+  where: {
+    email: {
+      contains: 'prisma.io',
+    },
+  },
+})
+```
+
+- 데이터를 삭제하기 위해서 delete 메서드 사용
+- 하나만 삭제하기 위해서는 delete 메서드 사용하고, 여러 레코드 삭제를 위해서는 deleteMany 사용
+
+---
+
+## 7. Prisma로 데이터 Seed 작업
+
+```tsx
+// prisma/seed.ts
+import { PrismaClient } from '@prisma/client'
+
+const prisma = new PrismaClient()
+
+async function seed() {
+  await prisma.user.createMany({
+    data: [
+      { username: '메시', email: '메시@example.com' },
+      { username: '호날두', email: '호날두@example.com' },
+    ],
+  })
+}
+
+seed()
+  .catch(e => {
+    throw e
+  })
+  .finally(async () => {
+    await prisma.$disconnect()
+  })
+```
+
+- Prisma의 Seed 파일을 사용하여 데이터베이스 초기 데이터를 삽입할 수 있음
+- 데이터 시드(Seed): 데이터베이스에 초기 데 이터를 삽입하는 작업
+- 위과 같이 데이터를 삽입하는 로직이 담긴 시 드 파일을 생성한 후, `npx prisma db seed` 명령어를 사용해 데이터베이스에 시드 적용

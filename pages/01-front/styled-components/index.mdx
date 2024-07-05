@@ -1,0 +1,395 @@
+# 1. Styling 라이브러리 종류
+
+컴포넌트가 많은 경우 일반 CSS로 스타일링을 하다보면 불편함이 생기는데
+
+1. **class 만들어놓은걸 까먹고 중복해서 또 만들거나**
+2. **갑자기 다른 이상한 컴포넌트에 원하지않는 스타일이 적용**되거나
+3. **CSS 파일이 너무 길어져서 수정이 어렵거나**
+
+위 경우를 해결하기 위해 라이브러리들을 사용합니다.
+
+> 💡 CSS의 문제점
+>
+> - `Global Namespace` : 글로벌 변수를 지양해야하는 JS와 대치
+> - `Dependencies` : css 간의 의존 관리
+> - `Dead Code Elimination` : 안쓰는 css 인지 어려움
+> - `Minification` : 클래스 이름 최소화
+> - `Sharing Constants` : JS의 코드와 값을 공유하고 싶음
+> - `Non-deterministic Resolution` : css 파일 로드 타이밍 이슈
+> - `Isolation` : 격리
+
+css로 꾸밀 떄 사용하는 라이브러리는 크게 `CSS-in-CSS 방식`과 `CSS-in-JS 방식`으로 구분합니다.
+
+- `CSS-in-JS`
+  - [Styled-Component 공식사이트](https://styled-components.com/)✔️
+    - 대표적인 CSS-in-JS
+    - https://speakerdeck.com/vjeux/react-css-in-js
+    - Basic : https://styled-components.com/docs/basics
+    - CSS Selector Ref : https://www.w3schools.com/cssref/css_selectors.php
+    - API : https://styled-components.com/docs/api
+  - [Emotion 공식사이트](https://emotion.sh/docs/install)✔️
+- `CSS-in-CSS` : CSS-in-JS 아닌 것들은 다 CSS-in-CSS
+  - Sass (전처리기)✔️
+  - CSS Module (Post CSS)✔️
+- cf. [CSS 2022 통계](https://2022.stateofcss.com/ko-KR/)
+  - https://2022.stateofcss.com/ko-KR/css-frameworks/
+  - https://2022.stateofcss.com/ko-KR/css-in-js/
+
+---
+
+# 2. Styled Components
+
+- **JS 파일 안에서 CSS를 작성할 수 있는** 대표적인 CSS-in-JS 라이브러리
+- **Styled이 적용된 Componen**t라고 해서 `Styled Components`라고 부름
+- https://styled-components.com/docs/basics#getting-started
+- 장점
+  - `Automatic critical CSS` : 자동 style injects & 코드 스플릿
+  - `No class name bugs` : unique / overlap x / misspellin
+  - `Easier deletion of CSS` : tied to a specific component
+  - `Simple dynamic styling` : props / global them
+  - `Painless maintenance` : styling affecting your compon
+  - `Automatic vendor prefixing` : current standard o
+
+---
+
+## 2.1 예제 : 공식문서 따라해보기
+
+```sh
+$ npx create-react-app styleing
+$ cd styleing
+$ npm install styled-components # Styled Components 설치
+$ npm start
+```
+
+---
+
+## 2.2 예제1 : 기본 사용법
+
+### 2.2.1 App.js
+
+```jsx
+import './App.css'
+import StyledComponentsExample from './components/StyledComponentsExample/StyledComponentsExample'
+
+export default function App() {
+  return (
+    <div className="App">
+      <StyledComponentsExample />
+    </div>
+  )
+}
+```
+
+### 2.2.2 StyledComponentsExample
+
+```jsx
+// src/components/StyledComponentsExample/StyledComponentsExample.jsx
+import React from 'react'
+import styled from 'styled-components'
+
+export default function StyledComponentsExample() {
+  const Title = styled.h1`
+    font-size: 1.5em;
+    text-align: center;
+    color: palevioletred;
+  `
+
+  // Create a Wrapper component that'll render a <section> tag with some styles
+  const Wrapper = styled.section`
+    padding: 4em;
+    background: papayawhip;
+  `
+
+  const Button = styled.button`
+    /* Adapt the colors based on primary prop */
+    background: ${props => (props.primary ? 'palevioletred' : 'white')};
+    color: ${props => (props.primary ? 'white' : 'palevioletred')};
+
+    font-size: 1em;
+    margin: 1em;
+    padding: 0.25em 1em;
+    border: 2px solid palevioletred;
+    border-radius: 3px;
+  `
+
+  const TomatoButton = styled(Button)`
+    color: tomato;
+    border-color: tomato;
+  `
+
+  const ReversedButton = props => (
+    <Button {...props} children={props.children.split('').reverse()} />
+  )
+
+  // Use Title and Wrapper like any other React component – except they're styled!
+  return (
+    <>
+      <Wrapper>
+        <Title>Hello World!</Title>
+      </Wrapper>
+      <Button onClick={() => alert('normal')}>Normal</Button>
+      <Button onClick={() => alert('normal')} primary>
+        Primary
+      </Button>
+      <TomatoButton>Tomato 확장 버튼</TomatoButton>
+
+      <Button as="a" href="#">
+        Link with Button styles
+      </Button>
+      <TomatoButton as="a" href="#">
+        Link with Tomato Button styles
+      </TomatoButton>
+
+      <Button as={ReversedButton}>
+        Custom Button with Normal Button styles
+      </Button>
+    </>
+  )
+}
+```
+
+---
+
+## 2.3 예제2 : 상속(&)
+
+- https://styled-components.com/docs/basics#getting-started
+
+```jsx
+import React from 'react'
+import styled from 'styled-components'
+
+const Thing = styled.div.attrs((/* props */) => ({ tabIndex: 0 }))`
+  color: blue;
+
+  // "&(ampersand)"는 현재 선택된 요소를 의미, 해당 컴포넌트 아래에 있는 자식들을 참조할 수 있음
+  &:hover {
+    color: red; // <Thing> when hovered
+  }
+
+  // 일반 형제 결합자 : 첫번쟤 요소를 뒤따르면서 같은 부모와 공유하는 2번쟤 형제 요소 선택
+  // Thing의 바로 옆은 아니지만 형제요소일 때
+  & ~ & {
+    background: tomato; // <Thing> as a sibling of <Thing>, but maybe not directly next to it
+  }
+
+  // 인접 형제 결합자 : 첫번쟤 요소를 뒤따르면서 바로 뒤에 있는 2번쟤 형제 요소 선택
+  // Thing이 바로 옆에 붙어있을 때
+  & + & {
+    background: lime; // <Thing> next to <Thing>
+  }
+
+  // Thing이 something이라는 클래스를 갖고있을 때
+  &.something {
+    background: orange; // <Thing> tagged with an additional CSS class ".something"
+  }
+
+  // // something-else라는 클래스를 가진 친구안에 있을 때
+  .something-else & {
+    border: 1px solid; // <Thing> inside another element labeled ".something-else"
+  }
+`
+
+export default function StyledComponentsExample() {
+  // Use Title and Wrapper like any other React component – except they're styled!
+  return (
+    <>
+      <Thing>Hello world!</Thing>
+      <Thing>How ya doing?</Thing>
+      <Thing className="something">The sun is shining...</Thing>
+      <div>Pretty nice day today.</div>
+      <Thing>Don't you think?</Thing>
+      <div className="something-else">
+        <Thing>Splendid.</Thing>
+      </div>
+    </>
+  )
+}
+```
+
+---
+
+## 2.4 예제3 : Overriding .attrs
+
+- https://styled-components.com/docs/basics#overriding-attrs
+
+```jsx
+import React from 'react'
+import styled from 'styled-components'
+
+const Input = styled.input.attrs(props => ({
+  type: 'text',
+  size: props.size || '1em',
+}))`
+  border: 2px solid palevioletred;
+  margin: ${props => props.size};
+  padding: ${props => props.size};
+`
+
+// Input's attrs will be applied first, and then this attrs obj
+const PasswordInput = styled(Input).attrs({
+  type: 'password',
+})`
+  // similarly, border will override Input's border
+  border: 2px solid aqua;
+`
+
+export default function StyledComponentsExample() {
+  // Use Title and Wrapper like any other React component – except they're styled!
+  return (
+    <>
+      <Input placeholder="A bigger text input" size="2em" />
+
+      {/* Notice we can still use the size attr from Input */}
+      <PasswordInput placeholder="A bigger password input" size="2em" />
+    </>
+  )
+}
+```
+
+---
+
+## 2.5 예제4 : Animations
+
+- https://styled-components.com/docs/basics#animations
+
+```jsx
+import React from 'react'
+import styled, { keyframes } from 'styled-components'
+
+const rotate = keyframes`
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+`
+
+const Rotate = styled.div`
+  display: inline-block;
+  animation: ${rotate} 2s linear infinite;
+  padding: 2rem 1rem;
+  font-size: 1.2rem;
+`
+
+export default function StyledComponentsExample() {
+  // Use Title and Wrapper like any other React component – except they're styled!
+  return (
+    <>
+      <Rotate>&lt; 💅🏾 &gt;</Rotate>
+    </>
+  )
+}
+```
+
+---
+
+## 2.6 예제5 : Theme
+
+- https://styled-components.com/docs/advanced#theming
+
+```jsx
+import React, { useState } from 'react'
+import styled, { ThemeProvider } from 'styled-components'
+
+// Define our button, but with the use of props.theme this time
+const Button = styled.button`
+  font-size: 1em;
+  margin: 1em;
+  padding: 0.25em 1em;
+  border-radius: 3px;
+
+  /* Color the border and text with theme.main */
+  color: ${props => props.theme.color};
+  border: 2px solid ${props => props.theme.borderColor};
+`
+
+// Define what props.theme will look like
+const defaultTheme = {
+  color: 'green',
+  borderColor: 'pink',
+}
+
+const redTheme = {
+  color: 'red',
+  borderColor: 'red',
+}
+
+export default function StyledComponentsExample() {
+  const [theme, setTheme] = useState(defaultTheme)
+  // Use Title and Wrapper like any other React component – except they're styled!
+  return (
+    <div>
+      <button onClick={() => setTheme(redTheme)}>red</button>
+      <button onClick={() => setTheme(defaultTheme)}>green</button>
+      <ThemeProvider theme={theme}>
+        <Button>Normal</Button>
+        <Button>Themed</Button>
+      </ThemeProvider>
+    </div>
+  )
+}
+```
+
+---
+
+## 2.7 예제 6 : Helpers
+
+- https://styled-components.com/docs/api#helpers
+- 전역 스타일(Global Style) 설정
+
+```jsx
+import React, { useState } from 'react'
+import styled, { ThemeProvider, createGlobalStyle } from 'styled-components'
+
+// Define our button, but with the use of props.theme this time
+const Button = styled.button`
+  font-size: 1em;
+  margin: 1em;
+  padding: 0.25em 1em;
+  border-radius: 3px;
+
+  /* Color the border and text with theme.main */
+  color: ${props => props.theme.color};
+  border: 2px solid ${props => props.theme.borderColor};
+`
+
+// Define what props.theme will look like
+const defaultTheme = {
+  color: 'green',
+  borderColor: 'pink',
+}
+
+const redTheme = {
+  color: 'red',
+  borderColor: 'red',
+}
+
+const GlobalStyle = createGlobalStyle`
+  button {
+    background-color : pink;
+  }
+`
+
+export default function StyledComponentsExample() {
+  const [theme, setTheme] = useState(defaultTheme)
+  // Use Title and Wrapper like any other React component – except they're styled!
+  return (
+    <>
+      <div>
+        <GlobalStyle />
+        <button onClick={() => setTheme(redTheme)}>red</button>
+        <button onClick={() => setTheme(defaultTheme)}>green</button>
+        <ThemeProvider theme={theme}>
+          <Button>Normal</Button>
+          <Button>Themed</Button>
+        </ThemeProvider>
+      </div>
+      <div>
+        <button>Other</button>
+      </div>
+    </>
+  )
+}
+```

@@ -1,0 +1,480 @@
+---
+title: '00-Next.js 기타 기능'
+date: 2023/12/15
+---
+
+## 1. 페이지 공유
+
+- **링크 공유**
+  - `navigator.clipboard`의 writeText 메서드를 사용해서 현재 링크 공유
+  - `navigator.clipboard.writeText(window.location.href).then(() => {}).catch(() => {})`
+- **이메일 공유**
+  - a tag의 mailto 속성을 사용해서 이메일 전송할 수 있도록 설정
+  - `href={‘mailto:?subject=nextBnb 숙소 공유하기&body=${window.location.href}}`
+- **트위터 공유**
+  - cf. https://developer.twitter.com/en/docs/twitter-for-websites/tweet-button/overview
+  - `window.open(‘https://www.twitter.com/intent/tweet?&url=${window.location.href}')`
+- **페이스북 공유**
+  - cf. 문서 참고: https://developers.facebook.com/docs/plugins/share-button
+  - `window.open(‘https://www.facebook.com/sharer/sharer.php?u=${window.location.href}')`
+
+---
+
+## 2. Next-auth
+
+- 공식 문서 참고: https://next-auth.js.org/
+- `Next-auth`: Next.js 애플리케이션에서 간단하고 확장 가능한 사용자 인증을 구현하기 위한 라이브러리
+
+  - 여러 인증 공급자 (Google, Facebook, GitHub 등)와 함께 작동
+  - 세션 기반 및 JWT(JSON Web Tokens) 기반의 인증을 지원
+
+- 다양한 인증 공급자를 통한 손쉬운 로그인 (Google, Facebook, GitHub, 이메일 및 기타)
+- 세션과 JWT를 사용한 사용자 인증 관리
+- 사용자 데이터베이스 통합 및 사용자 정의 프로필 필드 관리
+- 보안적으로 안전한 사용자 인증을 위한 설정 및 옵션
+
+---
+
+### 2.1 예시
+
+`app/api/auth/[…nextauth]/route.ts`에 routeHandler 구현
+
+```tsx app/api/auth/[...nextauth]/route.ts
+import NextAuth, { NextAuthOptions } from 'next-auth'
+import GoogleProvider from 'next-auth/providers/google'
+import { s } from 'nextra/dist/types-c8e621b7'
+
+export const authOptions: NextAuthOptions = {
+  session: {
+    strategy: 'jwt' as const,
+    // ...
+  },
+  providers: [
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID || '',
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+    }),
+  ],
+  pages: {
+    signIn: '/users/signin',
+  },
+  callbacks: {
+    // ...
+  },
+}
+const handler = NextAuth(authOptions)
+
+export { handler as GET, handler as POST }
+```
+
+`/users/signin` 페이지에 로그인 로직 작업
+
+```tsx
+'use client'
+
+import { useSession } from 'next-auth/react'
+
+export default function SignInPage() {
+  const router = useRouter()
+  const { status } = useSession()
+
+  const handleClickGoogle = () => {
+    try {
+      signIn('google', { callbackUrl: '/' })
+    } catch (e) {
+      console.log(e)
+      console.error('다시 시도해주세요')
+    }
+  }
+  return (
+    <button type="button" onClick={handleClickGoogle}>
+      구글로 로그인
+    </button>
+  )
+}
+```
+
+---
+
+### 2.2 장점
+
+- `간단한 설정`: 직접 구현하는 것에 비해 인증 설정이 매우 간단
+- `다양한 인증 공급자`: Google, Facebook, Apple, Naver, Kakao 등 수십개의 인증 공급자 통합 가능
+- `안전한 보안`: 보안 관련 작업 (세션 관리, JWT 생성, CSRF 방어 등) 자동 처리
+- `확장성`: 사용자 데이터베이스와의 통합을 지원
+- `Next.js와의 통합`: Next.js와 통합하여 SSR(Server Side Rendering) 및 CSR(Client Side Rendering)에서 원활하게 작동
+
+---
+
+### 2.3 Next-auth 사용자 인증 방식 (+ callback)
+
+```tsx
+// ...
+	callback {
+		async signIn({user, account, profile, email, credentials}) {
+			return true
+		},
+		async redirect({url, baseUrl}) {
+			return baseUrl
+		},
+		async session({session, user, token}) {
+			return session
+		},
+		async jwt({token, user, account, profile, isNewUser}) {
+			return token
+		}
+  // ...
+}
+```
+
+- NextAuth.js는 주로 세션과 JWT를 함께 사용해서 인증 작업 진행
+- 개발자는 프로젝트의 요구 사항에 따 라 적절한 방식을 선택할 수 있음
+- 또한, NextAuth.js는 다양한 콜백 함 수를 사용해서 사용자 인증 및 세션 관 리 조정 가능
+
+---
+
+### 2.4 JWT 와 Session 방식
+
+`JWT (JSON Web Tokens)`와 `세션`은 사용자 인증 및 권한 부여에 사용되는 두 가지 주요 방식
+
+- `JWT`: Json Web Token의 약자로, Json 포맷을 이용해 인증에 필요한 정보를 암호화 한 웹 토큰
+- `세션(Session)`: 웹 애플리케이션에서 사용자의 상태 정보를 저장하고 관리하기 위한 방식 중 하나
+  - 세션은 사용자가 웹 서비스와 상호작용할 때 생성되며, 사용자의 상태 정보를 서버 측에 저장
+
+|           |                                  Session                                   |                                          JWT                                           |
+| :-------: | :------------------------------------------------------------------------: | :------------------------------------------------------------------------------------: |
+| 저장 위치 | 서버 측에서 사용자 데이터를 저장하며, 클라이언트는 세션 ID만을 가지고 있음 |                 클라이언트 측에서 사용자 데이터를 포함하는 토큰을 저장                 |
+|  확장성   |                서버에서 세션을 관리하므로 서버 자원을 사용                 |    클라이언트 측에서 토큰을 검증하므로 서버 리소스를 덜 사용하고 확장성이 더 뛰어남    |
+|   보안    |      서버에서 데이터를 안전하게 관리하므로 데이터 유출 가능성이 낮음       | 토큰은 안전하게 서명되어 있지만 클라이언트 측에 저 장되므로 XSS 공격에 노출 될 수 있음 |
+| 사용 사례 |         로그인 상태 관리, 권한 부여, 사용자 데이터 관리 등에 적합          |                   분산 시스템, API 인증, 단일 로그인 (SSO) 등에 적합                   |
+
+---
+
+### 2.5 Next-auth & Prisma 같이 사용
+
+```tsx
+import NextAuth, { NextAuthOptions } from 'next-auth'
+import { PrismaAdapter } from '@auth/prisma-adapter'
+import prisma from '@/db'
+
+import GoogleProvider from 'next-auth/providers/google'
+
+export const authOptions: NextAuthOptions = {
+  adapter: PrismaAdapter(prisma),
+  providers: [
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID || '',
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+    }),
+  ],
+}
+```
+
+- Prisma Adapter를 사용해, Next-auth로 회원가입을 하면 유저 정보를 prisma로 저장
+- cf. https://authjs.dev/reference/adapter/prisma
+
+---
+
+### 2.6 Next-auth 세팅
+
+공식 문서 참고: https://next-auth.js.org/getting-started/example
+
+1. NextAuth 설치
+   - `yarn add next-auth`
+2. .env 파일에 NEXTAUTH_URL 환경변수 추가
+   - `NEXTAUTH_URL=http://localhost:3000`
+3. .env 파일에 NEXTAUTH_SECRET 환경변수 추가
+   - `NEXTAUTH_SECRET=adlfalkdj123123dkfljsdfj(어려운랜덤문자열)`
+4. Route Handler 추가
+   - `app/api/auth/[…nextauth]` 경로에 `route.ts` 파일 생성
+   - 파일 내부에 원하는 인증 공급자 및 옵션 설정
+
+```tsx
+import NextAuth, { NextAuthOptions } from 'next-auth'
+import { PrismaAdapter } from '@auth/prisma-adapter'
+import prisma from '@/db'
+
+import GoogleProvider from 'next-auth/providers/google'
+
+export const authOptions: NextAuthOptions = {
+  providers: [
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID || '',
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+    }),
+  ],
+  // ...
+}
+
+const handler = NextAuth(authOptions)
+
+export { handler as GET, handler as POST }
+```
+
+5. `app/api/auth/[…nextauth]/route.ts` 파일 코드 예시
+   - `GOOGLE_ID 및 GOOGLE_SECRET`: Google Oauth 인증 공급자 설정을 위한 정보
+
+---
+
+```tsx
+'use client'
+
+import { SessionProvider } from 'next-auth/react'
+import React from 'react'
+
+export const NextProvider = ({ children }: Props) => {
+  return (
+    <RecoilRoot>
+      <QueryClientProvider client={queryClient}>
+        {/* session Provider 추가 */}
+        <SessionProvider>
+          {children}
+          <ReactQueryDevtools />
+        </SessionProvider>
+      </QueryClientProvider>
+    </RecoilRoot>
+  )
+}
+```
+
+6. `app/providers.tsx` 파일에 Session Provider 설정
+   - Next-auth를 전체 앱에 적용할 수 있도록 가장 상위 파일에 적용
+
+---
+
+```tsx
+'use client'
+
+import { useSession } from 'next-auth/react'
+
+export default function SignInPage() {
+  const router = useRouter()
+  const { status } = useSession()
+
+  const handleClickGoogle = () => {
+    try {
+      signIn('google', { callbackUrl: '/' })
+    } catch (e) {
+      console.log(e)
+      console.error('다시 시도해주세요')
+    }
+  }
+  return (
+    <button type="button" onClick={handleClickGoogle}>
+      구글로 로그인
+    </button>
+  )
+}
+```
+
+```tsx
+import { useSession } from 'next-auth/react'
+
+export default function Component() {
+  const { data: session, status } = useSession()
+
+  if (status === 'authenticated') {
+    return <p>Signed in as {session.user.email}</p>
+  }
+
+  return <a href="/api/auth/signin">회원가입</a>
+}
+```
+
+7. 로그인/로그아웃 등 세션 관리 하고싶은 페이지에서 useSession() 및 인증 훅으로 사용자 관리
+
+---
+
+### 2.7 Prisma Adapter 세팅
+
+```tsx
+import NextAuth, { NextAuthOptions } from 'next-auth'
+import { PrismaAdapter } from '@auth/prisma-adapter'
+import prisma from '@/db'
+
+import GoogleProvider from 'next-auth/providers/google'
+
+export const authOptions: NextAuthOptions = {
+  // PrismaAdapter로 유저 정보 간편하게 저장
+  adapter: PrismaAdapter(prisma),
+  providers: [
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID || '',
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+    }),
+  ],
+}
+```
+
+1. `Prisma Adapter 세팅`: 우선 아래와 같이 Prisma Adapter를 설치하고, next-auth 파일에 정의
+   - `yarn add @auth/prisma-adapter`
+
+---
+
+```
+model Account {
+  id                 String  @id @default(cuid())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?  @db.Text
+  refresh_token_expires_in    Int?
+  access_token       String?  @db.Text
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?  @db.Text
+  session_state      String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id          String     @id @default(uuid())
+  email       String?    @unique
+  name        String?
+  image       String?
+  desc        String?
+  emailVerified  Boolean?
+  phone       String?
+  address     String?
+  rooms       Room[]
+  accounts    Account[]
+  sessions    Session[]
+  likes       Like[]
+  comments    Comment[]
+  bookings    Booking[]
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+```
+
+2. prisma.schema 파일에 스키마를 정의해주고, migrate 하기
+   - 전체 schema 참고: https://authjs.dev/reference/adapter/prisma
+
+---
+
+### 2.8 Middleware 세팅
+
+```tsx
+// middleware.ts
+export { default } from 'next-auth/middleware'
+
+export const config = {
+  matcher: [
+    '/users/mypage',
+    '/users/info',
+    '/users/edit',
+    '/users/likes',
+    '/users/comments',
+    '/users/bookings/:path*',
+    '/payments/:path*',
+    '/rooms/register/:path',
+    '/users/rooms',
+  ],
+}
+```
+
+- 특정 경로에서 항상 로그인을 해야하는 경우, middleware를 통해 보안을 걸 수 있음
+- .env 파일에 NEXTAUTH_SECRET 생성 후, 반드시 로그인이 필요한 페이지 경로를 Middleware 를 통해 정의 (위치는 /src/middleware.ts)
+- cf. https://next-auth.js.org/configuration/nextjs#middleware
+
+---
+
+### 2.9 구글 로그인 구현
+
+```tsx
+import GoogleProvider from 'next-auth/providers/google'
+
+// ...
+providers: [
+	GoogleProvider({
+		clientId: process.env.GOOGLE_CLIENT_ID || '',
+		clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+	}),
+],
+```
+
+- `https://console.developers.google.com/apis/credentials`에서 API 및 서비스 > 사용자 인증 정보 > API 키 생성
+  - 생성된 클라이언트 ID와 보안 비밀번호 환경변수에 추가 (GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET)
+  - 승인된 리디렉션 URI에 `http://localhost:3000/api/auth/callback/google` 추가
+- `/api/[…nextauth]/route.ts` 파일에 다음 코드 추가
+  - cf. 문서 참고: https://next-auth.js.org/providers/google
+
+---
+
+### 2.10 네이버 로그인 구현
+
+```tsx
+import NaverProvider from 'next-auth/providers/naver'
+
+// ...
+providers: [
+	NaverProvider({
+		clientId: process.env.NAVER_CLIENT_ID || '',
+		clientSecret: process.env.NAVER_CLIENT_SECRET || '',
+	}),
+],
+```
+
+- https://developers.naver.com/main/ 네이버 디벨로퍼 가입 후, 네이버 로그인 클릭
+  - 오픈 API 이용 신청 > 서비스 URL에 로컬 호스트 추가
+  - 네아로 Callback URL에 `http://localhost:3000/api/auth/callback/naver` 추가,
+  - 애플리케이션 정보의 클라이언트 아이디 및 시크릿 키 저장 (NAVER_CLIENT_ID, NAVER_CLIENT_SECRET)
+- `/api/[…nextauth]/route.ts` 파일에 다음 코드 추가:
+  - cf. 문서 참고: https://next-auth.js.org/providers/naver
+
+---
+
+### 2.11 카카오 로그인 구현
+
+- https://developers.kakao.com/ 카카오 디벨로퍼 가입 후, 앱 등록 > 동의 항목 설정
+- 내 앱 > 앱설정 > 앱 키 > REST API 키 복사 (KAKAO_CLIENT_ID)
+- 내 앱 > 제품 설정 > 카카오 로그인 > 보안에서 Client Secret 코드 발급 (KAKAO_CLIENT_SECRET)
+- 내 앱 > 제품 설정 > 카카오 로그인 > 활성화
+- 내 앱 > 제품 설정 > 카카오 로그인 > 동의 항목 구성 (닉네임- 필수, 프로필, 이메일)
+- 내 앱 > 제품 설정 > 카카오 로그인> Redirect URI > http://localhost:3000/api/auth/callback/kakao
+- cf. https://next-auth.js.org/providers/kakao
+- 카카오 로그인 주의할 점:
+  - Prisma Schema의 Account 모델 필드를 추가해줘야 함
+  - refresh_token_expires_in (Int) 라는 값이 따로 들어오기 때문에, 해당 optional 필드 추가
+
+```prisma
+model Account {
+  id                 String  @id @default(cuid())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?  @db.Text
+  // 해당 값 끝에 (?) 옵셔널 태그 추가
+  refresh_token_expires_in    Int?
+  access_token       String?  @db.Text
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?  @db.Text
+  session_state      String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+```

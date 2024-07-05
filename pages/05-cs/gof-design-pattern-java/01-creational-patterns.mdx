@@ -1,0 +1,1860 @@
+---
+title: '01-행동 패턴'
+date: 2024/06/29
+---
+
+## 1. 싱글톤(Singleton) 패턴
+
+![gof_1_1](https://raw.githubusercontent.com/berenickt/image-server/main/img/gof_1_1.png)
+
+- **인스턴스를 오직 한개만 제공하는 클래스**
+- 시스템 런타임, 환경 세팅에 대한 정보 등, 인스턴스가 여러개 일 때 문제가 생길 수 있는 경우가 있다.
+  - 인스턴스를 `오직 한개만 만들어 제공하는 클래스`가 필요하다.
+- e.g. 게임의 설정화면이 여러 개 설정화면이 아닌, 오직 하나의 설정화면을 글로벌하게 제공하는 것
+  - 게임의 설정화면이 여러 인스턴스였다면, A라는 설정화면, B라는 설정화면 등 난잡해짐
+- cf. singleton은 '단독 개체', '독신자'라는 뜻 말고도 '정확히 하나의 요소만 갖는 집합' 등의 의미가 있다
+
+---
+
+### 1.1 구현 방법1-가장 단순
+
+```java
+package me.whiteship.designpatterns._01_creational_patterns._01_singleton;
+
+import java.io.*;
+
+public class App {
+
+  public static void main(String[] args) {
+    Settings settings = new Settings();
+    Settings settings1 = new Settings()
+
+    System.out.println(settings != settings1); // true
+  }
+}
+```
+
+- 싱글톤 패턴을 구현하려면, new를 절대 사용하면 안된다.
+- Java에서 new을 사용해 생성자를 쓰지 못하게 만드려면,
+
+  - `private` 생성자를 만들어서,
+  - 해당 클래스 안에서만 접근할 수 있는 생성자를 만들어주면, 클래스 밖에서는 생성자를 사용할 수 없다.
+
+- 이렇게 되면 밖에서는 인스턴스를 만들 수 없기 떄문에,
+  - 해당 클래스 안에서 인스턴스를 만들어주는 방법을 글로벌하게 접근할 수 있는 방법을 제공해줘야 한다.
+  - 여기서 말하는 글로벌 접근이 가능한 방법은 `static`을 제공해주는 것이다.
+
+```java
+package me.whiteship.designpatterns._01_creational_patterns._01_singleton;
+
+/**
+ * private 생성자와 public static 메소드를 사용하는 방법
+ */
+public class Settings1 {
+
+  private static Settings1 instance;
+
+  private Settings1() {}
+
+  public static Settings1 getInstance() {
+    if (instance == null) {
+      instance = new Settings1();
+    }
+
+    return instance;
+  }
+}
+```
+
+```java
+public class App {
+  public static void main(String[] args) {
+    Settings1 settings = Settings1.getInstance();
+    Settings1 settings1 = Settings1.getInstance();
+
+    System.out.println(settings == settings1); // true
+  }
+}
+```
+
+이 방식의 심각한 문제점은, 그 중에서도 웹 앱을 만들떄, 멀티 쓰레드를 사용하게 된다.
+
+- 대부분의 코드는 멀티쓰레드, 즉, 여러 쓰레드가 동시 접근할 수 있는 코드가 된다
+- 멀티스레드 환경에서 이 코드는 안전하지 않다.
+
+> 💡 복습
+>
+> 1. 생성자를 private으로 만든 이유?
+>    - 오직 한 개의 인스턴스에만 접근하기 위해 생성자의 노출을 막기 위해서.
+> 2. getInstance() 메소드를 static으로 선언한 이유?
+>    - 글로벌하게 접근하게 만들기 위해 static 으로 선언하고,
+>    - 이는 JVM에 클래스 영역에 생성되어 글로벌하게 사용할 수 있다
+> 3. getInstance()가 멀티쓰레드 환경에서 안전하지 않은 이유?
+>    - 특히 웹 애플리케이션을 만들 때 멀티 스레드를 사용하게 된다.
+>    - 멀티쓰레드 환경에서는 오직 한 개의 인스턴스가 아니게 됩니다.
+>    - 새롭게 생성된 인스턴스에서도 instance가 null인지 여부를 판단하게 된다.
+>    - 이때 새로운 스레드에는 생성된 instance 가 없기 때문에 한 개의 인스턴스를 보장할 수 없다.
+
+---
+
+### 1.2 구현 방법2-멀티 쓰레드 환경에서 안전하게 구현
+
+```java
+/**
+ * synchronized 키워드를 사용해서 동기화 처리
+ */
+public class Settings2 {
+
+  private static Settings2 instance;
+
+  private Settings2() {}
+
+  public static synchronized Settings2 getInstance() {
+    if (instance == null) {
+      instance = new Settings2();
+    }
+
+    return instance;
+  }
+}
+```
+
+`동기화(synchronized)` 키워드를 사용해 멀티쓰레드 환경에 안전하게 만드는 방법
+
+- 다만 이 방법의 단점은 `getInstance` 메소드로 호출할 때마다,
+  - 동기화처리하는 작업때문에 성능 상에 약간의 불이익이 생길 수 있다.
+- 왜냐하면 동기화라는 메커니즘 자체가 어떤 락(열쇠, 잠금)을 사용해,
+  - 그 락을 가지고 있는 쓰레드만 이 영역에 접근할 수 있게끔 해주는 매커니즘이기 떄문이다.
+  - 다 쓰고 나면 그 락을 해제하는 메커니즘을 처리하는 과정이 필요하기 때문에 부가적인 성능 부하가 생길 수 있다.
+
+> 💡 복습
+>
+> 1. 자바의 동기화 블럭 처리 방법은?
+>    - 정확하게는 메서드에 synchronized하는데, 메소드 전체가 임계영역으로 설정된다.
+>    - 임계 영역으로 설정된 부분은 쓰레드가 synchronized 메소드가 호출된 시점부터
+>    - 해당 메소드가 포함된 객체의 Lock을 얻어 작업을 수행하다가 메소드가 종료되면 Lock을 반환한다.
+> 2. getInstance() 메소드 동기화시 사용하는 락(lock)은 인스턴스의 락인가 클래스의 락인가? 그 이유는?
+>    - 클래스의 락이다.
+>    - 만약 락이 인스턴스의 락이라면, 동기화시 하나의 객체를 보장할 수 없게 되기 때문
+
+---
+
+### 1.3 구현 방법3-이른 초기화
+
+만약에 이 객체를 꼭 나중에 만들지 않아도 되고, 이 객체를 만드는 비용이 그렇게 비싸지 않다면, 미리 만들 수도 있다.
+
+- 이른 초기화(eager initialization)을 사용하는 방법
+
+```java
+/**
+ * 이른 초기화(eager initialization)을 사용하는 방법
+ */
+public class Settings3 {
+
+  private static final Settings3 INSTANCE = new Settings3();
+
+  private Settings3() { }
+
+  public static Settings3 getInstance() {
+    return INSTANCE;
+  }
+
+}
+```
+
+> 💡 복습
+>
+> 1. 이른 초기화가 단점이 될 수도 있는 이유?
+>    - 미리 만들게 되는 것이 단점이 될 수 있는데, 만약 생성자에 많은 리소스를 사용되는 경우에는 좋지 않다.
+> 2. 만약에 생성자에서 checked 예외를 던진다면 이 코드를 어떻게 변경해야 할까요?
+>    - 만약 생성자에서 예외를 던진다면,
+>    - 그 안에서 try-catch 으로 예외 핸들링을 해야만 한다. 그렇지 않다면, 이른 초기화를 사용할 수 없다.
+
+---
+
+### 1.4 구현 방법4-double checked locking
+
+```java
+package me.whiteship.designpatterns._01_creational_patterns._01_singleton;
+
+/**
+ * double checked locking
+ */
+public class Settings4 {
+
+  private static volatile Settings4 instance;
+
+  private Settings4() {
+  }
+
+  public static Settings4 getInstance() {
+    if (instance == null) {
+      synchronized (Settings4.class) {
+        if (instance == null) {
+          instance = new Settings4();
+        }
+      }
+    }
+
+    return instance;
+  }
+
+}
+```
+
+- `double checked locking`으로 효율적인 동기화 블럭 만들기
+- java 1.5 이상에서 동작
+
+> 💡 복습
+>
+> 1. `double check locking`이라고 부르는 이유?
+>    - 2번에 걸쳐 단 하나의 객체임을 체크하기 때문이다.
+>    - if 문이 2번 사용되는데, 첫번째는 instance가 null일 경우와,
+>      - 동기화 클래스 synchronized(xx.class) 에서 한번 더 체크하기 때문이다.
+>    - 동기화 매커니즘을 사용하지 않습니다.
+>    - 만약 instance가 있다면 바로 리턴하기 때문이다.
+> 2. `instacne` 변수는 어떻게 정의해야 하는가? 그 이유는?
+>    - `volatile`을 사용하여, 가장 최신의 객체를 가져오도록 한다.
+>    - Multi Thread 환경에서 하나의 Thread만 read & write하고,
+>    - 나머지 Thread가 read하는 상황에서 가장 최신의 값을 보장한다.
+
+---
+
+### 1.5 구현 방법5-static inner 클래스 사용 (권장)
+
+```java
+package me.whiteship.designpatterns._01_creational_patterns._01_singleton;
+
+/**
+ * static inner 클래스 홀더
+ */
+public class Settings5 {
+
+  private Settings5() {
+  }
+
+  private static class Settings5Holder {
+    private static final Settings5 INSTANCE = new Settings5();
+  }
+
+  public static Settings5 getInstance() {
+    return Settings5Holder.INSTANCE;
+  }
+
+}
+```
+
+- 권장하는 방법중 하나.
+- 이 방법은 static final 를 썻는데도, 왜 `지연 초기화(lazy intialization)`라고 볼 수 있는가?
+  - Holder를 통해 객체를 생성하게 되는데,
+  - 이렇게 할 경우 `getIntance()`가 호출될 때 로딩되기 때문이다.
+
+---
+
+### 1.6 싱글톤 구현 깨트리는 방법1
+
+```java
+public class App {
+
+  public static void main(String[] args) throws IOException, ClassNotFoundException {
+    Settings settings = Settings.getInstance();
+
+    Constructor<Settings> declaredConstructor = Settings.class.getDeclaredConstructor();
+    declaredConstructor.setAccessible(true);
+    Settings settings1 = declaredConstructor.newInstance();
+
+    System.out.println(settings == settings1); // false
+  }
+
+}
+```
+
+> 💡 복습
+>
+> 1. 리플렉션에 대해 설명하세요.
+>    - 구체적인 클래스 타입을 알지 못해도,
+>    - 그 클래스의 메서드, 타입, 변수들에 접근할 수 있도록 해주는 자바 API
+> 2. `setAccessible(true)`를 사용하는 이유는?
+>    - private 생성자에 접근하기 위한 목적이다.
+
+---
+
+### 1.7 싱글톤 구현 깨트리는 방법2
+
+```java
+public class App {
+
+  public static void main(String[] args) throws IOException, ClassNotFoundException {
+    Settings5 settings = Settings5.INSTANCE;
+
+    Settings5 settings1 = null;
+    try (ObjectOutput out = new ObjectOutputStream(new FileOutputStream("settings.obj"))) {
+      out.writeObject(settings);
+    }
+
+    try (ObjectInput in = new ObjectInputStream(new FileInputStream("settings.obj"))) {
+      settings1 = (Settings5) in.readObject();
+    }
+
+    System.out.println(settings == settings1);
+  }
+
+}
+```
+
+> 💡 복습
+>
+> 1. 자바의 직렬화 & 역직렬화에 대해 설명하세요.
+>    - 직렬화: 자바 시스템 내부에서 사용되는 객체 또는 데이터를 바이트(byte) 형태로 변환
+>    - 역직렬화: 바이트로 변환된 데이터를 다시 객체로 변환
+> 2. SerializableId란 무엇이며 왜 쓰는가?
+>    - 직렬화된 클래스의 버전을 기억하여 로드된 클래스와 직렬화된 객체가 호환되는지 확인한다.
+>    - SerializableId가 다르면 역직렬화 할 수 없다.
+> 3. try-resource 블럭에 대해 설명하세요
+>    - try 코드 블럭이 끝나면 자동으로 자원을 종료해주기 때문에 명시적으로 자원 반환을 하지 않아도 된다.
+
+---
+
+### 1.8 구현 방법6-enum (권장)
+
+```java
+/**
+ * Enum을 사용해서 싱글톤 만들기
+ */
+public enum Settings5 {
+  INSTANCE,
+}
+```
+
+1. enum 타입의 인스턴스를 리팩토링을 만들 수 있는가?
+   - 만들 수 없다.
+   - enum 타입의 클래스는 리플랙션을 통해 만들 수 없도록 제한한다.
+2. enum으로 싱글톤 타입을 구현할 때의 단점은?
+   - 단점은 이른 초기화와 같이 미리 만들어진다는 것이다.
+   - 그리고 상속을 사용할 수 없다.
+3. 직렬화 & 역직렬화 시에 별도로 구현해야 하는 메소드가 있는가?
+   - 별다른 장치가 없어도 Enum 클래스는 직렬화 & 역직렬화가 된다.
+   - 그러나 getResolves() 구현시 역직렬화시 변경을 가할 수 있다.
+
+---
+
+### 1.9 실무에서는 어떻게 쓰이나?
+
+- 스프링에서 빈의 스코프 중에 하나로 싱글톤 스코프.
+- 자바 java.lang.Runtime
+- 다른 디자인 패턴(빌더, 퍼사드, 추상 팩토리 등) 구현체의 일부로 쓰이기도 한다.
+
+---
+
+## 2. 팩토리 메서드(Factory method) 패턴
+
+![gof_1_2](https://raw.githubusercontent.com/berenickt/image-server/main/img/gof_1_2.png)
+
+구체적으로 **어떤 인스턴스를 만들지는 서브 클래스가 정한다.**
+
+- 다양한 구현체(Product)가 있고,
+  - 그 중에서 특정한 구현체를 만들 수 있는 다양한 팩토리 (Creator)를 제공할 수 있다.
+- e.g. 어떤 배를 만든다고 가정해보면,
+  - 하얀 배를 만드는 공장에는 하얀배만 만들다가,
+  - 사업이 잘되서 추후에 검정 배를 만드는 공장도 만들었다.
+  - 색 칠하는 작업, 로고를 새기고, 다 만들면 알림을 울리는 등의 처리 프로세스가 있을 것이다.
+  - 이 과정을 한 로직에 담아두면 복잡해질 것이다.
+  - 그래서 개별 과정이 담긴 추상화되어 있는 공장을 만든다.
+- How? 위 그림처럼 공장(factory) 역할을 할 인터페이스를 만들고,
+  - 이 `인터페이스에 정의되어 있는 메소드`는 여러 개가 있을 수 있다.
+  - 이 구현부 중에 일부 바뀌어야 되는 것들을 `추상 메서드`로 빼내서 **하위 클래스에서 만들게끔** 한다.
+  - 이 팩토리에서 만들어낸 다양한 객체를 만들 수 있게끔 Product라는 인터페이스를 만들고,
+  - 그 각각의 구체적인 팩토리 안에서 구체적인 인스턴스들을 만들게끔 설계하면,
+  - 유연한 확장에 용이한 구조가 된다.
+- cf. factory는 '공장'이란 뜻이고, 공장은 물건을 만드는 곳이다. 여기서 물건에 해당되는 것이 바로 인스턴스이다
+
+---
+
+### 2.1 구현 방법
+
+![gof_1_3](https://raw.githubusercontent.com/berenickt/image-server/main/img/gof_1_3.png)
+
+`팩토리 메소드 구현 방법` : **확장에 열려있고 변경에 닫혀있는 구조**로 만들어보자
+
+---
+
+### 2.2 예시 - 기존
+
+```java
+// Ship.java
+package me.whiteship.designpatterns._01_creational_patterns._02_factory_method._01_before;
+
+public class Ship {
+
+    private String name;
+
+    private String color;
+
+    private String logo;
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getColor() {
+        return color;
+    }
+
+    public void setColor(String color) {
+        this.color = color;
+    }
+
+    public String getLogo() {
+        return logo;
+    }
+
+    public void setLogo(String logo) {
+        this.logo = logo;
+    }
+
+    @Override
+    public String toString() {
+        return "Ship{" + "name='" + name + '\'' + ", color='" + color + '\'' + ", logo='" + logo + '\'' + '}';
+    }
+}
+```
+
+```java
+// ShipFactory.java
+package me.whiteship.designpatterns._01_creational_patterns._02_factory_method._01_before;
+
+public class ShipFactory {
+
+  public static Ship orderShip(String name, String email) {
+    // validate
+    if (name == null || name.isBlank()) {
+      throw new IllegalArgumentException("배 이름을 지어주세요.");
+    }
+    if (email == null || email.isBlank()) {
+      throw new IllegalArgumentException("연락처를 남겨주세요.");
+    }
+
+    prepareFor(name);
+
+    Ship ship = new Ship();
+    ship.setName(name);
+
+    // Customizing for specific name
+    if (name.equalsIgnoreCase("whiteship")) {
+      ship.setLogo("\uD83D\uDEE5️");
+    } else if (name.equalsIgnoreCase("blackship")) {
+      ship.setLogo("⚓");
+    }
+
+    // coloring
+    if (name.equalsIgnoreCase("whiteship")) {
+      ship.setColor("whiteship");
+    } else if (name.equalsIgnoreCase("blackship")) {
+      ship.setColor("black");
+    }
+
+    // notify
+    sendEmailTo(email, ship);
+
+    return ship;
+  }
+
+  private static void prepareFor(String name) {
+    System.out.println(name + " 만들 준비 중");
+  }
+
+  private static void sendEmailTo(String email, Ship ship) {
+    System.out.println(ship.getName() + " 다 만들었습니다.");
+  }
+}
+
+```
+
+```java
+// Client.java
+package me.whiteship.designpatterns._01_creational_patterns._02_factory_method._01_before;
+
+public class Client {
+
+  public static void main(String[] args) {
+    Ship whiteship = ShipFactory.orderShip("Whiteship", "keesun@mail.com");
+    System.out.println(whiteship);
+
+    Ship blackship = ShipFactory.orderShip("Blackship", "keesun@mail.com");
+    System.out.println(blackship);
+  }
+}
+```
+
+---
+
+### 2.3 예시 - 변경
+
+```java
+// ShipFactory.java
+package me.whiteship.designpatterns._01_creational_patterns._02_factory_method._02_after;
+
+public interface ShipFactory {
+  default Ship orderShip(String name, String email) {
+    validate(name, email);
+    prepareFor(name);
+    Ship ship = createShip();
+    sendEmailTo(email, ship);
+    return ship;
+  }
+
+  void sendEmailTo(String email, Ship ship);
+
+  Ship createShip();
+
+  private void validate(String name, String email) {
+    if (name == null || name.isBlank()) {
+      throw new IllegalArgumentException("배 이름을 지어주세요.");
+    }
+    if (email == null || email.isBlank()) {
+      throw new IllegalArgumentException("연락처를 남겨주세요.");
+    }
+  }
+
+  private void prepareFor(String name) {
+    System.out.println(name + " 만들 준비 중");
+  }
+}
+```
+
+```java
+// DefaultShipFactory.java
+package me.whiteship.designpatterns._01_creational_patterns._02_factory_method._02_after;
+
+public abstract class DefaultShipFactory implements ShipFactory {
+
+  @Override
+  public void sendEmailTo(String email, Ship ship) {
+    System.out.println(ship.getName() + " 다 만들었습니다.");
+  }
+}
+```
+
+```java
+// WhiteshipFactory.java
+package me.whiteship.designpatterns._01_creational_patterns._02_factory_method._02_after;
+
+public class WhiteshipFactory extends DefaultShipFactory {
+
+  @Override
+  public Ship createShip() {
+    return new Whiteship();
+  }
+}
+```
+
+```java
+// Ship.java
+package me.whiteship.designpatterns._01_creational_patterns._02_factory_method._02_after;
+
+import me.whiteship.designpatterns._01_creational_patterns._03_abstract_factory._02_after.Anchor;
+import me.whiteship.designpatterns._01_creational_patterns._03_abstract_factory._02_after.Wheel;
+
+public class Ship {
+
+  private String name;
+
+  private String color;
+
+  private String logo;
+
+  private Wheel wheel;
+
+  private Anchor anchor;
+
+  public String getName() {
+    return name;
+  }
+
+  public void setName(String name) {
+    this.name = name;
+  }
+
+  public String getColor() {
+    return color;
+  }
+
+  public void setColor(String color) {
+    this.color = color;
+  }
+
+  public String getLogo() {
+    return logo;
+  }
+
+  public void setLogo(String logo) {
+    this.logo = logo;
+  }
+
+  @Override
+  public String toString() {
+    return (
+      "Ship{" + "name='" + name +
+      '\'' + ", color='" + color +
+      '\'' + ", logo='" + logo + '\'' +
+      '}'
+    );
+  }
+
+  public Wheel getWheel() {
+    return wheel;
+  }
+
+  public void setWheel(Wheel wheel) {
+    this.wheel = wheel;
+  }
+
+  public Anchor getAnchor() {
+    return anchor;
+  }
+
+  public void setAnchor(Anchor anchor) {
+    this.anchor = anchor;
+  }
+}
+```
+
+```java
+// Whiteship.java
+package me.whiteship.designpatterns._01_creational_patterns._02_factory_method._02_after;
+
+public class Whiteship extends Ship {
+
+  public Whiteship() {
+    setName("whiteship");
+    setLogo("\uD83D\uDEE5");
+    setColor("white");
+  }
+}
+```
+
+```java
+// BlackshipFactory.java
+package me.whiteship.designpatterns._01_creational_patterns._02_factory_method._02_after;
+
+public class BlackshipFactory extends DefaultShipFactory {
+
+  @Override
+  public Ship createShip() {
+    return new Blackship();
+  }
+}
+```
+
+```java
+// Blackship.java
+package me.whiteship.designpatterns._01_creational_patterns._02_factory_method._02_after;
+
+public class Blackship extends Ship {
+
+  public Blackship() {
+    setName("blackship");
+    setColor("black");
+    setLogo("⚓");
+  }
+}
+```
+
+```java
+// Client.java
+package me.whiteship.designpatterns._01_creational_patterns._02_factory_method._02_after;
+
+public class Client {
+
+  public static void main(String[] args) {
+    Client client = new Client();
+    client.print(new WhiteshipFactory(), "whiteship", "keesun@mail.com");
+    client.print(new BlackshipFactory(), "blackship", "keesun@mail.com");
+  }
+
+  private void print(ShipFactory shipFactory, String name, String email) {
+    System.out.println(shipFactory.orderShip(name, email));
+  }
+}
+```
+
+---
+
+### 2.4 정리 및 장단점
+
+구체적으로 어떤 것을 만들지는 서브 클래스가 정한다.
+
+- 팩토리 메소드 패턴을 적용했을 때의 장점은? 단점은?
+  - `장점` : **확장에 열려있고 변경에 닫혀있는 객체 지향 원칙을 적용**해서,
+    - 기존 코드를 변경하지 않고, 새로운 인스턴스를 다른 방법으로 확장이 가능하다
+  - `단점` : 클래스가 많아 진다.
+- “확장에 열려있고 변경에 닫혀있는 객체 지향 원칙”을 설명하세요.
+  - **기존 코드를 변경하지 않으면서, 새로운 기능을 확장할 수 있는 구조**를 만드는 것
+- 자바 8에 추가된 default 메소드에 대해 설명하세요.
+  - 인터페이스에서 기본적인 구현체를 만들 수 있다.
+  - 오히려 추상 클래스에서 하던 일을 인터페이스에서도 할 수 있게끔 되었기 때문에
+    - Java 8부터는 추상 클래스를 그렇게 많이 쓰지는 않는다.
+  - 정말 추상 클래스가 필요한 경우가 아니라면, 인터페이스에 있는 defaut 메서드를 사용해서 시도해보길 바란다.
+  - 나아가 Java 9에서는 인터페이스에 private 메소드를 정의하는 것도 있다.
+
+---
+
+### 2.5 실무에서는 어떻게 쓰이나?
+
+단순한 팩토리 패턴
+
+- 매개변수의 값에 따라 또는 메소드에 따라 각기 다른 인스턴스를 리턴하는 단순한 버전의 팩토리 패턴
+- `java.lang.Calendar` 또는 `java.lang.NumberFormat`
+
+```java
+package me.whiteship.designpatterns._01_creational_patterns._02_factory_method._03_java;
+
+import me.whiteship.designpatterns._01_creational_patterns._02_factory_method._02_after.Blackship;
+import me.whiteship.designpatterns._01_creational_patterns._02_factory_method._02_after.Whiteship;
+
+public class SimpleFactory {
+
+  public Object createProduct(String name) {
+    if (name.equals("whiteship")) {
+      return new Whiteship();
+    } else if (name.equals("blackship")) {
+      return new Blackship();
+    }
+
+    throw new IllegalArgumentException();
+  }
+}
+```
+
+```java
+package me.whiteship.designpatterns._01_creational_patterns._02_factory_method._03_java;
+
+import java.util.Calendar;
+import java.util.Locale;
+
+public class CalendarExample {
+
+  public static void main(String[] args) {
+    System.out.println(Calendar.getInstance().getClass()); // 그레고리력 달력
+    System.out.println(
+      Calendar
+        .getInstance(Locale.forLanguageTag("th-TH-x-lvariant-TH"))
+        .getClass()
+    ); // 타이완 달력
+    System.out.println(
+      Calendar
+        .getInstance(Locale.forLanguageTag("ja-JP-x-lvariant-JP"))
+        .getClass()
+    ); // 일본 달력
+  }
+}
+```
+
+스프링 BeanFactory
+
+- Object 타입의 Product를 만드는 BeanFacotry라는 Creator!
+
+```java
+package me.whiteship.designpatterns._01_creational_patterns._02_factory_method._03_java;
+
+import org.springframework.beans.factory.BeanFactory;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+
+public class SpringBeanFactoryExample {
+
+  public static void main(String[] args) {
+    BeanFactory xmlFactory = new ClassPathXmlApplicationContext("config.xml");
+    String hello = xmlFactory.getBean("hello", String.class);
+    System.out.println(hello);
+
+    BeanFactory javaFactory = new AnnotationConfigApplicationContext(
+      Config.class
+    );
+    String hi = javaFactory.getBean("hello", String.class);
+    System.out.println(hi);
+  }
+}
+```
+
+---
+
+## 3. 추상 팩토리(Abstract factory) 패턴
+
+![gof_1_4](https://raw.githubusercontent.com/berenickt/image-server/main/img/gof_1_4.png)
+
+**서로 관련있는 여러 객체(=인스턴스)를 만들어주는 인터페이스**.
+
+- 구체적으로 어떤 클래스의 인스턴스를(concrete product)를 사용하는지 감출 수 있다.
+- 인터페이스로 정의하거나, 추상 클래스로 정의하거나 그래서 구체적인 Factory를 만드는 것까지는 팩토리 메서드와 비슷하지만,
+
+  - 초점이 클라이언트쪽에 있다.
+  - **Factory를 사용하는 클라이언트 쪽에 초점**을 바라보면 `추상 팩토리 패턴`이다.
+  - 반대로 **Factory쪽에만 초점**으로 바라보면 `팩토리 메서드 패턴`이다.
+
+- 팩토리 메소드의 목적 자체가 **클라이언트의 코드를 인터페이스 기반으로 코딩하는 것**에 있다.
+- 위 그림은 `팩토리 메서드 패턴`에서 클라이언트만 추가된 것일 뿐이다.
+
+  - 내부 구조는 `팩토리 메서드 패턴`과 굉장히 유사하다.
+
+- e.g. 하얀 배와 검정 배를 만드는데, 비슷한 부품들이 세트로 있을 것이다. (e.g. 닻이나 배의 바퀴)
+  - 그러다 발전된 부품이 새로 나왔다면, 해당 제품에 모두 다 바꿔줘야 될 것이다.
+  - 이렇게 모두 바뀌는 것을 바뀌지 않게끔 하면서 제품군을 늘려나갈 수 있는 방법으로 추상 팩토리를 적용해본다.
+
+---
+
+### 3.1 구현 방법
+
+![gof_1_5](https://raw.githubusercontent.com/berenickt/image-server/main/img/gof_1_5.png)
+
+`클라이언트 코드`에서 **구체적인 클래스의 의존성을 제거**한다.
+
+---
+
+### 3.2 예시 - 기존
+
+```java
+// Anchor.java
+package me.whiteship.designpatterns._01_creational_patterns._03_abstract_factory._02_after;
+
+public interface Anchor {}
+```
+
+```java
+// WhiteAnchor.java
+package me.whiteship.designpatterns._01_creational_patterns._03_abstract_factory._01_before;
+
+import me.whiteship.designpatterns._01_creational_patterns._03_abstract_factory._02_after.Anchor;
+
+public class WhiteAnchor implements Anchor {}
+```
+
+```java
+// Wheel.java
+package me.whiteship.designpatterns._01_creational_patterns._03_abstract_factory._02_after;
+
+public interface Wheel {}
+```
+
+```java
+// WhiteWheel.java
+package me.whiteship.designpatterns._01_creational_patterns._03_abstract_factory._01_before;
+
+import me.whiteship.designpatterns._01_creational_patterns._03_abstract_factory._02_after.Wheel;
+
+public class WhiteWheel implements Wheel {}
+```
+
+```java
+// WhiteshipFactory.java
+package me.whiteship.designpatterns._01_creational_patterns._03_abstract_factory._01_before;
+
+import me.whiteship.designpatterns._01_creational_patterns._02_factory_method._02_after.DefaultShipFactory;
+import me.whiteship.designpatterns._01_creational_patterns._02_factory_method._02_after.Ship;
+import me.whiteship.designpatterns._01_creational_patterns._02_factory_method._02_after.Whiteship;
+
+public class WhiteshipFactory extends DefaultShipFactory {
+
+  @Override
+  public Ship createShip() {
+    Ship ship = new Whiteship();
+    ship.setAnchor(new WhiteAnchor());
+    ship.setWheel(new WhiteWheel());
+    return ship;
+  }
+}
+```
+
+---
+
+### 3.3 예시 - 변경
+
+```java
+// WhiteAnchorPro.java
+package me.whiteship.designpatterns._01_creational_patterns._03_abstract_factory._02_after;
+
+public class WhiteAnchorPro implements Anchor {}
+```
+
+```java
+// WhiteWheelPro.java
+package me.whiteship.designpatterns._01_creational_patterns._03_abstract_factory._02_after;
+
+public class WhiteWheelPro implements Wheel {}
+```
+
+```java
+// ShipPartsFactory.java
+package me.whiteship.designpatterns._01_creational_patterns._03_abstract_factory._02_after;
+
+import me.whiteship.designpatterns._01_creational_patterns._03_abstract_factory._01_before.WhiteAnchor;
+import me.whiteship.designpatterns._01_creational_patterns._03_abstract_factory._01_before.WhiteWheel;
+
+public class WhiteshipPartsFactory implements ShipPartsFactory {
+
+  @Override
+  public Anchor createAnchor() {
+    return new WhiteAnchor();
+  }
+
+  @Override
+  public Wheel createWheel() {
+    return new WhiteWheel();
+  }
+}
+```
+
+```java
+// WhiteshipPartsFactory.java
+package me.whiteship.designpatterns._01_creational_patterns._03_abstract_factory._02_after;
+
+public class WhitePartsProFactory implements ShipPartsFactory {
+
+  @Override
+  public Anchor createAnchor() {
+    return new WhiteAnchorPro();
+  }
+
+  @Override
+  public Wheel createWheel() {
+    return new WhiteWheelPro();
+  }
+}
+```
+
+```java
+// WhiteshipFactory.java
+package me.whiteship.designpatterns._01_creational_patterns._03_abstract_factory._02_after;
+
+import me.whiteship.designpatterns._01_creational_patterns._02_factory_method._02_after.DefaultShipFactory;
+import me.whiteship.designpatterns._01_creational_patterns._02_factory_method._02_after.Ship;
+import me.whiteship.designpatterns._01_creational_patterns._02_factory_method._02_after.Whiteship;
+
+public class WhiteshipFactory extends DefaultShipFactory {
+
+  private ShipPartsFactory shipPartsFactory;
+
+  public WhiteshipFactory(ShipPartsFactory shipPartsFactory) {
+    this.shipPartsFactory = shipPartsFactory;
+  }
+
+  @Override
+  public Ship createShip() {
+    Ship ship = new Whiteship();
+    ship.setAnchor(shipPartsFactory.createAnchor());
+    ship.setWheel(shipPartsFactory.createWheel());
+    return ship;
+  }
+}
+```
+
+```java
+// ShipInventory.java
+package me.whiteship.designpatterns._01_creational_patterns._03_abstract_factory._02_after;
+
+import me.whiteship.designpatterns._01_creational_patterns._02_factory_method._02_after.Ship;
+import me.whiteship.designpatterns._01_creational_patterns._02_factory_method._02_after.ShipFactory;
+
+public class ShipInventory {
+
+  public static void main(String[] args) {
+    ShipFactory shipFactory = new WhiteshipFactory(new WhiteshipPartsFactory());
+    Ship ship = shipFactory.createShip();
+    System.out.println(ship.getAnchor().getClass());
+    System.out.println(ship.getWheel().getClass());
+  }
+}
+```
+
+---
+
+### 3.4 정리
+
+팩토리 메소드 패턴과 굉장히 흡사한데 무엇이 다른건가.
+
+- 모양과 효과는 비슷하지만…
+  - 둘 다 구체적인 객체 생성 과정을 `추상화한 인터페이스`를 제공한다.
+- 관점이 다르다.
+  - `팩토리 메소드 패턴`은 `팩토리를 구현하는 방법(inheritance)`에 초점을 둔다.
+  - `추상 팩토리 패턴`은 `팩토리를 사용하는 방법(composition)`에 초점을 둔다.
+- 목적이 조금 다르다.
+  - `팩토리 메소드 패턴`은 구체적인 **객체 생성 과정을 하위 또는 구체적인 클래스로 옮기는 것이 목적**.
+  - `추상 팩토리 패턴`은 관련있는 **여러 객체를 구체적인 클래스에 의존하지 않고 만들 수 있게 해주는 것이 목적**
+
+---
+
+### 3.5 실무에서는 어떻게 쓰이나?
+
+자바 라이브러리
+
+- javax.xml.xpath.XPathFactory#newInstance()
+- javax.xml.transform.TransformerFactory#newInstance()
+- javax.xml.parsers.DocumentBuilderFactory#newInstance()
+
+```java
+// DocumentBuilderFactoryExample.java
+package me.whiteship.designpatterns._01_creational_patterns._03_abstract_factory._03_java;
+
+import java.io.File;
+import java.io.IOException;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
+
+public class DocumentBuilderFactoryExample {
+
+    public static void main(String[] args) throws ParserConfigurationException, IOException, SAXException {
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        DocumentBuilder builder = factory.newDocumentBuilder();
+
+        Document document = builder.parse(new File("src/main/resources/config.xml"));
+        System.out.println(document.getDocumentElement());
+    }
+}
+```
+
+스프링
+
+- FactoryBean과 그 구현체
+
+```java
+// ShipFactory.java
+package me.whiteship.designpatterns._01_creational_patterns._03_abstract_factory._03_java;
+
+import me.whiteship.designpatterns._01_creational_patterns._02_factory_method._02_after.Ship;
+import me.whiteship.designpatterns._01_creational_patterns._02_factory_method._02_after.Whiteship;
+import org.springframework.beans.factory.FactoryBean;
+
+public class ShipFactory implements FactoryBean<Ship> {
+
+    @Override
+    public Ship getObject() throws Exception {
+        Ship ship = new Whiteship();
+        ship.setName("whiteship");
+        return ship;
+    }
+
+    @Override
+    public Class<?> getObjectType() {
+        return Ship.class;
+    }
+}
+
+```
+
+```java
+// FactoryBeanConfig.java
+package me.whiteship.designpatterns._01_creational_patterns._03_abstract_factory._03_java;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class FactoryBeanConfig {
+
+    @Bean
+    public ShipFactory shipFactory() {
+        return new ShipFactory();
+    }
+}
+```
+
+```java
+// FactoryBeanExample.java
+package me.whiteship.designpatterns._01_creational_patterns._03_abstract_factory._03_java;
+
+import me.whiteship.designpatterns._01_creational_patterns._02_factory_method._02_after.Ship;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+
+public class FactoryBeanExample {
+
+    public static void main(String[] args) {
+        // **** XML
+        // ApplicationContext applicationContext = new ClassPathXmlApplicationContext("config.xml");
+        // Ship whiteship = applicationContext.getBean("whiteship", Ship.class);
+        // System.out.println(whiteship.getName());
+
+        // **** Java
+        ApplicationContext applicationContext = new AnnotationConfigApplicationContext(FactoryBeanConfig.class);
+        Ship bean = applicationContext.getBean(Ship.class);
+        System.out.println(bean);
+    }
+}
+```
+
+---
+
+## 4. 빌더(Builder) 패턴
+
+### 4.1 패턴 소개
+
+![gof_1_6](https://raw.githubusercontent.com/berenickt/image-server/main/img/gof_1_6.png)
+
+**동일한 프로세스를 거쳐 다양한 구성의 인스턴스를 만드는 방법**.
+
+- (복잡한) 객체를 만드는 프로세스를 독립적으로 분리할 수 있다
+- 복잡한 객체의 생성 과정과 표현 방법을 분리하여,
+  - 동일한 생성 절차에서 서로 다른 표현 결과를 만들 수 있게 하는 디자인 패턴
+
+![gof_1_7](https://raw.githubusercontent.com/berenickt/image-server/main/img/gof_1_7.png)
+
+e.g. `빌더 패턴`을 적용하여 여행 계획을 만드는 과정은 마치 **여행사에서 여행 패키지를 조합하는 것과 유사**하다.
+
+- 여행 계획을 만들기 위해, 우리는 여행의 제목, 시작 날짜, 숙박 일수, 숙소, 그리고 여행 일정 등 다양한 세부 사항을 결정해야 한다.
+- 이 모든 정보를 한 번에 설정하는 대신, 빌더 패턴을 사용하면 **여행 계획을 단계별로 구성**할 수 있다.
+
+> 1. **여행 계획 시작**: 먼저, 여행 계획을 만들기 위한 빌더 객체를 생성한다. 이 객체는 여행 계획의 기초를 마련한다.
+> 2. **세부 사항 추가**: 빌더 객체를 사용하여 여행 계획의 세부 사항을 단계별로 추가한다.
+>    - e.g. 여행의 제목을 설정하고, 여행의 시작 날짜를 지정한다.
+>    - 그 다음, 숙박 일수와 숙소를 결정하고, 여행 일정에 여러 활동을 추가한다.
+>    - 이 과정에서 각 단계는 메소드 체이닝을 통해 연결되어, 코드의 가독성을 높인다.
+> 3. **여행 계획 완성**: 모든 세부 사항을 추가한 후, 빌더 객체는 최종적으로 여행 계획 객체를 반환합니다.
+>    - 이 객체는 앞서 설정한 모든 세부 사항을 포함합니다.
+
+빌더 패턴의 장점은 여행 계획과 같은 복잡한 객체를 유연하고 직관적으로 구성할 수 있다.
+
+- 각 단계에서 필요한 정보만을 설정할 수 있으며, **모든 세부 사항을 한 번에 설정할 필요가 없다**.
+- 또한, 빌더 패턴은 **선택적인 세부 사항을 쉽게 처리**할 수 있게 해주며, 최종 객체의 생성 과정을 더 명확하고 이해하기 쉽게 만들어 준다.
+
+---
+
+### 4.2 예시 - 기존
+
+```java
+// TourPlan.java
+package me.whiteship.designpatterns._01_creational_patterns._04_builder._01_before;
+
+import java.time.LocalDate;
+import java.util.List;
+
+public class TourPlan {
+
+    private String title;
+
+    private int nights;
+
+    private int days;
+
+    private LocalDate startDate;
+
+    private String whereToStay;
+
+    private List<DetailPlan> plans;
+
+    public TourPlan() {
+    }
+
+    public TourPlan(String title, int nights, int days, LocalDate startDate, String whereToStay,
+            List<DetailPlan> plans) {
+        this.title = title;
+        this.nights = nights;
+        this.days = days;
+        this.startDate = startDate;
+        this.whereToStay = whereToStay;
+        this.plans = plans;
+    }
+
+    @Override
+    public String toString() {
+        return "TourPlan{" + "title='" + title + '\'' + ", nights=" + nights + ", days=" + days + ", startDate="
+                + startDate + ", whereToStay='" + whereToStay + '\'' + ", plans=" + plans + '}';
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public int getNights() {
+        return nights;
+    }
+
+    public void setNights(int nights) {
+        this.nights = nights;
+    }
+
+    public int getDays() {
+        return days;
+    }
+
+    public void setDays(int days) {
+        this.days = days;
+    }
+
+    public LocalDate getStartDate() {
+        return startDate;
+    }
+
+    public void setStartDate(LocalDate startDate) {
+        this.startDate = startDate;
+    }
+
+    public String getWhereToStay() {
+        return whereToStay;
+    }
+
+    public void setWhereToStay(String whereToStay) {
+        this.whereToStay = whereToStay;
+    }
+
+    public List<DetailPlan> getPlans() {
+        return plans;
+    }
+
+    public void setPlans(List<DetailPlan> plans) {
+        this.plans = plans;
+    }
+
+    public void addPlan(int day, String plan) {
+        this.plans.add(new DetailPlan(day, plan));
+    }
+}
+```
+
+```java
+// DetailPlan.java
+package me.whiteship.designpatterns._01_creational_patterns._04_builder._01_before;
+
+public class DetailPlan {
+
+    private int day;
+
+    private String plan;
+
+    public DetailPlan(int day, String plan) {
+        this.day = day;
+        this.plan = plan;
+    }
+
+    public int getDay() {
+        return day;
+    }
+
+    public void setDay(int day) {
+        this.day = day;
+    }
+
+    public String getPlan() {
+        return plan;
+    }
+
+    public void setPlan(String plan) {
+        this.plan = plan;
+    }
+
+    @Override
+    public String toString() {
+        return "DetailPlan{" + "day=" + day + ", plan='" + plan + '\'' + '}';
+    }
+}
+```
+
+```java
+// App.class
+package me.whiteship.designpatterns._01_creational_patterns._04_builder._01_before;
+
+import java.time.LocalDate;
+
+public class App {
+
+    public static void main(String[] args) {
+        TourPlan shortTrip = new TourPlan();
+        shortTrip.setTitle("오레곤 롱비치 여행");
+        shortTrip.setStartDate(LocalDate.of(2021, 7, 15));
+
+        TourPlan tourPlan = new TourPlan();
+        tourPlan.setTitle("칸쿤 여행");
+        tourPlan.setNights(2);
+        tourPlan.setDays(3);
+        tourPlan.setStartDate(LocalDate.of(2020, 12, 9));
+        tourPlan.setWhereToStay("리조트");
+        tourPlan.addPlan(0, "체크인 이후 짐풀기");
+        tourPlan.addPlan(0, "저녁 식사");
+        tourPlan.addPlan(1, "조식 부페에서 식사");
+        tourPlan.addPlan(1, "해변가 산책");
+        tourPlan.addPlan(1, "점심은 수영장 근처 음식점에서 먹기");
+        tourPlan.addPlan(1, "리조트 수영장에서 놀기");
+        tourPlan.addPlan(1, "저녁은 BBQ 식당에서 스테이크");
+        tourPlan.addPlan(2, "조식 부페에서 식사");
+        tourPlan.addPlan(2, "체크아웃");
+    }
+}
+```
+
+---
+
+### 4.3 예시 - 변경
+
+```java
+// TourPlanBuilder.java
+package me.whiteship.designpatterns._01_creational_patterns._04_builder._02_after;
+
+import me.whiteship.designpatterns._01_creational_patterns._04_builder._01_before.TourPlan;
+
+import java.time.LocalDate;
+
+public interface TourPlanBuilder {
+
+    TourPlanBuilder nightsAndDays(int nights, int days);
+
+    TourPlanBuilder title(String title);
+
+    TourPlanBuilder startDate(LocalDate localDate);
+
+    TourPlanBuilder whereToStay(String whereToStay);
+
+    TourPlanBuilder addPlan(int day, String plan);
+
+    TourPlan getPlan();
+
+}
+```
+
+```java
+// DefaultTourBuilder.java
+package me.whiteship.designpatterns._01_creational_patterns._04_builder._02_after;
+
+import me.whiteship.designpatterns._01_creational_patterns._04_builder._01_before.DetailPlan;
+import me.whiteship.designpatterns._01_creational_patterns._04_builder._01_before.TourPlan;
+
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+
+public class DefaultTourBuilder implements TourPlanBuilder {
+
+    private String title;
+
+    private int nights;
+
+    private int days;
+
+    private LocalDate startDate;
+
+    private String whereToStay;
+
+    private List<DetailPlan> plans;
+
+    @Override
+    public TourPlanBuilder nightsAndDays(int nights, int days) {
+        this.nights = nights;
+        this.days = days;
+        return this;
+    }
+
+    @Override
+    public TourPlanBuilder title(String title) {
+        this.title = title;
+        return this;
+    }
+
+    @Override
+    public TourPlanBuilder startDate(LocalDate startDate) {
+        this.startDate = startDate;
+        return this;
+    }
+
+    @Override
+    public TourPlanBuilder whereToStay(String whereToStay) {
+        this.whereToStay = whereToStay;
+        return this;
+    }
+
+    @Override
+    public TourPlanBuilder addPlan(int day, String plan) {
+        if (this.plans == null) {
+            this.plans = new ArrayList<>();
+        }
+
+        this.plans.add(new DetailPlan(day, plan));
+        return this;
+    }
+
+    @Override
+    public TourPlan getPlan() {
+        return new TourPlan(title, nights, days, startDate, whereToStay, plans);
+    }
+}
+```
+
+```java
+// TourDirector.java
+package me.whiteship.designpatterns._01_creational_patterns._04_builder._02_after;
+
+import java.time.LocalDate;
+import me.whiteship.designpatterns._01_creational_patterns._04_builder._01_before.TourPlan;
+
+public class TourDirector {
+
+  private TourPlanBuilder tourPlanBuilder;
+
+  public TourDirector(TourPlanBuilder tourPlanBuilder) {
+    this.tourPlanBuilder = tourPlanBuilder;
+  }
+
+  public TourPlan cancunTrip() {
+    return tourPlanBuilder
+      .title("칸쿤 여행")
+      .nightsAndDays(2, 3)
+      .startDate(LocalDate.of(2020, 12, 9))
+      .whereToStay("리조트")
+      .addPlan(0, "체크인하고 짐 풀기")
+      .addPlan(0, "저녁 식사")
+      .getPlan();
+  }
+
+  public TourPlan longBeachTrip() {
+    return tourPlanBuilder
+      .title("롱비치")
+      .startDate(LocalDate.of(2021, 7, 15))
+      .getPlan();
+  }
+}
+```
+
+```java
+// App.java
+package me.whiteship.designpatterns._01_creational_patterns._04_builder._02_after;
+
+import me.whiteship.designpatterns._01_creational_patterns._04_builder._01_before.TourPlan;
+
+public class App {
+
+    public static void main(String[] args) {
+        TourDirector director = new TourDirector(new DefaultTourBuilder());
+        TourPlan tourPlan = director.cancunTrip();
+        TourPlan tourPlan1 = director.longBeachTrip();
+    }
+}
+```
+
+---
+
+### 4.4 장단점
+
+- 장점
+  - **만들기 복잡한 객체를 순차적으로 만들 수 있다**.
+  - 복잡한 객체를 만드는 구체적인 과정을 숨길 수 있다.
+  - 동일한 프로세스를 통해 각기 다르게 구성된 객체를 만들 수도 있다.
+  - 불완전한 객체를 사용하지 못하도록 방지할 수 있다.
+- 단점
+  - **원하는 객체를 만들려면 빌더부터 만들어야 한다.**
+  - 구조가 복잡해 진다. (트레이드 오프)
+
+---
+
+### 4.5 실무에서 어떻게 쓰이나?
+
+자바 8 Stream.Buidler API
+
+```java
+// StreamExample.java
+package me.whiteship.designpatterns._01_creational_patterns._04_builder._03_java;
+
+import java.util.stream.Stream;
+
+public class StreamExample {
+
+    public static void main(String[] args) {
+        Stream<String> names = Stream.<String>builder().add("keesun").add("whiteship").build();
+        names.forEach(System.out::println);
+    }
+}
+```
+
+StringBuilder는 빌더 패턴일까?
+
+```java
+// StringBuilderExample.java
+package me.whiteship.designpatterns._01_creational_patterns._04_builder._03_java;
+
+public class StringBuilderExample {
+
+    public static void main(String[] args) {
+        StringBuilder stringBuilder = new StringBuilder();
+        String result = stringBuilder.append("whiteship").append("keesun").toString();
+        System.out.println(result);
+    }
+}
+
+```
+
+롬복의 @Builder
+
+- https://projectlombok.org/features/Builder
+
+```java
+package me.whiteship.designpatterns._01_creational_patterns._04_builder._03_java;
+
+import lombok.Builder;
+
+@Builder
+public class LombokExample {
+
+  private String title;
+
+  private int nights;
+
+  private int days;
+
+  public static void main(String[] args) {
+    LombokExample trip = LombokExample
+      .builder()
+      .title("여행")
+      .nights(2)
+      .days(3)
+      .build();
+  }
+}
+```
+
+스프링
+
+- UriComponentsBuilder
+- MockMvcWebClientBuilder
+- …Builder
+
+```java
+// SpringExample.java
+package me.whiteship.designpatterns._01_creational_patterns._04_builder._03_java;
+
+import org.springframework.web.util.UriComponents;
+import org.springframework.web.util.UriComponentsBuilder;
+
+public class SpringExample {
+
+  public static void main(String[] args) {
+    UriComponents howToStudyJava = UriComponentsBuilder
+      .newInstance()
+      .scheme("http")
+      .host("www.whiteship.me")
+      .path("java playlist ep1")
+      .build()
+      .encode();
+    System.out.println(howToStudyJava);
+  }
+}
+```
+
+---
+
+## 5. 프로토타입(Prototype) 패턴
+
+![gof_1_8](https://raw.githubusercontent.com/berenickt/image-server/main/img/gof_1_8.png)
+
+**기존 인스턴스를 복제하여 새로운 인스턴스를 만드는 방법**
+
+- 복제 기능을 갖추고 있는 기존 인스턴스를 프로토타입으로 사 용해 새 인스턴스를 만들 수 있다
+
+![gof_1_9](https://raw.githubusercontent.com/berenickt/image-server/main/img/gof_1_9.png)
+
+e.g. GitHub에서는 각각의 저장소(repository)가 고유한 설정, 파일, 이슈(issue) 등을 가지고 있다.
+
+- 특정 프로젝트를 위한 새로운 저장소를 만들 때, 기존 저장소의 설정이나 구조를 그대로 사용하기 위해,
+  - **기존 저장소를 복사하여 새로운 저장소를 만드는 것이 더 효율적**이다.
+- 프로토타입 패턴을 적용하면, 기존의 GitHub 저장소 객체를 `복사(clone)`하여 새로운 저장소 객체를 생성할 수 있다.
+  - 이 과정에서 기존 저장소의 설정, 파일 구조, 이슈 템플릿 등이 새로운 저장소로 복사된다.
+  - 복사된 새 객체는 필요에 따라 추가적인 수정을 거쳐 사용될 수 있다.
+
+프로토타입 패턴의 핵심은 `복사`와 `수정`이다.
+
+- 기존 객체를 복사하여 새 객체를 만들고, 이 새 객체에 대해 필요한 수정을 수행함으로써,
+  - **객체 생성 과정을 간소화하고, 효율성을 높일 수 있다**.
+- GitHub 저장소 예시에서 볼 수 있듯,
+  - 프로토타입 패턴은 **설정이 복잡하거나, 객체의 상태가 다양하게 변할 수 있는 상황에서 특히 유용**합니다.
+
+---
+
+### 5.1 예시 - 기존
+
+```java
+// GithubRepository.java
+package me.whiteship.designpatterns._01_creational_patterns._05_prototype._01_before;
+
+public class GithubRepository {
+
+  private String user;
+
+  private String name;
+
+  public String getUser() {
+    return user;
+  }
+
+  public void setUser(String user) {
+    this.user = user;
+  }
+
+  public String getName() {
+    return name;
+  }
+
+  public void setName(String name) {
+    this.name = name;
+  }
+}
+```
+
+```java
+// GithubIssue.java
+package me.whiteship.designpatterns._01_creational_patterns._05_prototype._01_before;
+
+public class GithubIssue {
+
+  private int id;
+
+  private String title;
+
+  private GithubRepository repository;
+
+  public GithubIssue(GithubRepository repository) {
+    this.repository = repository;
+  }
+
+  public int getId() {
+    return id;
+  }
+
+  public void setId(int id) {
+    this.id = id;
+  }
+
+  public String getTitle() {
+    return title;
+  }
+
+  public void setTitle(String title) {
+    this.title = title;
+  }
+
+  public GithubRepository getRepository() {
+    return repository;
+  }
+
+  public String getUrl() {
+    return String.format(
+      "https://github.com/%s/%s/issues/%d",
+      repository.getUser(),
+      repository.getName(),
+      this.getId()
+    );
+  }
+}
+```
+
+```java
+// App.java
+package me.whiteship.designpatterns._01_creational_patterns._05_prototype._01_before;
+
+public class App {
+
+    public static void main(String[] args) {
+        GithubRepository repository = new GithubRepository();
+        repository.setUser("whiteship");
+        repository.setName("live-study");
+
+        GithubIssue githubIssue = new GithubIssue(repository);
+        githubIssue.setId(1);
+        githubIssue.setTitle("1주차 과제: JVM은 무엇이며 자바 코드는 어떻게 실행하는 것인가.");
+
+        String url = githubIssue.getUrl();
+        System.out.println(url);
+    }
+
+}
+```
+
+---
+
+### 5.2 예시 - 변경
+
+```java
+// GithubIssue.java
+package me.whiteship.designpatterns._01_creational_patterns._05_prototype._02_after;
+
+import java.util.Objects;
+
+public class GithubIssue implements Cloneable {
+
+  private int id;
+
+  private String title;
+
+  private GithubRepository repository;
+
+  public GithubIssue(GithubRepository repository) {
+    this.repository = repository;
+  }
+
+  public int getId() {
+    return id;
+  }
+
+  public void setId(int id) {
+    this.id = id;
+  }
+
+  public String getTitle() {
+    return title;
+  }
+
+  public void setTitle(String title) {
+    this.title = title;
+  }
+
+  public GithubRepository getRepository() {
+    return repository;
+  }
+
+  public String getUrl() {
+    return String.format(
+      "https://github.com/%s/%s/issues/%d",
+      repository.getUser(),
+      repository.getName(),
+      this.getId()
+    );
+  }
+
+  @Override
+  protected Object clone() throws CloneNotSupportedException {
+    GithubRepository repository = new GithubRepository();
+    repository.setUser(this.repository.getUser());
+    repository.setName(this.repository.getName());
+
+    GithubIssue githubIssue = new GithubIssue(repository);
+    githubIssue.setId(this.id);
+    githubIssue.setTitle(this.title);
+
+    return githubIssue;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    GithubIssue that = (GithubIssue) o;
+    return (
+      id == that.id &&
+      Objects.equals(title, that.title) &&
+      Objects.equals(repository, that.repository)
+    );
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(id, title, repository);
+  }
+}
+```
+
+```java
+// App.java
+package me.whiteship.designpatterns._01_creational_patterns._05_prototype._02_after;
+
+public class App {
+
+    public static void main(String[] args) throws CloneNotSupportedException {
+        GithubRepository repository = new GithubRepository();
+        repository.setUser("whiteship");
+        repository.setName("live-study");
+
+        GithubIssue githubIssue = new GithubIssue(repository);
+        githubIssue.setId(1);
+        githubIssue.setTitle("1주차 과제: JVM은 무엇이며 자바 코드는 어떻게 실행하는 것인가.");
+
+        String url = githubIssue.getUrl();
+        System.out.println(url);
+
+        GithubIssue clone = (GithubIssue) githubIssue.clone();
+        System.out.println(clone.getUrl());
+
+        repository.setUser("Keesun");
+
+        System.out.println(clone != githubIssue);
+        System.out.println(clone.equals(githubIssue));
+        System.out.println(clone.getClass() == githubIssue.getClass());
+        System.out.println(clone.getRepository() == githubIssue.getRepository());
+
+        System.out.println(clone.getUrl());
+    }
+
+}
+```
+
+---
+
+### 5.3 장단점
+
+- 장점
+  - **복잡한 객체를 만드는 과정을 숨길 수 있다**.
+  - 기존 객체를 복제하는 과정이 새 인스턴스를 만드는 것보다 비용(시간 또는 메모리)적인 면에서 효율적일 수도 있다.
+  - 추상적인 타입을 리턴할 수 있다.
+- 단점
+  - 복제한 객체를 만드는 과정 자체가 복잡할 수 있다. (특히, 순환 참조가 있는 경우)
+
+---
+
+### 5.4 실무에서 어떻게 쓰이나?
+
+- 자바 Object 클래스의 clone 메소드와 Cloneable 인터페이스
+- shallow copy와 deep copy
+- ModelMapper
+
+```java
+// ModelMapperExample.java
+package me.whiteship.designpatterns._01_creational_patterns._05_prototype._03_java;
+
+import me.whiteship.designpatterns._01_creational_patterns._05_prototype._02_after.GithubIssue;
+import me.whiteship.designpatterns._01_creational_patterns._05_prototype._02_after.GithubRepository;
+import org.modelmapper.ModelMapper;
+
+public class ModelMapperExample {
+
+    public static void main(String[] args) {
+        GithubRepository repository = new GithubRepository();
+        repository.setUser("whiteship");
+        repository.setName("live-study");
+
+        GithubIssue githubIssue = new GithubIssue(repository);
+        githubIssue.setId(1);
+        githubIssue.setTitle("1주차 과제: JVM은 무엇이며 자바 코드는 어떻게 실행하는 것인가.");
+
+        ModelMapper modelMapper = new ModelMapper();
+        GithubIssueData githubIssueData = modelMapper.map(githubIssue, GithubIssueData.class);
+        System.out.println(githubIssueData);
+    }
+}
+```
+
+```java
+// JavaCollectionExample.java
+package me.whiteship.designpatterns._01_creational_patterns._05_prototype._03_java;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class JavaCollectionExample {
+
+    public static void main(String[] args) {
+        Student keesun = new Student("keesun");
+        Student whiteship = new Student("whiteship");
+        List<Student> students = new ArrayList<>();
+        students.add(keesun);
+        students.add(whiteship);
+
+        List<Student> clone = new ArrayList<>(students);
+        System.out.println(clone);
+    }
+}
+```

@@ -1,0 +1,25 @@
+/* 글자 색상, 강조 색상 */
+p {
+  white-space: pre-line;
+  font-style: normal;
+}
+
+strong {
+  color: palevioletred;
+}
+
+code {
+  color: #218d10;
+}
+
+.nx-mt-6 {
+  margin-top: 0.8rem !important;
+}
+
+hr {
+  border-color: rgba(113, 110, 110, 0.7) !important;
+}
+
+blockquote {
+  background-color: rgba(227, 226, 226, 0.3);
+}

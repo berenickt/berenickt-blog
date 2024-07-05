@@ -1,0 +1,49 @@
+{
+  "index": "Backend 로드맵",
+  "select-lang": "백엔드 언어 선택",
+  "-- (1) Node 백엔드 --": {
+    "type": "separator",
+    "title": "(1) Node 백엔드"
+  },
+  "nodejs": "NodeJs",
+  "expressjs": "ExpressJs",
+  "nestjs": "NestJs",
+  "rxjs": "RxJS",
+  "-- (2) Java 백엔드 --": {
+    "type": "separator",
+    "title": "(2) Java 백엔드"
+  },
+  "spring": "Spring",
+  "-- (3) 기능 이론 --": {
+    "type": "separator",
+    "title": "(3) 기능 이론"
+  },
+  "crawling": "스크랩핑과 크롤링",
+  "login": "로그인",
+  "file-upload": "파일 업로드",
+  "payment": "결제",
+  "search": "검색",
+  "msa": "MSA",
+  "-- (4) Database & SQL --": {
+    "type": "separator",
+    "title": "(4) Database & SQL"
+  },
+  "database-type": "데이터베이스 종류",
+  "oracle": "Oracle",
+  "mysql": "MySQL",
+  "postgresql": "PostgreSQL",
+  "redis": "Redis",
+  "mongodb": "MongoDB",
+  "-- (5) 다른 API --": {
+    "type": "separator",
+    "title": "(5) 다른 API"
+  },
+  "graphql": "GraphQL",
+  "grpc": "gRPC",
+  "-- (6) Serverless/ORM --": {
+    "type": "separator",
+    "title": "(6) Serverless/ORM"
+  },
+  "supabase": "Supabase",
+  "prisma": "Prisma"
+}

@@ -1,0 +1,468 @@
+---
+title: '프론트엔드 역사와 미래'
+date: 2023/12/07
+---
+
+## 1. 프론트엔드의 탄생과 현재, 미래
+
+### 1.1 Web 1.0 (1990~2000초)
+
+- 1990, 웹이 탄생 (HTML, HTTP)
+- 1994, 동적 페이지 탄생, CGI(Common Gate Interface), (e.g. PHP)
+- 1995, JavaScript 탄생, 동작 제어
+- 1996, CSS 탄생, 브라우저 애니메이션용 Flash 탄생
+- 구글 검색 엔진, MS의 Explorer 대중화, e-커머스 등의 `닷컴 열풍`
+
+---
+
+### 1.2 Web 2.0
+
+- 2001년, 닷컴버블로 IT 산업의 거품이 꺼짐
+- 2000년 초, 애플의 Flash 퇴출 운동
+- 2005년, 구글의 크롬 브라우저(V8 엔진)와 Map으로 Ajax(비동기)의 등장
+  - 백엔드와 프론트엔드의 전문성을 분리(프론트엔드의 탄생)
+- 크로스 브라우저 호환성을 위해 웹 표준이 등장
+- DOM을 쉽게 쓰기 위해 jQuery가 등장
+- 2009년, V8엔진 기반 Node.js와 npm 등장
+- SPA 프레임워크인 구글 Angular가 등장
+- 2013년, 페이스북에서 Angular가 너무 무거워서 라이브러리인 React 등장
+- 2015년, 페이스북의 크로스 플랫폼을 위한 React Native 등장
+- 미래, serverless하게?
+
+---
+
+### 1.3 Web 3.0
+
+- 블록체인 기반의 탈중앙화된 인터넷(e.g. 비트코인)
+
+---
+
+### 1.4 프론트엔드 포지션에 대한 이해
+
+일반적으로 프론트엔드가 하는 업무는 크게 4가지로 구분 가능하다.
+
+1. 데이터를 (예쁘게) 잘 보여주기
+2. 데이터(화면)를 조작하기
+3. 서버로 데이터를 보내기
+4. 서버에서 받은 데이터를 다루기
+
+회사나 프로젝트의 특성에 따라서 사용자에 가까운 쪽을 만드느냐
+백엔드랑 가까운 쪽을 맡게 되느냐에 따라서 해야 하는 주 업무의 모양새가 좀 달라진다.
+
+- 퍼블리셔는 대개 1~2의 영역만을 다루고,
+- 백엔드는 3~4의 영역만 다루는 것이 일반적인 견해다.
+
+`프론트엔드가 1~2~3~4를 혼자서 다하는가?`라고 하면 꼭 그렇지는 않고,
+프론트 개발자마다 주력 포지션이 `1~2~3~4` 어딘가에 있다.
+이를 칼 같이 구분할 수는 없지만, 회사마다 경계선은 존재한다.
+왜냐하면 프론트엔드가 없다가 갑자기 튀어나온 게 아니라, 웹이 커져가면서 기존 역할을 분리하면서 생겼기 때문이다.
+
+- `코딩만 잘하는 개발자 !== 잘하는 개발자`
+- `(코딩 + 시간 잘맞추고 + 협업 잘하는 개발자) === 잘하는 개발자`
+
+프론트엔드의 기술적인 가치는 안타깝게도 엄청 중요하지는 않다.
+대부분의 서비스들이 화면이 좀 안보여도, 사업은 돌아는 가기 때문에.
+그래서 일반적으로 일정을 잘 지키는 개발자가 좋은 개발자라고 생각한다.
+보통 주니어를 벗어났는가를 구분하는 주요 기준으로 일정을 컨트롤할 수 있는지 여부를 본다.
+
+근데 `기획 -> 디자인 -> 백앤드 -> 프론트엔드`의 개발 일정순서에서
+다른 포지션과 협업을 많이 하고, 모든 작업의 마지막에서 마무리를 하기에 일정 산출이 어렵다.
+그래서 일정 산출을 잘하려면, 다른 포지션에 대한 이해와 지식이 풍부해야 한다.
+
+기획, 디자인, 백엔드, QA, UX, 사업, 사용자까지 협업 라인까지 타 지식을 열심히 쌓아야 한다.
+또한 소통의 방식으로 말과 글이 있다. 회사의 규모가 커질 수록 문서의 중요도가 높아진다.
+말로 끝나면 시간이 지나면 잊어버리고, 담당자가 퇴사하면 답이 없다.
+문서를 잘 쓰는 것은 중요한 능력이고, 이때문에 개발자 취업에서 블로그를 보는 것이다.
+
+---
+
+### 1.5 참고
+
+- https://yozm.wishket.com/magazine/detail/1289/
+
+---
+
+## 2. 프론트엔드 아키텍쳐의 역사
+
+1. HTML, CSS, JS의 탄생: 관심의 분리와 느슨한 결합
+2. jQuery까지의 시대: DOM을 쉽게 쓰자
+3. HTML + JS를 합치자: `MVC 컴포넌트 방식`의 탄생
+   - MVC 패턴으로 만들려고하는 backbon.js 프레임워크가 등장
+4. 데이터 바인딩 + 템플릿 = `MVVM 웹 프레임워크`
+   - knockout.js와 angular 등의 등장으로 MVVM 아키텍쳐가 등장
+   - 이후 React, Vue, Angular로 3대장으로 정착
+5. `Container - Presenter 방식` : 컴포넌트 간 데이터 교환이 너무 복잡
+   - 데이터 조작을 다루는 `Container 컴포넌트`
+   - 뷰를 보여주는 `Presenter 컴포넌트`
+   - Container에서 props를 Presenter로 내려주면서 로직을 한군데에 모으고,
+   - 화면을 다루는 View 방식이 재사용 형태의 아키텍처 주류가 됨
+6. `Flux 패턴과 Redux` : Props Drill 문제 대두
+   - 상위 props들을 하위 컴포넌트로 전달할 때,
+   - 중간 컴포넌트에서 사용하지 않는 props를 추가해야 하는 Props Driling 문제가 대두됨
+   - 이에, 비즈니스 로직을 컴포넌트 계층구조가 아닌,
+     - View와 비즈니스 로직을 분리해 단방향 데이터 구조를 가지는 Flux 패턴이 등장
+   - Redux 등을 통해 FLux 패턴이 주류가 됨
+   - 이렇게 비즈니스 로직을 컴포넌트에서 분리하고, 별도로 관리하는 도구들이 등장
+     - 이 도구들을 `상태관리(State Management)`라고 부름
+     - e.g. Redux, Vuex(vue진영), Mobx(클래스 데코레이터로 좀 더 쉽게 사용)
+7. `Hooks 패턴과 Context, Recoil, Zustand, jotai` : Redux 너무 복잡하다. 쉽게 가자
+   - Redux는 너무 많은 보일러플레이트(여러 곳에서 재사용되며, 반복적으로 비슷한 형태를 띠는 코드)가 필요
+   - React 팀에서 Hooks를 통해 외부 비즈니스 로직을 쉽게 연동함
+     - Context를 통해 Props Driling 없이도 상위 Props를 하위 컴포넌트로 전달 가능해짐
+   - React 팀에서 Hook API만으로 전역 상태관리가 한계가 있었음
+     - 그래서 Atom이라 불리는 전역 객체를 이용해 데이터를 기록하고,
+     - 변경감지를 통해 View로 전달하는 형태의 `상태관리 도구`들이 대거 등장
+     - e.g. Recoil, Zustands, Jotai
+     - cf. Redux 팀도 Redux 버리고, Redux toolkit이라는 상태관리 도구를 쓰길 권장
+8. `React Query, SWR, Redux Query` : 서버 API 관리 도구
+   - 프론트엔드에서 전역 상태 관리가 필요한 이유? 서버와 API떄문
+   - 웹의 데이터는 CRUD는 서버에서 이루어지고, 비즈니스 로직이 대부분 백엔드에 보관됨
+   - 그래서 View는 서버 데이터 보여주고, 서버에 Action을 전달만 하는 도구가 등장
+     - 백엔드와 직접 연동해 로딩, 캐싱, 무효화, 업데이트 로직을 단순화
+     - 이로 인해 API를 통한 전역 상태 관리가 단순해짐
+9. 기타...
+   - 연산자, 함수를 그래도 사용해 로컬에서 데이터 변경감지하는 전력 관리 기능 도구
+     - React의 Valtio 라이브러리
+   - 기존 상태관리 도구들의 단점인 복잡한 상용구와 중첩 객체를 쉽게 풀어낸 도구
+     - Hookstate 라이브러리
+
+---
+
+### 2.1 프론트엔드에서 MV\* 아키텍쳐
+
+1. `순수 MVC 아키텍쳐`
+   - `Model(데이터)` : (e.g. JS Obejct, 서버 API, 서버에 있는 DB 등)
+   - `View(화면)` : HTML, CSS
+   - `Controller(컨트롤러)` : Model, View 사이의 중간자 역할
+   - 초창기 웹은 DB를 Model로 보고,
+   - HTML, CSS, JS를 View로 보고,
+   - 라우터를 통해 새 HTML을 보여주는 백앤드 영역을 Controller라 취급
+   - PHP, JSP 등
+2. `jQuery MVC 아키텍쳐`
+   - ajax로 받는 데이터를 Model로 보고,
+   - HTML, CSS를 View로 보고,
+   - JS가 중간에서 서버 데이터 받아서 이벤트 처리하고 서버에 데이터 전달하는 Controller 역할
+3. `MVVM 아키텍쳐`
+   - jQuery의 문제점 :
+     - 데이터를 찾고, 수정, 이벤트 연결, 수정 등 반복적인 패턴을 발견
+     - `{{ }}, <?= ?>, <%= %>`와 같은 치환자로 개발, but 수정할 부분을 일일히 찾아야 함
+   - 2013년 angualar.js가 나와 `템플릿`과 `바인딩` 개념이 등장
+   - Controller의 역할을 기존 jQuery DOM 조작방식에서 템플릿과 바인딩을 통한 선언적 방법으로 변경됨
+   - `Model`은 그대로 데이터 관련
+   - `View`도 그대로 HTML, CSS
+   - Controller는 View를 그리는 Model만 다루게 되었다는 의미로 `ViewModel`로 변경
+   - 이를 MVVM 아키텍쳐라고 부르며 React, Vue, Angualar2, Svelte 등이 존재
+   - 위 4개의 라이브러리(프레임워크)들 모두 템플릿과 바인딩 문법을 쓰는 방식이 다를 뿐 똑같음
+4. `Flux 아키텍쳐`
+   - MVC 기반이 아닌 단방향 패턴 (Action > Dispatcher > Store > View)
+     - `View(사용자가 클릭한거)`에서 `Action(이벤트 같은거)` 호출,
+     - `Dispatcher(배달하는 놈)`를 통해 `Store(저장소)`에 데이터 보관,
+     - Store에서 다시 View로 전달
+   - Flux 패턴 구현 라이브러리 Redux 등장
+   - Flux 아키텍쳐 단점
+     - 너무 많은 보일러 플레이트로 인해 문법이 장황함
+     - 위 이유로 학습하기 어려움
+5. `MVI 아키텍쳐`
+   - 기존 Flux 패턴의 Dispatch, Action과 Update 인터페이스를 전부
+   - Observable를 이용한 `스트림(Stream) 방식`으로 비동기 문제를 해결
+   - 현재 ios와 android의 새 아키텍쳐로 부상 중
+     - 단방향 아키텍쳐
+     - 선언적 프로그래밍을 통한 Controller
+     - 뷰와 비지니스 로직의 분리(상태관리)
+     - 반응형 프로그래밍
+     - 서버와의 연동을 Controller로 간주하는 움직임
+6. 현대 아키텍쳐들은 크게 4방향으로 발전 중
+   1. `Context와 hook, props 상속`
+      - Redux 너무 복잡하니 쓰지말자.
+      - Props Driling이 문제면, Props만 새로 뚫지 않는 방법을 제공하자.
+      - 그래서 React 기본 기능인 Context API 쓰자
+   2. `Atomic 패턴` - Recoil, Zustand, jotai, Vue Composition, Svelte Store
+      - Action ~ Dispatch ~ Reducer와 같은 복잡한 구조를 없애보자
+      - 컴포넌트 외부에서 공통의 데이터를 set, get을 하면서 동시에 동기화
+        - View와 Model은 분리
+        - 중간의 과정은 자율에 맡기고 간단하게 Model에 접근법만 알자
+        - 동기화, 동시성 처리가 중요
+   3. `React-Query, SWR(MVC의 개념 확대)` - 원격 상태관리 방법 분리 시도
+      - Model : 서버와 fetch
+      - View : React
+      - Controller : query와 mutation이란 2가지 인터페이스를 통해 서버 상태 관리
+      - 캐싱, 동기화, refetch 등을 관리
+   4. `GrahphQL, firebase` - Schema Based 아키텍쳐
+      - 먼저 스키마를 정의하고, 스키마 기반으로 데이터 교환
+      - Model : 서버 데이터
+      - View : React
+      - Controller : query와 mutation 통신을 통해 view에게 데이터를 전달하는 방식
+
+어떤 것이든 칼 같이 딱 떨어지지 않는다.
+왜냐면 만든 사람들이 다른 것들을 보고 참고해서 계속 발전시키기 떄문...
+무슨 `MV*` 뭐시기든 저시기든, 결국 Model과 View 사이에 무언가를 조정하는 것이다.
+
+---
+
+## 3. MVVM
+
+### 3.1 MVVM 탄생
+
+- 2004년 마틴 파울러, 프레젠테이션 모델(PM) 패턴 발표
+  - 프레젠테이션 모델 = 뷰의 추상화
+  - 뷰는 단지 프레젠테이션 모델의 렌더링에 불과
+  - 프레젠테이션 모델은 뷰를 자주 업데이트하여 동기화 상태 유지
+  - 동기화 로직은 프레젠테이션 모델 클래스에 코드로 존재
+- 2005년 마이크로소프트의 John Gassman, MVVM 패턴 발표
+  - MS사는 마티 파울러의 아이디어를 수용하여 MVVM 체계화 및 도입
+  - 두 패턴 모두 뷰의 상태와 동작을 포함해 추상화
+  - PM패턴을 WPF 및 Sliverlight 플랫폼에 맞게 특화시킨 것
+
+---
+
+### 3.2 MVVM 소개
+
+- 과거와 다른 애플리케이션의 UI 개발 환경의 변화
+  - 코딩을 덜 필요로 하며, 다양한 툴, 언어, 사람, 로직 등에 의해 이루어짐
+- 하나의 환경 혹은 하나의 언어를 사용하던 과거와 달리, 현재 트렌드를 반영해 발전시킨 MVC의 업그레이드 버전
+- 또한 MVVM은 데이터바인딩을 위한 일반적인 메커니즘에 한 가지 의존
+
+> 엔지니어가 디자이너에게 ViewModel을 던지기만 하면 디자이너가 코드를 작성하지 않고, GUI를 구축할 수 있다고 가정
+> MVVM의 가장 큰 특성인 데이터바인딩을 통해 이를 달성함
+
+---
+
+### 3.3 MVVM의 장점
+
+- 독립적인 모델을 만들고, 뷰 모델은 어댑터 역할을 하며, 모델 코드의 간섭을 줄인다.
+- 개발자는 뷰를 사용하지 않고, 뷰모델과 모델에 대한 단위 테스트를 만들 수 있다.
+- 상태와 동작이 뷰모델에 있으므로, UI 수정이 유연하다.
+- 디자이너와 개발자는 독립적으로, 동시에 작업할 수 있다.
+
+> 디자이너는 뷰에 집중할 수 있고, 개발자는 기능에 대해 작업할 수 있다.
+> MVVM 패턴은 앱 비즈니스 및 프레젠테이션 로직과 UI를 깔끔하게 분리하며,
+> 이는 테스트, 유지보수, 확장, 재사용성, 협업을 보다 용이하게 만든다.
+
+---
+
+### 3.4 MVVM 구조
+
+![위키백과-MVVM](https://upload.wikimedia.org/wikipedia/commons/8/87/MVVMPattern.png)
+
+> 💡 View → View Model → Model
+>
+> - `View`는 `ViewModel`을 알지만, `ViewModel`은 `View`를 알지 못한다.
+> - `ViewModel`은 `Model`을 알지만, `Model` 은 `ViewModel`을 알지 못한다.
+>
+> 이런 구조를 통해 **`ViewModel`과 `Model`이 `View`로부터 독립적인 형태가 완성**되고,
+> **UI로부터 비즈니스 로직과 프레젠테이션 로직을 분리**할 수 있게 되어 MVVM의 근본적 목적을 달성
+
+- 고수준에서 저수준으로, 단방향 의존 관계이다.
+- 따라서 뷰모델은 뷰를 분리하고, 모델이 뷰와 독립적으로 발전할 수 있도록 한다.
+- 뷰는 뷰모델의 프로퍼티를 바인드한다.
+- cf. https://ko.wikipedia.org/wiki/%EB%AA%A8%EB%8D%B8-%EB%B7%B0-%EB%B7%B0%EB%AA%A8%EB%8D%B8
+
+> 구조
+>
+> - `View`는 유저가 보는 화면의 구조, 레이아웃
+> - `ViewModel`은 `View`가 사용할 메소드와 필드를 구현하고, 데이터를 `Model`에 요청하는 역할
+> - `Model`은 데이터에 대해 접근하고 검증하는 로직, 즉 비즈니스 로직이 포함
+>
+> 사용 시나리오
+>
+> 1. 사용자가 `View`를 통해 요구 사항을 요청한다.
+> 2. `ViewModel`에게 요청을 전달한다.
+> 3. `ViewModel`은 요청에 따라 필요 데이터를 `Model`에게 요청한다.
+> 4. `Model`은 요청에 맞춰 데이터를 응답한다.
+> 5. `ViewModel`이 응답받은 데이터를 가져오고 이를 가공하여 저장한다.
+> 6. `View`는 데이터바인딩을 통해 `ViewModel`의 데이터를 즉시 전달받고 이를 화면에 나타낸다
+
+---
+
+#### 3.4.1 Model
+
+- MVC에서 정의하던 모델과 같다.
+- 앱 데이터를 저장하고, 도메인의 처리 및 유효성 검사를 수행하는 완전히 UI와 독립저긴 데이터 또는 비즈니스 로직을 의미
+- 모델은 코드로 작성되거나 관계형 테이블 또는 XML로 인코딩된 순수한 데이터로 표현된다.
+
+---
+
+#### 3.4.2 View
+
+- 사용자에게 비추어지는 모든 UI 구성요소를 담당
+- 항상 선언적으로 정의되어 있고, 대부분 도구를 사용하여 정의
+- 선언적 언어의 특성상 MVC가 뷰에서 인코딩하는 일부 뷰상태는 표현하기 쉽지 않다.
+- 이 시점에서 ‘데이터바인딩’이라는 개념이 동작
+- 단방향 혹은 양방향 데이터 바인딩을 통해 모델에 직접 연결된다.
+  - cf. `데이터 바인딩` : 앱 UI와 해당 UI가 표시하는 데이터를 연결하는 프로세스
+  - cf. `단방향 바인딩` : 데이터가 오직 한 방향으로 흐른다
+
+---
+
+#### 3.4.3 ViewModel
+
+![마이크로소프트-MVVM](https://learn.microsoft.com/ko-kr/dotnet/architecture/maui/media/mvvm-pattern.png)
+
+- View의 추상화이자, 용어 그대로 **View의 Model을 의미**한다.
+
+`View - ViewModel 관계`
+
+- 뷰모델은 뷰가 데이터바인딩할 수 있는 속성과 명령을 구현하고 뷰에 알림
+- 뷰는 UI 스레드를 차단하지 않은 상태로 유지해야 하기 떄문에, 뷰모델에서 I/O작업에 비동기 메서드를 사용하고,
+  이벤트를 발생시켜 뷰에 속성 변경 사항을 비동기적으로 알린다.
+- 뷰 모델과 뷰는 1:N관계를 유지한다.
+  - 뷰모델은 뷰를 알지 못하며, 뷰의 추상화이다.
+  - 따라서 재사용이 용이하다
+- 주의할점은 뷰모델에서 뷰의 버튼 혹은 리스트뷰와 같은 뷰타입을 참조하지 않는다.
+  - cf. 강한 결합이 발생한다.
+
+`ViewModel - Model 관계`
+
+- 뷰모델은 데이터바인딩에 사용할 수 있는 모델의 특수화도 제공한다.
+- 뷰모델은 뷰가 쉽게 사용할 수 있는 형식으로 모델의 데이터를 가공해 제공한다.
+- 뷰모델과 모델은 1:N 관계를 유지한다.
+  - 모델은 뷰모델과 뷰, 그 누구도 알지 못한다.
+  - 뷰와 독립적으로 발전할 수 있다.
+
+---
+
+### 3.5 MVVM과 MVC 패턴의 차이점
+
+- 과거와 다른 앱의 UI 개발 환경의 변화
+- 하나의 환경 혹은 하나의 언어를 사용하던 과거와 달리, 현재 트렌드를 반영해 발전시킨 MVC의 업그레이드 버전
+- 추상화를 통해 뷰로부터 프레젠테이션 로직을 분리함
+- 뷰모델 vs 컨트롤러
+
+---
+
+## 4. React Query & Zustand
+
+상태(state) === 컴포넌트의 메모리
+
+- e.g. 어떤 팝업을 화면에 띄울지 말지, 주문/배달의 진행은 어떤지 등등
+
+배달의 민족 프론트엔드 상태관리
+
+- Client에서 소유 및 관리하며 Client에서 온전히 제어가능한 상태면, 즉 Client State 관리는 `Zustand`
+- Client 외부에서 소유하며 Client에서는 일종의 캐시인 상태면, 즉 Server State 관리는 `React Query`(Tanstack Query)
+
+---
+
+### 4.1 Zustand : Client 상태 관리
+
+- 컴포넌트 밖에서도 상태 변경이 가능
+- 사용성이 단순해 러닝커브가 낮음
+- 상태관리에 필요한 코드도 적음
+- Redux Devtools 확장 프로그램 활용 가능
+
+---
+
+### 4.2 React Query : Server 상태 관리
+
+- API 호출 코드로 비대해진 Store를 목적에 맞게 분리
+- 리액트 훅과 비슷한 직관적인 사용성
+- 여러 인터페이스&옵션을 제공해 적은 코드로 강력한 동작
+- 자체 개발도구 제공
+
+---
+
+## 5. FSD 폴더 아키텍처
+
+- 과거 : Hook이 등장하기 전, `Container - Presenter` 패턴
+  - `Container` : 데이터를 가져오고, 상태를 관리하는 컴포넌트
+  - `Presenter` : 데이터를 보여주는 컴포넌트
+- 현재 : `Hook`이 등장하면서, `Hooks` 패턴
+  - `components` : 공용 컴포넌트
+  - `hooks` : 공용 hooks
+  - `layout` : 레이아웃용 컴포넌트
+  - `pages` : 도메인별 페이지
+  - `utils` : 공용 함수들
+  - `types` : 타입들
+- 폴더의 규칙을 정한 것 : `기능 분할 설계(Feature-Sliced Design, FSD)` 아키텍처
+
+---
+
+### 5.1 기능분할(FSD) 아키텍처
+
+![FSD 폴더 패턴](https://media.dev.to/cdn-cgi/image/width=800%2Cheight=%2Cfit=scale-down%2Cgravity=auto%2Cformat=auto/https%3A%2F%2Fdev-to-uploads.s3.amazonaws.com%2Fuploads%2Farticles%2Fvscch6q7ej44oxkwensa.jpg)
+
+- 크게 `레이어(layer)`, `슬라이스(slice)`, `세그먼트(segment)` 3가지 개념이 존재한다.
+  - Layer 폴더 안에 Slice 폴더가 있고, Slice 폴더 안에 Segment 폴더가 있다. (Layer > Slice > Segment)
+  - 즉, **파일의 깊이는 최대 3단계까지만 적용**된다.
+
+Layer 단에는 7가지의 역할을 하는 레이어를 둔다. (✅는 주요 핵심 폴더라 생각하는 부분)
+
+- `app`: 애플리케이션 로직이 초기화되는 곳✅
+  - 프로바이더, 라우터, 전역 스타일, 전역 타입 선언 등이 여기에서 정의
+  - 애플리케이션의 진입점 역할
+- `processes`: 이 레이어는 여러 단계로 이루어진 등록과 같이 여러 페이지에 걸쳐 있는 프로세스를 처리❌
+  - 이 레이어는 더 이상 사용되지 않는 것으로 간주되지만, 여전히 가끔씩 마주할 수 있습니다.
+  - e.g. 첫 페이지에서 닉네임 입력받고, 그 다음 페이지에서 휴대폰 인증받고, 그 다음 페이지에서 이메일 인증받는 형태
+  - cf. 스탭 바이 스탭 형식의 페이지들을 쓸 떄, 사용하지만, widgets 폴더로 넘길 수 있어서 가급적 사용하지 말 것
+  - 선택적인 레이어.
+- `pages`: 이 레이어에는 애플리케이션의 페이지가 포함✅
+- `widgets`: 페이지에 사용되는 독립적인 UI 컴포넌트
+- `features`: 이 레이어는 비즈니스 가치를 전달하는 사용자 시나리오와 기능을 다룸.
+  - e.g. 좋아요, 리뷰 작성, 제품 평가 등
+  - cf. 데이터를 뺸 모양 그 자체의 컴포넌트
+  - 선택적 레이어
+- `entities`: 이 레이어는 비즈니스 엔티티를 나타냄.✅
+  - e.g. 사용자, 리뷰, 댓글 등이 포함
+  - cf. 데이터 그 자체의 컴포넌트
+  - 선택적 레이어
+  - cf. features와 entities의 차이는
+    - `features`는 동사로 “뭐뭐하다”행위를 할 떄 사용
+    - `entities`는 명사로, 데이터를 정의할 떄 사용
+    - 재사용하는 UI는 `shared 폴더`
+- `shared`: 이 레이어에는 특정 비즈니스 로직에 종속되지 않은 재사용 가능한 컴포넌트와 유틸리티가 포함✅
+  - e.g. UI 키트, axios 설정, 애플리케이션 설정, 비즈니스 로직에 묶이지 않은 헬퍼 등이 포함
+  - cf. FSD에도 정답이 있는 것은 아니라서, 프로젝트마다 조금 수정해서 쓰면 된다.
+  - cf. features와 entities폴더에 양쪽에 포함되며, 전역적으로 자주 쓴다면 shared 폴더에 넣어도 된다.
+    - 그런 다음 버튼을 클릭했을 떄의 동작은 features 폴더에 정의하면 된다.
+
+그리고 가장 중요한 점으로 app 폴더는 그 하위의 모든 폴더를 import할 수 있지만,
+
+- 가장 밑에 있는 shared가 app 폴더를 import할 수 는 없다.
+- 7개의 폴더가 계층을 이루는 형태다.
+- 즉, **위 계층 폴더는 아래 계층 폴더를 import할 수 있지만, 아래 계층 폴더는 위 계층 폴더를 import할 수 없다.**
+- e.g. `feature`가 `entities, shared`를 import할 수 있음, But 상위의 `widgets`은 import 불가능함
+
+그리고 **shared 폴더만 유일하게 slices 폴더가 없다**. 그냥 바로 `segment` 폴더로 바로 이어진다.
+
+- 또한 각 폴더에 index 파일을 적극 활용해서, **import가 무조건 index 파일로 끝나야 한다.**
+- 그래서 index 폴더에 정의한 것은 public 컴포넌트, 정의하지 않는 것은 private 컴포넌트로 `캡슐화`를 한다.
+
+![FSD 폴더 패턴](https://media.dev.to/cdn-cgi/image/width=800%2Cheight=%2Cfit=scale-down%2Cgravity=auto%2Cformat=auto/https%3A%2F%2Fdev-to-uploads.s3.amazonaws.com%2Fuploads%2Farticles%2Fvscch6q7ej44oxkwensa.jpg)
+
+그리고 각 `Layer`안에는 `Slices`를 두는데, 각 Layer안에서 다시 특정 비즈니스의 엔티티로 분리된다.
+
+- e.g. user, post, comment 3개 개념으로 나눈다면,
+  - user 정보 따로, post(게시글) 정보 따로, comment(댓글) 정보 따로
+- cf. Redux-Toolkit의 slice와 동일한 개념
+
+![FSD 폴더 패턴](https://media.dev.to/cdn-cgi/image/width=800%2Cheight=%2Cfit=scale-down%2Cgravity=auto%2Cformat=auto/https%3A%2F%2Fdev-to-uploads.s3.amazonaws.com%2Fuploads%2Farticles%2Fvscch6q7ej44oxkwensa.jpg)
+
+그리고 각 `Slices` 안에는 `Segments`를 두며, 각 `Slices` 안에는 `UI, Model, API`로 분리된다.
+
+- `UI`는 화면 담당
+- `Model`은 데이터 담당
+- `API`는 서버로부터 데이터 가져오는 axios나 GraphQL, Fetch 함수 등
+- 그 외 기타 유틸들은 `lib`에 넣어두면 된다.
+
+FSD는 강제된 규칙이 아니기에, 누군가가 규칙을 지키지 않으면 소용이 없다.
+
+- 그래서 모든 팀원이 FSD를 알고 있어야 하며, 쓰고자 하는 마음이 있어야 한다.
+- 또한 다른 아키텍처 솔루션에 비해 진입장벽이 존재한다.
+- 그리고 도전 과제와 문제를 나중이 아닌 즉시 바로 해결해야 한다.
+- 또 `아토믹 디자인 패턴`도 `FSD 아키텍처`랑 합쳐서 사용할 수 있다.
+  - `segments의 ui 폴더`에다 `atomic 폴더들`만 1깊이만 추가해주면 된다.
+
+---
+
+## 참고
+
+- https://yozm.wishket.com/magazine/detail/1663/
+- https://velog.io/@teo/%ED%94%84%EB%A1%A0%ED%8A%B8%EC%97%94%EB%93%9C%EC%97%90%EC%84%9C-MV-%EC%95%84%ED%82%A4%ED%85%8D%EC%B3%90%EB%9E%80-%EB%AC%B4%EC%97%87%EC%9D%B8%EA%B0%80%EC%9A%94
+- [우아한테크-10분 테코톡산군의 MVVM](https://www.youtube.com/watch?v=JdSwZzdUHrA)
+- [우아한테크 - 프론트엔드 상태관리 실전 편 with React Query & Zustand](https://www.youtube.com/watch?v=nkXIpGjVxWU)
+- cf. [기능 분할 설계 최고의 프런트엔드 아키텍처](https://emewjin.github.io/feature-sliced-design/?utm_source=substack&utm_medium=email)
+  - [FSD 공식문서](https://feature-sliced.design/)
+  - [예제. Github Client - FSD 디자인 패턴에 따라 클론코딩](https://github.com/ani-team/github-client)
+  - [예제. Nike Sneaker and Footwear Store - FSD 디자인 패턴 적용](https://github.com/noveogroup-amorgunov/nukeapp)
+  - 원문: https://dev.to/m_midas/feature-sliced-design-the-best-frontend-architecture-4noj
+  - cf. https://www.youtube.com/watch?v=64Fx5Y1gEOA

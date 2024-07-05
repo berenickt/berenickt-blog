@@ -1,0 +1,19 @@
+{
+  "01-Intro": "01-개요",
+  "02-type": "02-자료구조 종류",
+  "03-array-object": "03-배열과 객체",
+  "04-linked-list": "04-연결(linked)-list",
+  "05-stack": "05-stack(스택)",
+  "06-queue": "06-queue(큐)",
+  "07-hash": "07-hash(해시)",
+  "08-graph": "08-graph(그래프)",
+  "09-tree": "09-tree(트리)",
+  "10-heap": "10-heap(힙)",
+  "11-trie": "11-trie(트라이)",
+  "12-binary-search": "12-binary-search(이진탐색)",
+  "13-sort": "13-sort(정렬)",
+  "14-bfs-dfs": "14-bfs-dfs",
+  "15-greedy": "15-greedy(그리디)",
+  "16-prime": "16-prime(소수)",
+  "17-recursion-call": "17-recursion-call(재귀호출)"
+}

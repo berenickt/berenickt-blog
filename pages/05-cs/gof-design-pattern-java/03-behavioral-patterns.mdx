@@ -1,0 +1,3530 @@
+---
+title: '03-행동 패턴'
+date: 2024/06/23
+---
+
+## 1. 책임 연쇄(Chain-of-Responsibility) 패턴
+
+### 1.1 패턴 소개
+
+![gof_2_15](https://raw.githubusercontent.com/berenickt/image-server/main/img/gof_3_1.png)
+
+`요청을 보내는 쪽(sender)`과 `요청을 처리하는 쪽(receiver)`의 분리하는 패턴
+
+- 핸들러 체인을 사용해서 요청을 처리한다
+
+![gof_2_16](https://raw.githubusercontent.com/berenickt/image-server/main/img/gof_3_2.png)
+
+---
+
+### 1.2 예시 - 기존
+
+```java
+// Request.java
+package me.whiteship.designpatterns._03_behavioral_patterns._13_chain_of_responsibilities._01_before;
+
+public class Request {
+
+  private String body;
+
+  public Request(String body) {
+    this.body = body;
+  }
+
+  public String getBody() {
+    return body;
+  }
+
+  public void setBody(String body) {
+    this.body = body;
+  }
+}
+```
+
+```java
+// RequestHandler.java
+package me.whiteship.designpatterns._03_behavioral_patterns._13_chain_of_responsibilities._01_before;
+
+public class RequestHandler {
+
+  public void handler(Request request) {
+    System.out.println(request.getBody());
+  }
+}
+```
+
+```java
+// AuthRequestHandler.java
+package me.whiteship.designpatterns._03_behavioral_patterns._13_chain_of_responsibilities._01_before;
+
+public class AuthRequestHandler extends RequestHandler {
+
+  public void handler(Request request) {
+    System.out.println("인증이 되었나?");
+    System.out.println("이 핸들러를 사용할 수 있는 유저인가?");
+    super.handler(request);
+  }
+}
+```
+
+```java
+// LoggingRequestHandler.java
+package me.whiteship.designpatterns._03_behavioral_patterns._13_chain_of_responsibilities._01_before;
+
+public class LoggingRequestHandler extends RequestHandler {
+
+  @Override
+  public void handler(Request request) {
+    System.out.println("로깅");
+    super.handler(request);
+  }
+}
+```
+
+```java
+// Client.java
+package me.whiteship.designpatterns._03_behavioral_patterns._13_chain_of_responsibilities._01_before;
+
+public class Client {
+
+  public static void main(String[] args) {
+    Request request = new Request("무궁화 꽃이 피었습니다.");
+    RequestHandler requestHandler = new LoggingRequestHandler();
+    requestHandler.handler(request);
+  }
+}
+```
+
+---
+
+### 1.3 예시 - 변경
+
+```java
+// RequestHandler.java
+package me.whiteship.designpatterns._03_behavioral_patterns._13_chain_of_responsibilities._02_after;
+
+import me.whiteship.designpatterns._03_behavioral_patterns._13_chain_of_responsibilities._01_before.Request;
+
+public abstract class RequestHandler {
+
+  private RequestHandler nextHandler;
+
+  public RequestHandler(RequestHandler nextHandler) {
+    this.nextHandler = nextHandler;
+  }
+
+  public void handle(Request request) {
+    if (nextHandler != null) {
+      nextHandler.handle(request);
+    }
+  }
+}
+```
+
+```java
+// PrintRequestHandler.java
+package me.whiteship.designpatterns._03_behavioral_patterns._13_chain_of_responsibilities._02_after;
+
+import me.whiteship.designpatterns._03_behavioral_patterns._13_chain_of_responsibilities._01_before.Request;
+
+public class PrintRequestHandler extends RequestHandler {
+
+  public PrintRequestHandler(RequestHandler nextHandler) {
+    super(nextHandler);
+  }
+
+  @Override
+  public void handle(Request request) {
+    System.out.println(request.getBody());
+    super.handle(request);
+  }
+}
+```
+
+```java
+// LoggingRequestHandler.java
+package me.whiteship.designpatterns._03_behavioral_patterns._13_chain_of_responsibilities._02_after;
+
+import me.whiteship.designpatterns._03_behavioral_patterns._13_chain_of_responsibilities._01_before.Request;
+
+public class LoggingRequestHandler extends RequestHandler {
+
+  public LoggingRequestHandler(RequestHandler nextHandler) {
+    super(nextHandler);
+  }
+
+  @Override
+  public void handle(Request request) {
+    System.out.println("로깅");
+    super.handle(request);
+  }
+}
+```
+
+```java
+// AuthRequestHandler.java
+package me.whiteship.designpatterns._03_behavioral_patterns._13_chain_of_responsibilities._02_after;
+
+import me.whiteship.designpatterns._03_behavioral_patterns._13_chain_of_responsibilities._01_before.Request;
+
+public class AuthRequestHandler extends RequestHandler {
+
+  public AuthRequestHandler(RequestHandler nextHandler) {
+    super(nextHandler);
+  }
+
+  @Override
+  public void handle(Request request) {
+    System.out.println("인증이 되었는가?");
+    super.handle(request);
+  }
+}
+```
+
+```java
+// Client.java
+package me.whiteship.designpatterns._03_behavioral_patterns._13_chain_of_responsibilities._02_after;
+
+import me.whiteship.designpatterns._03_behavioral_patterns._13_chain_of_responsibilities._01_before.Request;
+
+public class Client {
+
+  private RequestHandler requestHandler;
+
+  public Client(RequestHandler requestHandler) {
+    this.requestHandler = requestHandler;
+  }
+
+  public void doWork() {
+    Request request = new Request("이번 놀이는 뽑기입니다.");
+    requestHandler.handle(request);
+  }
+
+  public static void main(String[] args) {
+    RequestHandler chain = new AuthRequestHandler(
+      new LoggingRequestHandler(new PrintRequestHandler(null))
+    );
+    Client client = new Client(chain);
+    client.doWork();
+  }
+}
+```
+
+---
+
+### 1.4 장단점
+
+- 장점
+  - 클라이언트 코드를 변경하지 않고 새로운 핸들러를 체인에 추가할 수 있다.
+  - 각각의 체인은 자신이 해야하는 일만 한다.
+  - 체인을 다양한 방법으로 구성할 수 있다.
+- 단점
+  - 디버깅이 조금 어렵다
+
+---
+
+### 1.5 실무에서 어떻게 쓰이나?
+
+- 자바 : 서블릿 필터
+
+```java
+// CoRInJava.java
+package me.whiteship.designpatterns._03_behavioral_patterns._13_chain_of_responsibilities._03_java;
+
+import java.io.IOException;
+import javax.servlet.*;
+
+public class CoRInJava {
+
+  public static void main(String[] args) {
+    Filter filter = new Filter() {
+      @Override
+      public void doFilter(
+        ServletRequest request,
+        ServletResponse response,
+        FilterChain chain
+      ) throws IOException, ServletException {
+        // TODO 전처리
+        chain.doFilter(request, response);
+        // TODO 후처리
+      }
+    };
+  }
+}
+```
+
+```java
+// MyFilter.java
+package me.whiteship.designpatterns._03_behavioral_patterns._13_chain_of_responsibilities._03_java;
+
+import java.io.IOException;
+import javax.servlet.*;
+import javax.servlet.annotation.WebFilter;
+
+@WebFilter(urlPatterns = "/hello")
+public class MyFilter implements Filter {
+
+  @Override
+  public void doFilter(
+    ServletRequest request,
+    ServletResponse response,
+    FilterChain chain
+  ) throws IOException, ServletException {
+    System.out.println("게임에 참하신 여러분 모두 진심으로 환영합니다.");
+    chain.doFilter(request, response);
+    System.out.println("꽝!");
+  }
+}
+```
+
+```java
+// App.java
+package me.whiteship.designpatterns._03_behavioral_patterns._13_chain_of_responsibilities._03_java;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.web.servlet.ServletComponentScan;
+
+@ServletComponentScan
+@SpringBootApplication
+public class App {
+
+  public static void main(String[] args) {
+    SpringApplication.run(App.class, args);
+  }
+}
+```
+
+```java
+// HelloController.java
+package me.whiteship.designpatterns._03_behavioral_patterns._13_chain_of_responsibilities._03_java;
+
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+public class HelloController {
+
+  @GetMapping("/hello")
+  public String hello() {
+    return "hello";
+  }
+}
+```
+
+![gof_3_3](https://raw.githubusercontent.com/berenickt/image-server/main/img/gof_3_3.png)
+
+- 스프링 : 스프링 시큐리티 필터
+
+```java
+// SecurityConfig.java
+package me.whiteship.designpatterns._03_behavioral_patterns._13_chain_of_responsibilities._03_java;
+
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+
+@Configuration
+public class SecurityConfig extends WebSecurityConfigurerAdapter {
+
+  @Override
+  protected void configure(HttpSecurity http) throws Exception {
+    http.authorizeRequests().anyRequest().permitAll().and();
+  }
+}
+```
+
+---
+
+## 2. 커맨드(Command) 패턴
+
+### 2.1 패턴 소개
+
+![gof_3_4](https://raw.githubusercontent.com/berenickt/image-server/main/img/gof_3_4.png)
+
+요청을 캡슐화 하여 호출자(invoker)와 수신자(receiver)를 분리하는 패턴.
+
+- 요청을 처리하는 방법이 바뀌더라도, 호출자의 코드는 변경되지 않는다
+
+![gof_3_5](https://raw.githubusercontent.com/berenickt/image-server/main/img/gof_3_5.png)
+
+---
+
+### 2.2 예시 - 기존
+
+```java
+// Light.java
+package me.whiteship.designpatterns._03_behavioral_patterns._14_command._01_before;
+
+public class Light {
+
+  private boolean isOn;
+
+  public void on() {
+    System.out.println("불을 켭니다.");
+    this.isOn = true;
+  }
+
+  public void off() {
+    System.out.println("불을 끕니다.");
+    this.isOn = false;
+  }
+
+  public boolean isOn() {
+    return this.isOn;
+  }
+}
+```
+
+```java
+// Game.java
+package me.whiteship.designpatterns._03_behavioral_patterns._14_command._01_before;
+
+public class Game {
+
+  private boolean isStarted;
+
+  public void start() {
+    System.out.println("게임을 시작합니다.");
+    this.isStarted = true;
+  }
+
+  public void end() {
+    System.out.println("게임을 종료합니다.");
+    this.isStarted = false;
+  }
+
+  public boolean isStarted() {
+    return isStarted;
+  }
+}
+```
+
+```java
+// Button.java
+package me.whiteship.designpatterns._03_behavioral_patterns._14_command._01_before;
+
+public class Button {
+
+  private Light light;
+
+  public Button(Light light) {
+    this.light = light;
+  }
+
+  public void press() {
+    light.off();
+  }
+
+  public static void main(String[] args) {
+    Button button = new Button(new Light());
+    button.press();
+    button.press();
+    button.press();
+    button.press();
+  }
+}
+```
+
+```java
+// MyApp.java
+package me.whiteship.designpatterns._03_behavioral_patterns._14_command._01_before;
+
+public class MyApp {
+
+  private Game game;
+
+  public MyApp(Game game) {
+    this.game = game;
+  }
+
+  public void press() {
+    game.start();
+  }
+
+  public static void main(String[] args) {
+    Button button = new Button(new Light());
+    button.press();
+    button.press();
+    button.press();
+    button.press();
+  }
+}
+```
+
+---
+
+### 2.3 예시 - 변경
+
+```java
+// Command.java
+package me.whiteship.designpatterns._03_behavioral_patterns._14_command._02_after;
+
+public interface Command {
+  void execute();
+
+  void undo();
+}
+```
+
+```java
+// GameEndCommand.java
+package me.whiteship.designpatterns._03_behavioral_patterns._14_command._02_after;
+
+import me.whiteship.designpatterns._03_behavioral_patterns._14_command._01_before.Game;
+
+public class GameEndCommand implements Command {
+
+  private Game game;
+
+  public GameEndCommand(Game game) {
+    this.game = game;
+  }
+
+  @Override
+  public void execute() {
+    game.end();
+  }
+
+  @Override
+  public void undo() {
+    new GameStartCommand(this.game).execute();
+  }
+}
+```
+
+```java
+// GameStartCommand.java
+package me.whiteship.designpatterns._03_behavioral_patterns._14_command._02_after;
+
+import me.whiteship.designpatterns._03_behavioral_patterns._14_command._01_before.Game;
+
+public class GameStartCommand implements Command {
+
+  private Game game;
+
+  public GameStartCommand(Game game) {
+    this.game = game;
+  }
+
+  @Override
+  public void execute() {
+    game.start();
+  }
+
+  @Override
+  public void undo() {
+    new GameEndCommand(this.game).execute();
+  }
+}
+```
+
+```java
+// LightOffCommand.java
+package me.whiteship.designpatterns._03_behavioral_patterns._14_command._02_after;
+
+import me.whiteship.designpatterns._03_behavioral_patterns._14_command._01_before.Light;
+
+public class LightOffCommand implements Command {
+
+  private Light light;
+
+  public LightOffCommand(Light light) {
+    this.light = light;
+  }
+
+  @Override
+  public void execute() {
+    light.off();
+  }
+
+  @Override
+  public void undo() {
+    new LightOnCommand(this.light).execute();
+  }
+}
+```
+
+```java
+// LightOnCommand.java
+package me.whiteship.designpatterns._03_behavioral_patterns._14_command._02_after;
+
+import me.whiteship.designpatterns._03_behavioral_patterns._14_command._01_before.Light;
+
+public class LightOnCommand implements Command {
+
+  private Light light;
+
+  public LightOnCommand(Light light) {
+    this.light = light;
+  }
+
+  @Override
+  public void execute() {
+    light.on();
+  }
+
+  @Override
+  public void undo() {
+    new LightOffCommand(this.light).execute();
+  }
+}
+```
+
+```java
+// Button.java
+package me.whiteship.designpatterns._03_behavioral_patterns._14_command._02_after;
+
+import java.util.Stack;
+import me.whiteship.designpatterns._03_behavioral_patterns._14_command._01_before.Game;
+import me.whiteship.designpatterns._03_behavioral_patterns._14_command._01_before.Light;
+
+public class Button {
+
+  private Stack<Command> commands = new Stack<>();
+
+  public void press(Command command) {
+    command.execute();
+    commands.push(command);
+  }
+
+  public void undo() {
+    if (!commands.isEmpty()) {
+      Command command = commands.pop();
+      command.undo();
+    }
+  }
+
+  public static void main(String[] args) {
+    Button button = new Button();
+    button.press(new GameStartCommand(new Game()));
+    button.press(new LightOnCommand(new Light()));
+    button.undo();
+    button.undo();
+  }
+}
+```
+
+```java
+// MyApp.java
+package me.whiteship.designpatterns._03_behavioral_patterns._14_command._02_after;
+
+import me.whiteship.designpatterns._03_behavioral_patterns._14_command._01_before.Game;
+
+public class MyApp {
+
+  private Command command;
+
+  public MyApp(Command command) {
+    this.command = command;
+  }
+
+  public void press() {
+    command.execute();
+  }
+
+  public static void main(String[] args) {
+    MyApp myApp = new MyApp(new GameStartCommand(new Game()));
+  }
+}
+```
+
+---
+
+### 2.4 장단점
+
+- 장점
+  - 기존 코드를 변경하지 않고 새로운 커맨드를 만들 수 있다.
+  - 수신자의 코드가 변경되어도 호출자의 코드는 변경되지 않는다.
+  - 커맨드 객체를 로깅, DB에 저장, 네트워크로 전송 하는 등 다양한 방법으로 활용할 수도 있다.
+- 단점 : 코드가 복잡하고 클래스가 많아진다
+
+---
+
+### 2.5 실무에서 어떻게 쓰이나?
+
+자바
+
+- Runnable
+- 람다
+- 메소드 레퍼런스
+
+```java
+// CommandInJava.java
+package me.whiteship.designpatterns._03_behavioral_patterns._14_command._03_java;
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import me.whiteship.designpatterns._03_behavioral_patterns._14_command._01_before.Game;
+import me.whiteship.designpatterns._03_behavioral_patterns._14_command._01_before.Light;
+
+public class CommandInJava {
+
+  public static void main(String[] args) {
+    Light light = new Light();
+    Game game = new Game();
+    ExecutorService executorService = Executors.newFixedThreadPool(4);
+    executorService.submit(light::on);
+    executorService.submit(game::start);
+    executorService.submit(game::end);
+    executorService.submit(light::off);
+    executorService.shutdown();
+  }
+}
+```
+
+스프링
+
+- SimpleJdbcInsert
+- SimpleJdbcCall
+
+```java
+// CommandInSpring.java
+package me.whiteship.designpatterns._03_behavioral_patterns._14_command._03_java;
+
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
+import javax.sql.DataSource;
+import me.whiteship.designpatterns._03_behavioral_patterns._14_command._02_after.Command;
+import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
+
+public class CommandInSpring {
+
+  private DataSource dataSource;
+
+  public CommandInSpring(DataSource dataSource) {
+    this.dataSource = dataSource;
+  }
+
+  public void add(Command command) {
+    SimpleJdbcInsert insert = new SimpleJdbcInsert(dataSource)
+      .withTableName("command")
+      .usingGeneratedKeyColumns("id");
+
+    Map<String, Object> data = new HashMap<>();
+    data.put("name", command.getClass().getSimpleName());
+    data.put("when", LocalDateTime.now());
+    insert.execute(data);
+  }
+}
+```
+
+---
+
+## 3. 인터프리터(Interpreter) 패턴
+
+### 3.1 패턴 소개
+
+![gof_3_6](https://raw.githubusercontent.com/berenickt/image-server/main/img/gof_3_6.png)
+
+**자주 등장하는 문제를 간단한 언어로 정의하고 재사용하는 패턴**.
+
+- 반복되는 문제 패턴을 언어 또는 문법으로 정의하고 확장할 수 있다
+
+![gof_3_7](https://raw.githubusercontent.com/berenickt/image-server/main/img/gof_3_7.png)
+
+---
+
+### 3.2 예시 - 기존
+
+```java
+// PostfixNotation.java
+package me.whiteship.designpatterns._03_behavioral_patterns._15_interpreter._01_before;
+
+import java.util.Stack;
+
+public class PostfixNotation {
+
+  private final String expression;
+
+  public PostfixNotation(String expression) {
+    this.expression = expression;
+  }
+
+  public static void main(String[] args) {
+    PostfixNotation postfixNotation = new PostfixNotation("123+-");
+    postfixNotation.calculate();
+  }
+
+  private void calculate() {
+    Stack<Integer> numbers = new Stack<>();
+
+    for (char c : this.expression.toCharArray()) {
+      switch (c) {
+        case '+':
+          numbers.push(numbers.pop() + numbers.pop());
+          break;
+        case '-':
+          int right = numbers.pop();
+          int left = numbers.pop();
+          numbers.push(left - right);
+          break;
+        default:
+          numbers.push(Integer.parseInt(c + ""));
+      }
+    }
+
+    System.out.println(numbers.pop());
+  }
+}
+```
+
+---
+
+### 3.3 예시 - 변경 방법1
+
+```java
+// PostfixParser.java
+package me.whiteship.designpatterns._03_behavioral_patterns._15_interpreter._02_after;
+
+import java.util.Stack;
+
+public class PostfixParser {
+
+  public static PostfixExpression parse(String expression) {
+    Stack<PostfixExpression> stack = new Stack<>();
+    for (char c : expression.toCharArray()) {
+      stack.push(getExpression(c, stack));
+    }
+    return stack.pop();
+  }
+
+  private static PostfixExpression getExpression(
+    char c,
+    Stack<PostfixExpression> stack
+  ) {
+    switch (c) {
+      case '+':
+        return new PlusExpression(stack.pop(), stack.pop());
+      case '-':
+        PostfixExpression right = stack.pop();
+        PostfixExpression left = stack.pop();
+        return new MinusExpression(left, right);
+      default:
+        return new VariableExpression(c);
+    }
+  }
+}
+```
+
+```java
+// PostfixExpression.java
+package me.whiteship.designpatterns._03_behavioral_patterns._15_interpreter._02_after;
+
+import java.util.Map;
+
+public interface PostfixExpression {
+  int interpret(Map<Character, Integer> context);
+}
+```
+
+```java
+// VariableExpression.java
+package me.whiteship.designpatterns._03_behavioral_patterns._15_interpreter._02_after;
+
+import java.util.Map;
+
+public class VariableExpression implements PostfixExpression {
+
+  private Character character;
+
+  public VariableExpression(Character character) {
+    this.character = character;
+  }
+
+  @Override
+  public int interpret(Map<Character, Integer> context) {
+    return context.get(this.character);
+  }
+}
+```
+
+```java
+// PlusExpression.java
+package me.whiteship.designpatterns._03_behavioral_patterns._15_interpreter._02_after;
+
+import java.util.Map;
+
+public class PlusExpression implements PostfixExpression {
+
+  private PostfixExpression left;
+
+  private PostfixExpression right;
+
+  public PlusExpression(PostfixExpression left, PostfixExpression right) {
+    this.left = left;
+    this.right = right;
+  }
+
+  @Override
+  public int interpret(Map<Character, Integer> context) {
+    return left.interpret(context) + right.interpret(context);
+  }
+}
+```
+
+```java
+// MinusExpression.java
+package me.whiteship.designpatterns._03_behavioral_patterns._15_interpreter._02_after;
+
+import java.util.Map;
+
+public class MinusExpression implements PostfixExpression {
+
+  private PostfixExpression left;
+
+  private PostfixExpression right;
+
+  public MinusExpression(PostfixExpression left, PostfixExpression right) {
+    this.left = left;
+    this.right = right;
+  }
+
+  @Override
+  public int interpret(Map<Character, Integer> context) {
+    return left.interpret(context) - right.interpret(context);
+  }
+}
+```
+
+```java
+// MultiplyExpression.java
+package me.whiteship.designpatterns._03_behavioral_patterns._15_interpreter._02_after;
+
+import java.util.Map;
+
+public class MultiplyExpression implements PostfixExpression {
+
+  private PostfixExpression left, right;
+
+  public MultiplyExpression(PostfixExpression left, PostfixExpression right) {
+    this.left = left;
+    this.right = right;
+  }
+
+  @Override
+  public int interpret(Map<Character, Integer> context) {
+    return left.interpret(context) * right.interpret(context);
+  }
+}
+```
+
+```java
+// App.java
+package me.whiteship.designpatterns._03_behavioral_patterns._15_interpreter._02_after;
+
+import java.util.Map;
+
+public class App {
+
+  public static void main(String[] args) {
+    PostfixExpression expression = PostfixParser.parse("xyz+-a+");
+    int result = expression.interpret(Map.of('x', 1, 'y', 2, 'z', 3, 'a', 4));
+    System.out.println(result);
+  }
+}
+```
+
+---
+
+### 3.4 예시 - 변경 방법2
+
+```java
+// PostfixExpression.java
+public interface PostfixExpression {
+  int interpret(Map<Character, Integer> context);
+
+  static PostfixExpression plus(
+    PostfixExpression left,
+    PostfixExpression right
+  ) {
+    return context -> left.interpret(context) + right.interpret(context);
+  }
+
+  static PostfixExpression minus(
+    PostfixExpression left,
+    PostfixExpression right
+  ) {
+    return context -> left.interpret(context) - right.interpret(context);
+  }
+
+  static PostfixExpression variable(Character c) {
+    return context -> context.get(c);
+  }
+}
+```
+
+```java
+// PostfixParser.java
+public class PostfixParser {
+
+  public static PostfixExpression parse(String expression) {
+    Stack<PostfixExpression> stack = new Stack<>();
+    for (char c : expression.toCharArray()) {
+      stack.push(getExpression(c, stack));
+    }
+    return stack.pop();
+  }
+
+  private static PostfixExpression getExpression(
+    char c,
+    Stack<PostfixExpression> stack
+  ) {
+    switch (c) {
+      case '+':
+        return PostfixExpression.plus(stack.pop(), stack.pop());
+      case '-':
+        PostfixExpression right = stack.pop();
+        PostfixExpression left = stack.pop();
+        return PostfixExpression.minus(left, right);
+      default:
+        return PostfixExpression.variable(c);
+    }
+  }
+}
+```
+
+---
+
+### 3.5 장단점
+
+- 장점
+  - 자주 등장하는 문제 패턴을 언어와 문법으로 정의할 수 있다.
+  - 기존 코드를 변경하지 않고 새로운 Expression을 추가할 수 있다.
+- 단점 : 복잡한 문법을 표현하려면 Expression과 Parser가 복잡해진다
+
+---
+
+### 3.6 실무에서 어떻게 쓰이나?
+
+자바
+
+- 자바 컴파일러
+- 정규 표현식
+
+```java
+// InterpreterInJava.java
+package me.whiteship.designpatterns._03_behavioral_patterns._15_interpreter._03_java;
+
+import java.util.regex.Pattern;
+
+public class InterpreterInJava {
+
+  public static void main(String[] args) {
+    System.out.println(Pattern.matches(".pr...", "spring"));
+    System.out.println(Pattern.matches("[a-z]{6}", "spring"));
+    System.out.println(Pattern.matches("white[a-z]{4}[0-9]{4}", "whiteship2000"));
+    System.out.println(Pattern.matches("\\d", "1")); // one digit
+    System.out.println(Pattern.matches("\\D", "a")); // one non-digit
+  }
+}
+```
+
+스프링
+
+- SpEL (스프링 Expression Language)
+
+```java
+// InterpreterInSpring.java
+package me.whiteship.designpatterns._03_behavioral_patterns._15_interpreter._03_java;
+
+import org.springframework.expression.Expression;
+import org.springframework.expression.ExpressionParser;
+import org.springframework.expression.spel.standard.SpelExpressionParser;
+
+public class InterpreterInSpring {
+
+  public static void main(String[] args) {
+    Book book = new Book("spring");
+
+    ExpressionParser parser = new SpelExpressionParser();
+    Expression expression = parser.parseExpression("title");
+    System.out.println(expression.getValue(book));
+  }
+}
+```
+
+```java
+// MyService.java
+package me.whiteship.designpatterns._03_behavioral_patterns._15_interpreter._03_java;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.ApplicationArguments;
+import org.springframework.boot.ApplicationRunner;
+import org.springframework.stereotype.Service;
+
+@Service
+public class MyService implements ApplicationRunner {
+
+  @Value("#{2 + 5}")
+  private String value;
+
+  @Override
+  public void run(ApplicationArguments args) throws Exception {
+    System.out.println(value);
+  }
+}
+```
+
+---
+
+## 4. 이터레이터(Interator) 패턴
+
+### 4.1 패턴 소개
+
+![gof_3_8](https://raw.githubusercontent.com/berenickt/image-server/main/img/gof_3_8.png)
+
+- 집합 객체 내부 구조를 노출시키지 않고 순회 하는 방법을 제공하는 패턴
+- 집합 객체를 순회하는 클라이언트 코드를 변경하지 않고 다양한 순회 방법을 제공할 수 있다.
+
+![gof_3_9](https://raw.githubusercontent.com/berenickt/image-server/main/img/gof_3_9.png)
+
+---
+
+### 4.2 예시 - 기존
+
+```java
+// Post.java
+package me.whiteship.designpatterns._03_behavioral_patterns._16_iterator._01_before;
+
+import java.time.LocalDateTime;
+
+public class Post {
+
+  private String title;
+
+  private LocalDateTime createdDateTime;
+
+  public Post(String title) {
+    this.title = title;
+    this.createdDateTime = LocalDateTime.now();
+  }
+
+  public String getTitle() {
+    return title;
+  }
+
+  public void setTitle(String title) {
+    this.title = title;
+  }
+
+  public LocalDateTime getCreatedDateTime() {
+    return createdDateTime;
+  }
+
+  public void setCreatedDateTime(LocalDateTime createdDateTime) {
+    this.createdDateTime = createdDateTime;
+  }
+}
+```
+
+```java
+// Board.java
+package me.whiteship.designpatterns._03_behavioral_patterns._16_iterator._01_before;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class Board {
+
+  List<Post> posts = new ArrayList<>();
+
+  public List<Post> getPosts() {
+    return posts;
+  }
+
+  public void setPosts(List<Post> posts) {
+    this.posts = posts;
+  }
+
+  public void addPost(String content) {
+    this.posts.add(new Post(content));
+  }
+}
+```
+
+```java
+// Client.java
+package me.whiteship.designpatterns._03_behavioral_patterns._16_iterator._01_before;
+
+import java.util.Collections;
+import java.util.List;
+
+public class Client {
+
+  public static void main(String[] args) {
+    Board board = new Board();
+    board.addPost("디자인 패턴 게임");
+    board.addPost("선생님, 저랑 디자인 패턴 하나 학습하시겠습니까?");
+    board.addPost(
+      "지금 이 자리에 계신 여러분들은 모두 디자인 패턴을 학습하고 계신 분들입니다."
+    );
+
+    // TODO 들어간 순서대로 순회하기
+    List<Post> posts = board.getPosts();
+    for (int i = 0; i < posts.size(); i++) {
+      Post post = posts.get(i);
+      System.out.println(post.getTitle());
+    }
+
+    // TODO 가장 최신 글 먼저 순회하기
+    Collections.sort(
+      posts,
+      (p1, p2) -> p2.getCreatedDateTime().compareTo(p1.getCreatedDateTime())
+    );
+    for (int i = 0; i < posts.size(); i++) {
+      Post post = posts.get(i);
+      System.out.println(post.getTitle());
+    }
+  }
+}
+```
+
+---
+
+### 4.3 예시 - 변경
+
+```java
+// RecentPostIterator.java
+package me.whiteship.designpatterns._03_behavioral_patterns._16_iterator._02_after;
+
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import me.whiteship.designpatterns._03_behavioral_patterns._16_iterator._01_before.Post;
+
+public class RecentPostIterator implements Iterator<Post> {
+
+  private Iterator<Post> internalIterator;
+
+  public RecentPostIterator(List<Post> posts) {
+    Collections.sort(
+      posts,
+      (p1, p2) -> p2.getCreatedDateTime().compareTo(p1.getCreatedDateTime())
+    );
+    this.internalIterator = posts.iterator();
+  }
+
+  @Override
+  public boolean hasNext() {
+    return this.internalIterator.hasNext();
+  }
+
+  @Override
+  public Post next() {
+    return this.internalIterator.next();
+  }
+}
+```
+
+```java
+// Board.java
+package me.whiteship.designpatterns._03_behavioral_patterns._16_iterator._02_after;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import me.whiteship.designpatterns._03_behavioral_patterns._16_iterator._01_before.Post;
+
+public class Board {
+
+  List<Post> posts = new ArrayList<>();
+
+  public List<Post> getPosts() {
+    return posts;
+  }
+
+  public void addPost(String content) {
+    this.posts.add(new Post(content));
+  }
+
+  public Iterator<Post> getRecentPostIterator() {
+    return new RecentPostIterator(this.posts);
+  }
+}
+```
+
+```java
+// Client.java
+package me.whiteship.designpatterns._03_behavioral_patterns._16_iterator._02_after;
+
+import java.util.Iterator;
+import java.util.List;
+import me.whiteship.designpatterns._03_behavioral_patterns._16_iterator._01_before.Post;
+
+public class Client {
+
+  public static void main(String[] args) {
+    Board board = new Board();
+    board.addPost("디자인 패턴 게임");
+    board.addPost("선생님, 저랑 디자인 패턴 하나 학습하시겠습니까?");
+    board.addPost(
+      "지금 이 자리에 계신 여러분들은 모두 디자인 패턴을 학습하고 계신 분들입니다."
+    );
+
+    // TODO 들어간 순서대로 순회하기
+    List<Post> posts = board.getPosts();
+    Iterator<Post> iterator = posts.iterator();
+    System.out.println(iterator.getClass());
+
+    for (int i = 0; i < posts.size(); i++) {
+      Post post = posts.get(i);
+      System.out.println(post.getTitle());
+    }
+
+    // TODO 가장 최신 글 먼저 순회하기
+    Iterator<Post> recentPostIterator = board.getRecentPostIterator();
+    while (recentPostIterator.hasNext()) {
+      System.out.println(recentPostIterator.next().getTitle());
+    }
+  }
+}
+```
+
+---
+
+### 4.4 장단점
+
+- 장점
+  - 집합 객체가 가지고 있는 객체들에 손쉽게 접근할 수 있다.
+  - 일관된 인터페이스를 사용해 여러 형태의 집합 구조를 순회할 수 있다.
+- 단점
+  - 클래스가 늘어나고 복잡도가 증가한다
+
+---
+
+### 4.5 실무에서 어떻게 쓰이나?
+
+자바
+
+- java.util.Enumeration과 java.util.Iterator
+- Java StAX (Streaming API for XML)의 Iterator 기반 API
+- XmlEventReader, XmlEventWriter
+
+```java
+// IteratorInJava.java
+package me.whiteship.designpatterns._03_behavioral_patterns._16_iterator._03_java;
+
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.util.Enumeration;
+import java.util.Iterator;
+import javax.xml.namespace.QName;
+import javax.xml.stream.XMLEventReader;
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.events.Attribute;
+import javax.xml.stream.events.StartElement;
+import javax.xml.stream.events.XMLEvent;
+import me.whiteship.designpatterns._03_behavioral_patterns._16_iterator._02_after.Board;
+
+public class IteratorInJava {
+
+  public static void main(String[] args)
+    throws FileNotFoundException, XMLStreamException {
+    Enumeration enumeration;
+    Iterator iterator;
+
+    Board board = new Board();
+    board.addPost("디자인 패턴 게임");
+    board.addPost("선생님, 저랑 디자인 패턴 하나 학습하시겠습니까?");
+    board.addPost(
+      "지금 이 자리에 계신 여러분들은 모두 디자인 패턴을 학습하고 계신 분들입니다."
+    );
+
+    // board.getPosts().iterator().forEachRemaining(p -> System.out.println(p.getTitle()));
+
+    // TODO Streaming API for XML(StAX), 이터레이터 기반의 API
+    XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
+    XMLEventReader reader = xmlInputFactory.createXMLEventReader(
+      new FileInputStream("Book.xml")
+    );
+
+    while (reader.hasNext()) {
+      XMLEvent nextEvent = reader.nextEvent();
+      if (nextEvent.isStartElement()) {
+        StartElement startElement = nextEvent.asStartElement();
+        QName name = startElement.getName();
+        if (name.getLocalPart().equals("book")) {
+          Attribute title = startElement.getAttributeByName(new QName("title"));
+          System.out.println(title.getValue());
+        }
+      }
+    }
+  }
+}
+```
+
+스프링
+
+- CompositeIterator
+
+```java
+// IteratorInSpring.java
+package me.whiteship.designpatterns._03_behavioral_patterns._16_iterator._03_java;
+
+import org.springframework.util.CompositeIterator;
+
+public class IteratorInSpring {
+
+  public static void main(String[] args) {
+    CompositeIterator iterator;
+  }
+}
+```
+
+---
+
+## 5. 중재자(Mediator) 패턴
+
+### 5.1 패턴 소개
+
+![gof_3_10](https://raw.githubusercontent.com/berenickt/image-server/main/img/gof_3_10.png)
+
+여러 객체들이 소통하는 방법을 캡슐화하는 패턴.
+
+- 여러 컴포넌트간의 결합도를 중재자를 통해 낮출 수 있다.
+
+![gof_3_11](https://raw.githubusercontent.com/berenickt/image-server/main/img/gof_3_11.png)
+
+---
+
+### 5.2 예시 - 기존
+
+```java
+// Guest.java
+package me.whiteship.designpatterns._03_behavioral_patterns._17_mediator._01_before;
+
+public class Guest {
+
+  private Restaurant restaurant = new Restaurant();
+
+  private CleaningService cleaningService = new CleaningService();
+
+  public void dinner() {
+    restaurant.dinner(this);
+  }
+
+  public void getTower(int numberOfTower) {
+    cleaningService.getTower(this, numberOfTower);
+  }
+}
+```
+
+```java
+// Gym.java
+package me.whiteship.designpatterns._03_behavioral_patterns._17_mediator._01_before;
+
+public class Gym {
+
+  private CleaningService cleaningService;
+
+  public void clean() {
+    cleaningService.clean(this);
+  }
+}
+```
+
+```java
+// Restaurant.java
+package me.whiteship.designpatterns._03_behavioral_patterns._17_mediator._01_before;
+
+public class Restaurant {
+
+  private CleaningService cleaningService = new CleaningService();
+
+  public void dinner(Guest guest) {
+    System.out.println("dinner " + guest);
+  }
+
+  public void clean() {
+    cleaningService.clean(this);
+  }
+}
+```
+
+```java
+// CleaningService.java
+package me.whiteship.designpatterns._03_behavioral_patterns._17_mediator._01_before;
+
+public class CleaningService {
+
+  public void clean(Gym gym) {
+    System.out.println("clean " + gym);
+  }
+
+  public void getTower(Guest guest, int numberOfTower) {
+    System.out.println(numberOfTower + " towers to " + guest);
+  }
+
+  public void clean(Restaurant restaurant) {
+    System.out.println("clean " + restaurant);
+  }
+}
+```
+
+```java
+// Hotel.java
+package me.whiteship.designpatterns._03_behavioral_patterns._17_mediator._01_before;
+
+public class Hotel {
+
+  public static void main(String[] args) {
+    Guest guest = new Guest();
+    guest.getTower(3);
+    guest.dinner();
+
+    Restaurant restaurant = new Restaurant();
+    restaurant.clean();
+  }
+}
+```
+
+---
+
+### 5.3 예시 - 변경
+
+```java
+// CleaningService.java
+package me.whiteship.designpatterns._03_behavioral_patterns._17_mediator._02_after;
+
+public class CleaningService {
+
+  private FrontDesk frontDesk = new FrontDesk();
+
+  public void getTowers(Integer guestId, int numberOfTowers) {
+    String roomNumber = this.frontDesk.getRoomNumberFor(guestId);
+    System.out.println("provide " + numberOfTowers + " to " + roomNumber);
+  }
+}
+```
+
+```java
+// Guest.java
+package me.whiteship.designpatterns._03_behavioral_patterns._17_mediator._02_after;
+
+import java.time.LocalDateTime;
+
+public class Guest {
+
+  private Integer id;
+
+  private FrontDesk frontDesk = new FrontDesk();
+
+  public void getTowers(int numberOfTowers) {
+    this.frontDesk.getTowers(this, numberOfTowers);
+  }
+
+  private void dinner(LocalDateTime dateTime) {
+    this.frontDesk.dinner(this, dateTime);
+  }
+
+  public Integer getId() {
+    return id;
+  }
+
+  public void setId(Integer id) {
+    this.id = id;
+  }
+}
+```
+
+```java
+// Restaurant.java
+package me.whiteship.designpatterns._03_behavioral_patterns._17_mediator._02_after;
+
+import java.time.LocalDateTime;
+
+public class Restaurant {
+
+  public void dinner(Integer id, LocalDateTime dateTime) {}
+}
+```
+
+```java
+// FrontDesk.java
+package me.whiteship.designpatterns._03_behavioral_patterns._17_mediator._02_after;
+
+import java.time.LocalDateTime;
+
+public class FrontDesk {
+
+  private CleaningService cleaningService = new CleaningService();
+
+  private Restaurant restaurant = new Restaurant();
+
+  public void getTowers(Guest guest, int numberOfTowers) {
+    cleaningService.getTowers(guest.getId(), numberOfTowers);
+  }
+
+  public String getRoomNumberFor(Integer guestId) {
+    return "1111";
+  }
+
+  public void dinner(Guest guest, LocalDateTime dateTime) {
+    restaurant.dinner(guest.getId(), dateTime);
+  }
+}
+```
+
+---
+
+### 5.4 장단점
+
+- 장점
+  - 컴포넌트 코드를 변경하지 않고 새로운 중재자를 만들어 사용할 수 있다.
+  - 각각의 컴포넌트 코드를 보다 간결하게 유지할 수 있다.
+- 단점
+  - 중재자 역할을 하는 클래스의 복잡도와 결합도가 증가한다
+
+---
+
+### 5.5 실무에서 어떻게 쓰이나?
+
+![gof_3_12](https://raw.githubusercontent.com/berenickt/image-server/main/img/gof_3_12.png)
+
+- 자바
+  - ExecutorService
+  - Executor
+- 스프링
+  - DispatcherServlet
+
+---
+
+## 6. 메멘토(Mediator) 패턴
+
+### 6.1 패턴 소개
+
+![gof_3_13](https://raw.githubusercontent.com/berenickt/image-server/main/img/gof_3_13.png)
+
+캡슐화를 유지하면서 객체 내부 상태를 외부에 저장하는 방법.
+
+- 객체 상태를 외부에 저장했다가 해당 상태로 다시 복구할 수 있다.
+
+![gof_3_14](https://raw.githubusercontent.com/berenickt/image-server/main/img/gof_3_14.png)
+
+---
+
+### 6.2 예시 - 기존
+
+```java
+// Game.java
+package me.whiteship.designpatterns._03_behavioral_patterns._18_memento._01_before;
+
+import java.io.Serializable;
+
+public class Game implements Serializable {
+
+  private int redTeamScore;
+
+  private int blueTeamScore;
+
+  public int getRedTeamScore() {
+    return redTeamScore;
+  }
+
+  public void setRedTeamScore(int redTeamScore) {
+    this.redTeamScore = redTeamScore;
+  }
+
+  public int getBlueTeamScore() {
+    return blueTeamScore;
+  }
+
+  public void setBlueTeamScore(int blueTeamScore) {
+    this.blueTeamScore = blueTeamScore;
+  }
+}
+
+```
+
+```java
+// Client.java
+package me.whiteship.designpatterns._03_behavioral_patterns._18_memento._01_before;
+
+public class Client {
+
+  public static void main(String[] args) {
+    Game game = new Game();
+    game.setRedTeamScore(10);
+    game.setBlueTeamScore(20);
+
+    int blueTeamScore = game.getBlueTeamScore();
+    int redTeamScore = game.getRedTeamScore();
+
+    Game restoredGame = new Game();
+    restoredGame.setBlueTeamScore(blueTeamScore);
+    restoredGame.setRedTeamScore(redTeamScore);
+  }
+}
+```
+
+---
+
+### 6.3 예시 - 변경
+
+```java
+// GameSave.java
+package me.whiteship.designpatterns._03_behavioral_patterns._18_memento._02_after;
+
+public final class GameSave {
+
+  private final int blueTeamScore;
+
+  private final int redTeamScore;
+
+  public GameSave(int blueTeamScore, int redTeamScore) {
+    this.blueTeamScore = blueTeamScore;
+    this.redTeamScore = redTeamScore;
+  }
+
+  public int getBlueTeamScore() {
+    return blueTeamScore;
+  }
+
+  public int getRedTeamScore() {
+    return redTeamScore;
+  }
+}
+```
+
+```java
+// Game.java
+package me.whiteship.designpatterns._03_behavioral_patterns._18_memento._02_after;
+
+public class Game {
+
+  private int redTeamScore;
+
+  private int blueTeamScore;
+
+  public int getRedTeamScore() {
+    return redTeamScore;
+  }
+
+  public void setRedTeamScore(int redTeamScore) {
+    this.redTeamScore = redTeamScore;
+  }
+
+  public int getBlueTeamScore() {
+    return blueTeamScore;
+  }
+
+  public void setBlueTeamScore(int blueTeamScore) {
+    this.blueTeamScore = blueTeamScore;
+  }
+
+  public GameSave save() {
+    return new GameSave(this.blueTeamScore, this.redTeamScore);
+  }
+
+  public void restore(GameSave gameSave) {
+    this.blueTeamScore = gameSave.getBlueTeamScore();
+    this.redTeamScore = gameSave.getRedTeamScore();
+  }
+}
+```
+
+```java
+// Client.java
+package me.whiteship.designpatterns._03_behavioral_patterns._18_memento._02_after;
+
+public class Client {
+
+  public static void main(String[] args) {
+    Game game = new Game();
+    game.setBlueTeamScore(10);
+    game.setRedTeamScore(20);
+
+    GameSave save = game.save();
+
+    game.setBlueTeamScore(12);
+    game.setRedTeamScore(22);
+
+    game.restore(save);
+
+    System.out.println(game.getBlueTeamScore());
+    System.out.println(game.getRedTeamScore());
+  }
+}
+```
+
+---
+
+### 6.4 장단점
+
+- 장점
+  - 캡슐화를 지키면서 상태 객체 상태 스냅샷을 만들 수 있다.
+  - 객체 상태 저장하고 또는 복원하는 역할을 CareTaker에게 위임할 수 있다.
+  - 객체 상태가 바뀌어도 클라이언트 코드는 변경되지 않는다.
+- 단점
+  - 많은 정보를 저장하는 Mementor를 자주 생성하는 경우 메모리 사용량에 많은 영향을 줄 수 있 다
+
+---
+
+### 6.5 실무에서 어떻게 쓰이나?
+
+자바
+
+- 객체 직렬화, java.io.Serializable
+- java.util.Date
+
+```java
+// MementoInJava.java
+package me.whiteship.designpatterns._03_behavioral_patterns._18_memento._03_java;
+
+import java.io.*;
+import me.whiteship.designpatterns._03_behavioral_patterns._18_memento._01_before.Game;
+
+public class MementoInJava {
+
+  public static void main(String[] args)
+    throws IOException, ClassNotFoundException {
+    // TODO Serializable
+    Game game = new Game();
+    game.setRedTeamScore(10);
+    game.setBlueTeamScore(20);
+
+    // TODO 직렬화
+    try (
+      FileOutputStream fileOut = new FileOutputStream("GameSave.hex");
+      ObjectOutputStream out = new ObjectOutputStream(fileOut)
+    ) {
+      out.writeObject(game);
+    }
+
+    game.setBlueTeamScore(25);
+    game.setRedTeamScore(15);
+
+    // TODO 역직렬화
+    try (
+      FileInputStream fileIn = new FileInputStream("GameSave.hex");
+      ObjectInputStream in = new ObjectInputStream(fileIn)
+    ) {
+      game = (Game) in.readObject();
+      System.out.println(game.getBlueTeamScore());
+      System.out.println(game.getRedTeamScore());
+    }
+  }
+}
+```
+
+---
+
+## 8. 옵저버(Observer) 패턴
+
+### 8.1 패턴 소개
+
+![gof_3_15](https://raw.githubusercontent.com/berenickt/image-server/main/img/gof_3_15.png)
+
+다수의 객체가 특정 객체 상태 변화를 감지하고 알림을 받는 패턴.
+
+- 발행(publish)-구독(subscribe) 패턴을 구현할 수 있다.
+
+![gof_3_16](https://raw.githubusercontent.com/berenickt/image-server/main/img/gof_3_16.png)
+
+---
+
+### 8.2 예시 - 기존
+
+```java
+// ChatServer.java
+package me.whiteship.designpatterns._03_behavioral_patterns._19_observer._01_before;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+public class ChatServer {
+
+  private Map<String, List<String>> messages;
+
+  public ChatServer() {
+    this.messages = new HashMap<>();
+  }
+
+  public void add(String subject, String message) {
+    if (messages.containsKey(subject)) {
+      messages.get(subject).add(message);
+    } else {
+      List<String> messageList = new ArrayList<>();
+      messageList.add(message);
+      messages.put(subject, messageList);
+    }
+  }
+
+  public List<String> getMessage(String subject) {
+    return messages.get(subject);
+  }
+}
+```
+
+```java
+// User.java
+package me.whiteship.designpatterns._03_behavioral_patterns._19_observer._01_before;
+
+import java.util.List;
+
+public class User {
+
+  private ChatServer chatServer;
+
+  public User(ChatServer chatServer) {
+    this.chatServer = chatServer;
+  }
+
+  public void sendMessage(String subject, String message) {
+    chatServer.add(subject, message);
+  }
+
+  public List<String> getMessage(String subject) {
+    return chatServer.getMessage(subject);
+  }
+}
+```
+
+```java
+// Client.java
+package me.whiteship.designpatterns._03_behavioral_patterns._19_observer._01_before;
+
+public class Client {
+
+  public static void main(String[] args) {
+    ChatServer chatServer = new ChatServer();
+
+    User user1 = new User(chatServer);
+    user1.sendMessage("디자인패턴", "이번엔 옵저버 패턴입니다.");
+    user1.sendMessage("롤드컵2021", "LCK 화이팅!");
+
+    User user2 = new User(chatServer);
+    System.out.println(user2.getMessage("디자인패턴"));
+
+    user1.sendMessage("디자인패턴", "예제 코드 보는 중..");
+    System.out.println(user2.getMessage("디자인패턴"));
+  }
+}
+```
+
+---
+
+### 8.3 예시 - 변경
+
+```java
+// Subscriber.java
+package me.whiteship.designpatterns._03_behavioral_patterns._19_observer._02_after;
+
+public interface Subscriber {
+  void handleMessage(String message);
+}
+```
+
+```java
+// User.java
+package me.whiteship.designpatterns._03_behavioral_patterns._19_observer._02_after;
+
+public class User implements Subscriber {
+
+  private String name;
+
+  public User(String name) {
+    this.name = name;
+  }
+
+  public String getName() {
+    return name;
+  }
+
+  @Override
+  public void handleMessage(String message) {
+    System.out.println(message);
+  }
+}
+```
+
+```java
+// ChatServer.java
+package me.whiteship.designpatterns._03_behavioral_patterns._19_observer._02_after;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+public class ChatServer {
+
+  private Map<String, List<Subscriber>> subscribers = new HashMap<>();
+
+  public void register(String subject, Subscriber subscriber) {
+    if (this.subscribers.containsKey(subject)) {
+      this.subscribers.get(subject).add(subscriber);
+    } else {
+      List<Subscriber> list = new ArrayList<>();
+      list.add(subscriber);
+      this.subscribers.put(subject, list);
+    }
+  }
+
+  public void unregister(String subject, Subscriber subscriber) {
+    if (this.subscribers.containsKey(subject)) {
+      this.subscribers.get(subject).remove(subscriber);
+    }
+  }
+
+  public void sendMessage(User user, String subject, String message) {
+    if (this.subscribers.containsKey(subject)) {
+      String userMessage = user.getName() + ": " + message;
+      this.subscribers.get(subject).forEach(s -> s.handleMessage(userMessage));
+    }
+  }
+}
+```
+
+```java
+// Client.java
+package me.whiteship.designpatterns._03_behavioral_patterns._19_observer._02_after;
+
+public class Client {
+
+  public static void main(String[] args) {
+    ChatServer chatServer = new ChatServer();
+    User user1 = new User("keesun");
+    User user2 = new User("whiteship");
+
+    chatServer.register("오징어게임", user1);
+    chatServer.register("오징어게임", user2);
+
+    chatServer.register("디자인패턴", user1);
+
+    chatServer.sendMessage(
+      user1,
+      "오징어게임",
+      "아.. 이름이 기억났어.. 일남이야.. 오일남"
+    );
+    chatServer.sendMessage(user2, "디자인패턴", "옵저버 패턴으로 만든 채팅");
+
+    chatServer.unregister("디자인패턴", user2);
+
+    chatServer.sendMessage(user2, "디자인패턴", "옵저버 패턴 장, 단점 보는 중");
+  }
+}
+```
+
+---
+
+### 8.4 장단점
+
+- 장점
+  - 상태를 변경하는 객체(publisher)와 변경을 감지하는 객체(subsriber)의 관계를 느슨하게 유지할 수 있다.
+  - Subject의 상태 변경을 주기적으로 조회하지 않고 자동으로 감지할 수 있다.
+  - 런타임에 옵저버를 추가하거나 제거할 수 있다.
+- 단점
+  - 복잡도가 증가한다.
+  - 다수의 Observer 객체를 등록 이후 해지 않는다면 memory leak이 발생할 수도 있다
+
+---
+
+### 8.5 실무에서 어떻게 쓰이나?
+
+자바
+
+- Observable과 Observer (자바 9부터 deprecated)
+- 자바 9 이후 부터는
+  - PropertyChangeListener, PropertyChangeEvent
+  - Flow API
+- SAX (Simple API for XML) 라이브러리
+
+```java
+// ObserverInJava.java
+package me.whiteship.designpatterns._03_behavioral_patterns._19_observer._03_java;
+
+import java.util.Observable;
+import java.util.Observer;
+
+public class ObserverInJava {
+
+  static class User implements Observer {
+
+    @Override
+    public void update(Observable o, Object arg) {
+      System.out.println(arg);
+    }
+  }
+
+  static class Subject extends Observable {
+
+    public void add(String message) {
+      setChanged();
+      notifyObservers(message);
+    }
+  }
+
+  public static void main(String[] args) {
+    Subject subject = new Subject();
+    User user = new User();
+    subject.addObserver(user);
+    subject.add("Hello Java, Observer");
+  }
+}
+```
+
+```java
+// PropertyChangeExample.java
+package me.whiteship.designpatterns._03_behavioral_patterns._19_observer._03_java;
+
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
+
+public class PropertyChangeExample {
+
+  static class User implements PropertyChangeListener {
+
+    @Override
+    public void propertyChange(PropertyChangeEvent evt) {
+      System.out.println(evt.getNewValue());
+    }
+  }
+
+  static class Subject {
+
+    PropertyChangeSupport support = new PropertyChangeSupport(this);
+
+    public void addObserver(PropertyChangeListener observer) {
+      support.addPropertyChangeListener(observer);
+    }
+
+    public void removeObserver(PropertyChangeListener observer) {
+      support.removePropertyChangeListener(observer);
+    }
+
+    public void add(String message) {
+      support.firePropertyChange("eventName", null, message);
+    }
+  }
+
+  public static void main(String[] args) {
+    Subject subject = new Subject();
+    User observer = new User();
+    subject.addObserver(observer);
+    subject.add("자바 PCL 예제 코드");
+    subject.removeObserver(observer);
+    subject.add("이 메시지는 볼 수 없지..");
+  }
+}
+```
+
+```java
+// FlowInJava.java
+package me.whiteship.designpatterns._03_behavioral_patterns._19_observer._03_java;
+
+import java.util.concurrent.Flow;
+import java.util.concurrent.SubmissionPublisher;
+
+public class FlowInJava {
+
+  public static void main(String[] args) throws InterruptedException {
+    Flow.Publisher<String> publisher = new SubmissionPublisher<>();
+
+    Flow.Subscriber<String> subscriber = new Flow.Subscriber<String>() {
+      private Flow.Subscription subscription;
+
+      @Override
+      public void onSubscribe(Flow.Subscription subscription) {
+        System.out.println("sub!");
+        this.subscription = subscription;
+        this.subscription.request(1);
+      }
+
+      @Override
+      public void onNext(String item) {
+        System.out.println("onNext called");
+        System.out.println(Thread.currentThread().getName());
+        System.out.println(item);
+      }
+
+      @Override
+      public void onError(Throwable throwable) {}
+
+      @Override
+      public void onComplete() {
+        System.out.println("completed");
+      }
+    };
+
+    publisher.subscribe(subscriber);
+
+    ((SubmissionPublisher) publisher).submit("hello java");
+
+    System.out.println("이게 먼저 출력될 수도 있습니다.");
+  }
+}
+```
+
+스프링
+
+- ApplicationContext와 ApplicationEvent
+
+```java
+// MyEvent.java
+package me.whiteship.designpatterns._03_behavioral_patterns._19_observer._03_java;
+
+public class MyEvent {
+
+  private String message;
+
+  public MyEvent(String message) {
+    this.message = message;
+  }
+
+  public String getMessage() {
+    return message;
+  }
+}
+```
+
+```java
+// MyEventListener.java
+package me.whiteship.designpatterns._03_behavioral_patterns._19_observer._03_java;
+
+import org.springframework.context.event.EventListener;
+import org.springframework.stereotype.Component;
+
+@Component
+public class MyEventListener {
+
+  @EventListener(MyEvent.class)
+  public void onApplicationEvent(MyEvent event) {
+    System.out.println(event.getMessage());
+  }
+}
+```
+
+```java
+// MyRunner.java
+package me.whiteship.designpatterns._03_behavioral_patterns._19_observer._03_java;
+
+import org.springframework.boot.ApplicationArguments;
+import org.springframework.boot.ApplicationRunner;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.stereotype.Component;
+
+@Component
+public class MyRunner implements ApplicationRunner {
+
+  private ApplicationEventPublisher publisher;
+
+  public MyRunner(ApplicationEventPublisher publisher) {
+    this.publisher = publisher;
+  }
+
+  @Override
+  public void run(ApplicationArguments args) throws Exception {
+    publisher.publishEvent(new MyEvent("hello spring event"));
+  }
+}
+```
+
+---
+
+## 9. 상태(State) 패턴
+
+### 9.1 패턴 소개
+
+![gof_3_17](https://raw.githubusercontent.com/berenickt/image-server/main/img/gof_3_17.png)
+
+객체 내부 상태 변경에 따라 객체의 행동이 달라지는 패턴.
+
+- 상태에 특화된 행동들을 분리해 낼 수 있으며, 새로운 행동을 추가하더라도 다른 행동에 영향을 주지 않는다.
+
+![gof_3_18](https://raw.githubusercontent.com/berenickt/image-server/main/img/gof_3_18.png)
+
+---
+
+### 9.2 예시 - 기존
+
+```java
+// Student.java
+package me.whiteship.designpatterns._03_behavioral_patterns._20_state._01_before;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class Student {
+
+  private String name;
+
+  public Student(String name) {
+    this.name = name;
+  }
+
+  private List<OnlineCourse> privateCourses = new ArrayList<>();
+
+  public boolean isEnabledForPrivateClass(OnlineCourse onlineCourse) {
+    return privateCourses.contains(onlineCourse);
+  }
+
+  public void addPrivateCourse(OnlineCourse onlineCourse) {
+    this.privateCourses.add(onlineCourse);
+  }
+
+  @Override
+  public String toString() {
+    return "Student{" + "name='" + name + '\'' + '}';
+  }
+}
+```
+
+```java
+// OnlineCourse.java
+package me.whiteship.designpatterns._03_behavioral_patterns._20_state._01_before;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class OnlineCourse {
+
+  public enum State {
+    DRAFT,
+    PUBLISHED,
+    PRIVATE,
+  }
+
+  private State state = State.DRAFT;
+
+  private List<String> reviews = new ArrayList<>();
+
+  private List<Student> students = new ArrayList<>();
+
+  public void addReview(String review, Student student) {
+    if (this.state == State.PUBLISHED) {
+      this.reviews.add(review);
+    } else if (this.state == State.PRIVATE && this.students.contains(student)) {
+      this.reviews.add(review);
+    } else {
+      throw new UnsupportedOperationException("리뷰를 작성할 수 없습니다.");
+    }
+  }
+
+  public void addStudent(Student student) {
+    if (this.state == State.DRAFT || this.state == State.PUBLISHED) {
+      this.students.add(student);
+    } else if (this.state == State.PRIVATE && availableTo(student)) {
+      this.students.add(student);
+    } else {
+      throw new UnsupportedOperationException(
+        "학생을 해당 수업에 추가할 수 없습니다."
+      );
+    }
+
+    if (this.students.size() > 1) {
+      this.state = State.PRIVATE;
+    }
+  }
+
+  public void changeState(State newState) {
+    this.state = newState;
+  }
+
+  public State getState() {
+    return state;
+  }
+
+  public List<String> getReviews() {
+    return reviews;
+  }
+
+  public List<Student> getStudents() {
+    return students;
+  }
+
+  private boolean availableTo(Student student) {
+    return student.isEnabledForPrivateClass(this);
+  }
+}
+```
+
+```java
+// Client.java
+package me.whiteship.designpatterns._03_behavioral_patterns._20_state._01_before;
+
+public class Client {
+
+  public static void main(String[] args) {
+    Student student = new Student("whiteship");
+    OnlineCourse onlineCourse = new OnlineCourse();
+
+    Student keesun = new Student("keesun");
+    keesun.addPrivateCourse(onlineCourse);
+
+    onlineCourse.addStudent(student);
+    onlineCourse.changeState(OnlineCourse.State.PRIVATE);
+
+    onlineCourse.addStudent(keesun);
+
+    onlineCourse.addReview("hello", student);
+
+    System.out.println(onlineCourse.getState());
+    System.out.println(onlineCourse.getStudents());
+    System.out.println(onlineCourse.getReviews());
+  }
+}
+```
+
+---
+
+### 9.3 예시 - 변경
+
+```java
+// State.java
+package me.whiteship.designpatterns._03_behavioral_patterns._20_state._02_after;
+
+public interface State {
+  void addReview(String review, Student student);
+
+  void addStudent(Student student);
+}
+```
+
+```java
+// Draft.java
+package me.whiteship.designpatterns._03_behavioral_patterns._20_state._02_after;
+
+public class Draft implements State {
+
+  private OnlineCourse onlineCourse;
+
+  public Draft(OnlineCourse onlineCourse) {
+    this.onlineCourse = onlineCourse;
+  }
+
+  @Override
+  public void addReview(String review, Student student) {
+    throw new UnsupportedOperationException(
+      "드래프트 상태에서는 리뷰를 남길 수 없습니다."
+    );
+  }
+
+  @Override
+  public void addStudent(Student student) {
+    this.onlineCourse.getStudents().add(student);
+    if (this.onlineCourse.getStudents().size() > 1) {
+      this.onlineCourse.changeState(new Private(this.onlineCourse));
+    }
+  }
+}
+```
+
+```java
+// Private.java
+package me.whiteship.designpatterns._03_behavioral_patterns._20_state._02_after;
+
+public class Private implements State {
+
+  private OnlineCourse onlineCourse;
+
+  public Private(OnlineCourse onlineCourse) {
+    this.onlineCourse = onlineCourse;
+  }
+
+  @Override
+  public void addReview(String review, Student student) {
+    if (this.onlineCourse.getStudents().contains(student)) {
+      this.onlineCourse.getReviews().add(review);
+    } else {
+      throw new UnsupportedOperationException(
+        "프라이빗 코스를 수강하는 학생만 리뷰를 남길 수 있습니다."
+      );
+    }
+  }
+
+  @Override
+  public void addStudent(Student student) {
+    if (student.isAvailable(this.onlineCourse)) {
+      this.onlineCourse.getStudents().add(student);
+    } else {
+      throw new UnsupportedOperationException(
+        "프라이빛 코스를 수강할 수 없습니다."
+      );
+    }
+  }
+}
+```
+
+```java
+// Published.java
+package me.whiteship.designpatterns._03_behavioral_patterns._20_state._02_after;
+
+public class Published implements State {
+
+  private OnlineCourse onlineCourse;
+
+  public Published(OnlineCourse onlineCourse) {
+    this.onlineCourse = onlineCourse;
+  }
+
+  @Override
+  public void addReview(String review, Student student) {
+    this.onlineCourse.getReviews().add(review);
+  }
+
+  @Override
+  public void addStudent(Student student) {
+    this.onlineCourse.getStudents().add(student);
+  }
+}
+```
+
+```java
+// OnlineCourse.java
+package me.whiteship.designpatterns._03_behavioral_patterns._20_state._02_after;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class OnlineCourse {
+
+  private State state = new Draft(this);
+
+  private List<Student> students = new ArrayList<>();
+
+  private List<String> reviews = new ArrayList<>();
+
+  public void addStudent(Student student) {
+    this.state.addStudent(student);
+  }
+
+  public void addReview(String review, Student student) {
+    this.state.addReview(review, student);
+  }
+
+  public State getState() {
+    return state;
+  }
+
+  public List<Student> getStudents() {
+    return students;
+  }
+
+  public List<String> getReviews() {
+    return reviews;
+  }
+
+  public void changeState(State state) {
+    this.state = state;
+  }
+}
+```
+
+```java
+// Student.java
+package me.whiteship.designpatterns._03_behavioral_patterns._20_state._02_after;
+
+import java.util.HashSet;
+import java.util.Set;
+
+public class Student {
+
+  private String name;
+
+  public Student(String name) {
+    this.name = name;
+  }
+
+  private Set<OnlineCourse> onlineCourses = new HashSet<>();
+
+  public boolean isAvailable(OnlineCourse onlineCourse) {
+    return onlineCourses.contains(onlineCourse);
+  }
+
+  public void addPrivate(OnlineCourse onlineCourse) {
+    this.onlineCourses.add(onlineCourse);
+  }
+
+  @Override
+  public String toString() {
+    return "Student{" + "name='" + name + '\'' + '}';
+  }
+}
+```
+
+```java
+// Client.java
+package me.whiteship.designpatterns._03_behavioral_patterns._20_state._02_after;
+
+public class Client {
+
+  public static void main(String[] args) {
+    OnlineCourse onlineCourse = new OnlineCourse();
+    Student student = new Student("whiteship");
+    Student keesun = new Student("keesun");
+    keesun.addPrivate(onlineCourse);
+
+    onlineCourse.addStudent(student);
+
+    onlineCourse.changeState(new Private(onlineCourse));
+
+    onlineCourse.addReview("hello", student);
+
+    onlineCourse.addStudent(keesun);
+
+    System.out.println(onlineCourse.getState());
+    System.out.println(onlineCourse.getReviews());
+    System.out.println(onlineCourse.getStudents());
+  }
+}
+```
+
+---
+
+### 9.4 장단점
+
+- 장점
+  - 상태에 따른 동작을 개별 클래스로 옮겨서 관리할 수 있다.
+  - 기존의 특정 상태에 따른 동작을 변경하지 않고 새로운 상태에 다른 동작을 추가할 수 있다.
+  - 코드 복잡도를 줄일 수 있다.
+- 단점
+  - 복잡도가 증가한다
+
+---
+
+## 10. 전략(Strategy) 패턴
+
+### 10.1 패턴 소개
+
+![gof_3_19](https://raw.githubusercontent.com/berenickt/image-server/main/img/gof_3_19.png)
+
+여러 알고리즘을 캡슐화하고 상호 교환 가능하게 만드는 패턴.
+
+- 컨텍스트에서 사용할 알고리듬을 클라이언트 선택한다.
+
+![gof_3_20](https://raw.githubusercontent.com/berenickt/image-server/main/img/gof_3_20.png)
+
+---
+
+### 10.2 예시 - 기존
+
+```java
+// BlueLightRedLight.java
+package me.whiteship.designpatterns._03_behavioral_patterns._21_strategy._01_before;
+
+public class BlueLightRedLight {
+
+  private int speed;
+
+  public BlueLightRedLight(int speed) {
+    this.speed = speed;
+  }
+
+  public void blueLight() {
+    if (speed == 1) {
+      System.out.println("무 궁 화    꽃   이");
+    } else if (speed == 2) {
+      System.out.println("무궁화꽃이");
+    } else {
+      System.out.println("무광꼬치");
+    }
+  }
+
+  public void redLight() {
+    if (speed == 1) {
+      System.out.println("피 었 습 니  다.");
+    } else if (speed == 2) {
+      System.out.println("피었습니다.");
+    } else {
+      System.out.println("피어씀다");
+    }
+  }
+}
+```
+
+```java
+// Client.java
+package me.whiteship.designpatterns._03_behavioral_patterns._21_strategy._01_before;
+
+public class Client {
+
+  public static void main(String[] args) {
+    BlueLightRedLight blueLightRedLight = new BlueLightRedLight(3);
+    blueLightRedLight.blueLight();
+    blueLightRedLight.redLight();
+  }
+}
+```
+
+---
+
+### 10.3 예시 - 변경
+
+```java
+// Speed.java
+package me.whiteship.designpatterns._03_behavioral_patterns._21_strategy._02_after;
+
+public interface Speed {
+  void blueLight();
+
+  void redLight();
+}
+```
+
+```java
+// Normal.java
+package me.whiteship.designpatterns._03_behavioral_patterns._21_strategy._02_after;
+
+public class Normal implements Speed {
+
+  @Override
+  public void blueLight() {
+    System.out.println("무 궁 화    꽃   이");
+  }
+
+  @Override
+  public void redLight() {
+    System.out.println("피 었 습 니  다.");
+  }
+}
+```
+
+```java
+// Faster.java
+package me.whiteship.designpatterns._03_behavioral_patterns._21_strategy._02_after;
+
+public class Faster implements Speed {
+
+  @Override
+  public void blueLight() {
+    System.out.println("무궁화꽃이");
+  }
+
+  @Override
+  public void redLight() {
+    System.out.println("피었습니다.");
+  }
+}
+```
+
+```java
+// Fastest.java
+package me.whiteship.designpatterns._03_behavioral_patterns._21_strategy._02_after;
+
+public class Fastest implements Speed {
+
+  @Override
+  public void blueLight() {
+    System.out.println("무광꼬치");
+  }
+
+  @Override
+  public void redLight() {
+    System.out.println("피어씀다.");
+  }
+}
+```
+
+```java
+// BlueLightRedLight.java
+package me.whiteship.designpatterns._03_behavioral_patterns._21_strategy._02_after;
+
+public class BlueLightRedLight {
+
+  public void blueLight(Speed speed) {
+    speed.blueLight();
+  }
+
+  public void redLight(Speed speed) {
+    speed.redLight();
+  }
+}
+```
+
+```java
+// Client.java
+package me.whiteship.designpatterns._03_behavioral_patterns._21_strategy._02_after;
+
+public class Client {
+
+  public static void main(String[] args) {
+    BlueLightRedLight game = new BlueLightRedLight();
+    game.blueLight(new Normal());
+    game.redLight(new Fastest());
+    game.blueLight(
+      new Speed() {
+        @Override
+        public void blueLight() {
+          System.out.println("blue light");
+        }
+
+        @Override
+        public void redLight() {
+          System.out.println("red light");
+        }
+      }
+    );
+  }
+}
+```
+
+---
+
+### 10.4 장단점
+
+- 장점
+  - 새로운 전략을 추가하더라도 기존 코드를 변경하지 않는다.
+  - 상속 대신 위임을 사용할 수 있다.
+  - 런타임에 전략을 변경할 수 있다.
+- 단점
+  - 복잡도가 증가한다.
+  - 클라이언트 코드가 구체적인 전략을 알아야 한다
+
+---
+
+### 10.5 실무에서 어떻게 쓰이나?
+
+자바의 Comparator
+
+```java
+package me.whiteship.designpatterns._03_behavioral_patterns._21_strategy._03_java;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+
+public class StrategyInJava {
+
+  public static void main(String[] args) {
+    List<Integer> numbers = new ArrayList<>();
+    numbers.add(10);
+    numbers.add(5);
+
+    System.out.println(numbers);
+
+    Collections.sort(numbers, Comparator.naturalOrder());
+
+    System.out.println(numbers);
+  }
+}
+```
+
+스프링
+
+- ApplicationContext
+- PlatformTransactionManager
+- …
+
+```java
+// StrategyInSpring.java
+package me.whiteship.designpatterns._03_behavioral_patterns._21_strategy._03_java;
+
+import org.springframework.beans.factory.xml.BeanDefinitionParser;
+import org.springframework.cache.CacheManager;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+import org.springframework.context.support.FileSystemXmlApplicationContext;
+import org.springframework.transaction.PlatformTransactionManager;
+
+public class StrategyInSpring {
+
+  public static void main(String[] args) {
+    ApplicationContext applicationContext = new ClassPathXmlApplicationContext();
+    ApplicationContext applicationContext1 = new FileSystemXmlApplicationContext();
+    ApplicationContext applicationContext2 = new AnnotationConfigApplicationContext();
+
+    BeanDefinitionParser parser;
+
+    PlatformTransactionManager platformTransactionManager;
+
+    CacheManager cacheManager;
+  }
+}
+```
+
+---
+
+## 11. 템플릿 메소드(Template method) 패턴
+
+### 11.1 패턴 소개
+
+![gof_3_21](https://raw.githubusercontent.com/berenickt/image-server/main/img/gof_3_21.png)
+
+알고리즘 구조를 서브 클래스가 확장할 수 있도록 **템플릿으로 제공하는 방법**.
+
+- 추상 클래스는 템플릿을 제공하고 하위 클래스는 구체적인 알고리듬을 제공한다
+
+![gof_3_22](https://raw.githubusercontent.com/berenickt/image-server/main/img/gof_3_22.png)
+
+템플릿 콜백 (Template-Callback)
+
+- 패턴 콜백으로 상속 대신 위임을 사용하는 템플릿 패턴.
+- 상속 대신 익명 내부 클래스 또는 람다 표현식을 활용할 수 있다
+
+![gof_3_23](https://raw.githubusercontent.com/berenickt/image-server/main/img/gof_3_23.png)
+
+---
+
+### 11.2 예시 - 기존
+
+```java
+// FileProcessor.java
+package me.whiteship.designpatterns._03_behavioral_patterns._22_template._01_before;
+
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+
+public class FileProcessor {
+
+  private String path;
+
+  public FileProcessor(String path) {
+    this.path = path;
+  }
+
+  public int process() {
+    try (BufferedReader reader = new BufferedReader(new FileReader(path))) {
+      int result = 0;
+      String line = null;
+      while ((line = reader.readLine()) != null) {
+        result += Integer.parseInt(line);
+      }
+      return result;
+    } catch (IOException e) {
+      throw new IllegalArgumentException(
+        path + "에 해당하는 파일이 없습니다.",
+        e
+      );
+    }
+  }
+}
+```
+
+```java
+// MultuplyFileProcessor.java
+package me.whiteship.designpatterns._03_behavioral_patterns._22_template._01_before;
+
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+
+public class MultuplyFileProcessor {
+
+  private String path;
+
+  public MultuplyFileProcessor(String path) {
+    this.path = path;
+  }
+
+  public int process() {
+    try (BufferedReader reader = new BufferedReader(new FileReader(path))) {
+      int result = 0;
+      String line = null;
+      while ((line = reader.readLine()) != null) {
+        result *= Integer.parseInt(line);
+      }
+      return result;
+    } catch (IOException e) {
+      throw new IllegalArgumentException(
+        path + "에 해당하는 파일이 없습니다.",
+        e
+      );
+    }
+  }
+}
+```
+
+```java
+// Client.java
+package me.whiteship.designpatterns._03_behavioral_patterns._22_template._01_before;
+
+public class Client {
+
+  public static void main(String[] args) {
+    FileProcessor fileProcessor = new FileProcessor("number.txt");
+    int result = fileProcessor.process();
+    System.out.println(result);
+  }
+}
+```
+
+---
+
+### 11.3 예시 - 변경
+
+```java
+// FileProcessor.java
+package me.whiteship.designpatterns._03_behavioral_patterns._22_template._02_after;
+
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+
+public abstract class FileProcessor {
+
+  private String path;
+
+  public FileProcessor(String path) {
+    this.path = path;
+  }
+
+  public final int process(Operator operator) {
+    try (BufferedReader reader = new BufferedReader(new FileReader(path))) {
+      int result = 0;
+      String line = null;
+      while ((line = reader.readLine()) != null) {
+        result = getResult(result, Integer.parseInt(line));
+      }
+      return result;
+    } catch (IOException e) {
+      throw new IllegalArgumentException(
+        path + "에 해당하는 파일이 없습니다.",
+        e
+      );
+    }
+  }
+
+  protected abstract int getResult(int result, int number);
+}
+```
+
+```java
+// Multiply.java
+package me.whiteship.designpatterns._03_behavioral_patterns._22_template._02_after;
+
+public class Multiply extends FileProcessor {
+
+  public Multiply(String path) {
+    super(path);
+  }
+
+  @Override
+  protected int getResult(int result, int number) {
+    return result *= number;
+  }
+}
+```
+
+```java
+// Operator.java
+package me.whiteship.designpatterns._03_behavioral_patterns._22_template._02_after;
+
+public interface Operator {
+  abstract int getResult(int result, int number);
+}
+```
+
+```java
+// FileProcessor.java
+package me.whiteship.designpatterns._03_behavioral_patterns._22_template._02_after;
+
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+
+public abstract class FileProcessor {
+
+  private String path;
+
+  public FileProcessor(String path) {
+    this.path = path;
+  }
+
+  public final int process(Operator operator) {
+    try (BufferedReader reader = new BufferedReader(new FileReader(path))) {
+      int result = 0;
+      String line = null;
+      while ((line = reader.readLine()) != null) {
+        result = getResult(result, Integer.parseInt(line));
+      }
+      return result;
+    } catch (IOException e) {
+      throw new IllegalArgumentException(
+        path + "에 해당하는 파일이 없습니다.",
+        e
+      );
+    }
+  }
+
+  protected abstract int getResult(int result, int number);
+}
+```
+
+```java
+// Plus.java
+package me.whiteship.designpatterns._03_behavioral_patterns._22_template._02_after;
+
+public class Plus implements Operator {
+
+  @Override
+  public int getResult(int result, int number) {
+    return result += number;
+  }
+}
+```
+
+```java
+// Client.java
+package me.whiteship.designpatterns._03_behavioral_patterns._22_template._02_after;
+
+public class Client {
+
+  public static void main(String[] args) {
+    FileProcessor fileProcessor = new Multiply("number.txt");
+    int result = fileProcessor.process((sum, number) -> sum += number);
+    System.out.println(result);
+  }
+}
+```
+
+---
+
+### 11.4 장단점
+
+- 장점
+  - 템플릿 코드를 재사용하고 중복 코드를 줄일 수 있다.
+  - 템플릿 코드를 변경하지 않고 상속을 받아서 구체적인 알고리듬만 변경할 수 있다.
+- 단점
+  - 리스코프 치환 원칙을 위반할 수도 있다.
+  - 알고리듬 구조가 복잡할 수록 템플릿을 유지하기 어려워진다
+
+---
+
+### 11.5 실무에서 어떻게 쓰이나?
+
+자바의 HttpServlet
+
+```java
+// MyHello.java
+package me.whiteship.designpatterns._03_behavioral_patterns._22_template._03_java;
+
+import java.io.IOException;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+public class MyHello extends HttpServlet {
+
+  @Override
+  protected void doGet(HttpServletRequest req, HttpServletResponse resp)
+    throws ServletException, IOException {
+    super.doGet(req, resp);
+  }
+
+  @Override
+  protected void doPost(HttpServletRequest req, HttpServletResponse resp)
+    throws ServletException, IOException {
+    super.doPost(req, resp);
+  }
+}
+```
+
+스프링
+
+- 템플릿 메소드 패턴
+  - Configuration
+- 템플릿 콜백 패턴
+  - JdbcTemplate
+  - RestTemplate
+  - …
+
+```java
+// TemplateInSpring.java
+package me.whiteship.designpatterns._03_behavioral_patterns._22_template._03_java;
+
+import java.util.Arrays;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.*;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.web.client.RestTemplate;
+
+public class TemplateInSpring {
+
+  public static void main(String[] args) {
+    // TODO 템플릿-콜백 패턴
+    // JdbcTemplate
+    JdbcTemplate jdbcTemplate = new JdbcTemplate();
+    jdbcTemplate.execute("insert");
+
+    // RestTemplate
+    RestTemplate restTemplate = new RestTemplate();
+
+    HttpHeaders headers = new HttpHeaders();
+    headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
+    headers.set("X-COM-PERSIST", "NO");
+    headers.set("X-COM-LOCATION", "USA");
+
+    HttpEntity<String> entity = new HttpEntity<String>(headers);
+    ResponseEntity<String> responseEntity = restTemplate.exchange(
+      "http://localhost:8080/users",
+      HttpMethod.GET,
+      entity,
+      String.class
+    );
+  }
+
+  @Configuration
+  class SecurityConfig extends WebSecurityConfigurerAdapter {
+
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+      http.authorizeRequests().anyRequest().permitAll();
+    }
+  }
+}
+```
+
+---
+
+## 12. 방문자(Visitor) 패턴
+
+### 12.1 패턴 소개
+
+![gof_3_24](https://raw.githubusercontent.com/berenickt/image-server/main/img/gof_3_24.png)
+
+기존 코드를 변경하지 않고 새로운 기능을 추가하는 방법.
+
+- 더블 디스패치 (Double Dispatch)를 활용할 수 있다.
+
+---
+
+### 12.2 예시 - 기존
+
+```java
+// Device.java
+package me.whiteship.designpatterns._03_behavioral_patterns._23_visitor._01_before;
+
+public interface Device {}
+```
+
+```java
+// Phone.java
+package me.whiteship.designpatterns._03_behavioral_patterns._23_visitor._01_before;
+
+public class Phone implements Device {}
+```
+
+```java
+// Watch.java
+package me.whiteship.designpatterns._03_behavioral_patterns._23_visitor._01_before;
+
+public class Watch implements Device {}
+```
+
+```java
+// Shape.java
+package me.whiteship.designpatterns._03_behavioral_patterns._23_visitor._01_before;
+
+public interface Shape {
+  void printTo(Device device);
+}
+```
+
+```java
+// Triangle.java
+package me.whiteship.designpatterns._03_behavioral_patterns._23_visitor._01_before;
+
+public class Triangle implements Shape {
+
+  @Override
+  public void printTo(Device device) {
+    if (device instanceof Phone) {
+      System.out.println("print Triangle to Phone");
+    } else if (device instanceof Watch) {
+      System.out.println("print Triangle to Watch");
+    }
+  }
+}
+```
+
+```java
+// Circle.java
+package me.whiteship.designpatterns._03_behavioral_patterns._23_visitor._01_before;
+
+public class Circle implements Shape {
+
+  @Override
+  public void printTo(Device device) {
+    if (device instanceof Phone) {
+      System.out.println("print Circle to phone");
+    } else if (device instanceof Watch) {
+      System.out.println("print Circle to watch");
+    }
+  }
+}
+```
+
+```java
+// Client.java
+package me.whiteship.designpatterns._03_behavioral_patterns._23_visitor._01_before;
+
+public class Client {
+
+  public static void main(String[] args) {
+    Shape rectangle = new Rectangle();
+    Device device = new Phone();
+    rectangle.printTo(device);
+  }
+}
+```
+
+---
+
+### 12.3 예시 - 변경
+
+```java
+// Device.java
+package me.whiteship.designpatterns._03_behavioral_patterns._23_visitor._02_after;
+
+public interface Device {
+  void print(Circle circle);
+
+  void print(Rectangle rectangle);
+
+  void print(Triangle triangle);
+}
+```
+
+```java
+// Pad.java
+package me.whiteship.designpatterns._03_behavioral_patterns._23_visitor._02_after;
+
+public class Pad implements Device {
+
+  @Override
+  public void print(Circle circle) {
+    System.out.println("Print Circle to Pad");
+  }
+
+  @Override
+  public void print(Rectangle rectangle) {
+    System.out.println("Print Rectangle to Pad");
+  }
+
+  @Override
+  public void print(Triangle triangle) {
+    System.out.println("Print Triangle to Pad");
+  }
+}
+```
+
+```java
+// Phone.java
+package me.whiteship.designpatterns._03_behavioral_patterns._23_visitor._02_after;
+
+public class Phone implements Device {
+
+  @Override
+  public void print(Circle circle) {
+    System.out.println("Print Circle to Phone");
+  }
+
+  @Override
+  public void print(Rectangle rectangle) {
+    System.out.println("Print Rectangle to Phone");
+  }
+
+  @Override
+  public void print(Triangle triangle) {
+    System.out.println("Print Triangle to Phone");
+  }
+}
+```
+
+```java
+// Watch.java
+package me.whiteship.designpatterns._03_behavioral_patterns._23_visitor._02_after;
+
+public class Watch implements Device {
+
+  @Override
+  public void print(Circle circle) {
+    System.out.println("Print Circle to Watch");
+  }
+
+  @Override
+  public void print(Rectangle rectangle) {
+    System.out.println("Print Rectangle to Watch");
+  }
+
+  @Override
+  public void print(Triangle triangle) {
+    System.out.println("Print Triangle to Watch");
+  }
+}
+```
+
+```java
+// Shape.java
+package me.whiteship.designpatterns._03_behavioral_patterns._23_visitor._02_after;
+
+public interface Shape {
+  void accept(Device device);
+}
+```
+
+```java
+// Circle.java
+package me.whiteship.designpatterns._03_behavioral_patterns._23_visitor._02_after;
+
+public class Circle implements Shape {
+
+  @Override
+  public void accept(Device device) {
+    device.print(this);
+  }
+}
+```
+
+```java
+// Triangle.java
+package me.whiteship.designpatterns._03_behavioral_patterns._23_visitor._02_after;
+
+public class Triangle implements Shape {
+
+  @Override
+  public void accept(Device device) {
+    device.print(this);
+  }
+}
+```
+
+```java
+// Rectangle.java
+package me.whiteship.designpatterns._03_behavioral_patterns._23_visitor._02_after;
+
+public class Rectangle implements Shape {
+
+  @Override
+  public void accept(Device device) {
+    device.print(this);
+  }
+}
+```
+
+```java
+// Client.java
+package me.whiteship.designpatterns._03_behavioral_patterns._23_visitor._02_after;
+
+public class Client {
+
+  public static void main(String[] args) {
+    Shape rectangle = new Rectangle();
+    Device device = new Pad();
+    rectangle.accept(device);
+  }
+}
+```
+
+---
+
+### 12.4 장단점
+
+- 장점
+  - 기존 코드를 변경하지 않고 새로운 코드를 추가할 수 있다.
+  - 추가 기능을 한 곳에 모아둘 수 있다.
+- 단점
+  - 복잡하다.
+  - 새로운 Element를 추가하거나 제거할 때 모든 Visitor 코드를 변경해야 한다
+
+---
+
+### 12.5 실무에서 어떻게 쓰이나?
+
+자바
+
+- FileVisitor, SimpleFileVisitor
+- AnnotationValueVisitor
+- ElementVisitor
+
+```java
+// SearchFileVisitor.java
+package me.whiteship.designpatterns._03_behavioral_patterns._23_visitor._03_java;
+
+import java.io.IOException;
+import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
+
+public class SearchFileVisitor implements FileVisitor<Path> {
+
+  private String fileToSearch;
+  private Path startingDirectory;
+
+  public SearchFileVisitor(String fileToSearch, Path startingDirectory) {
+    this.fileToSearch = fileToSearch;
+    this.startingDirectory = startingDirectory;
+  }
+
+  @Override
+  public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs)
+    throws IOException {
+    return FileVisitResult.CONTINUE;
+  }
+
+  @Override
+  public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+    throws IOException {
+    if (fileToSearch.equals(file.getFileName().toString())) {
+      System.out.println("found " + file.getFileName());
+      return FileVisitResult.TERMINATE;
+    }
+    return FileVisitResult.CONTINUE;
+  }
+
+  @Override
+  public FileVisitResult visitFileFailed(Path file, IOException exc)
+    throws IOException {
+    exc.printStackTrace(System.out);
+    return FileVisitResult.CONTINUE;
+  }
+
+  @Override
+  public FileVisitResult postVisitDirectory(Path dir, IOException exc)
+    throws IOException {
+    if (Files.isSameFile(startingDirectory, dir)) {
+      System.out.println("search end");
+      return FileVisitResult.TERMINATE;
+    }
+    return FileVisitResult.CONTINUE;
+  }
+}
+```
+
+```java
+// VisitorInJava.java
+package me.whiteship.designpatterns._03_behavioral_patterns._23_visitor._03_java;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+public class VisitorInJava {
+
+  public static void main(String[] args) throws IOException {
+    Path startingDirectory = Path.of("/Users/keesun/workspace/design-patterns");
+    SearchFileVisitor searchFileVisitor = new SearchFileVisitor(
+      "Triangle.java",
+      startingDirectory
+    );
+    Files.walkFileTree(startingDirectory, searchFileVisitor);
+  }
+}
+```
+
+스프링의 BeanDefinitionVisitor
+
+```java
+package me.whiteship.designpatterns._03_behavioral_patterns._23_visitor._03_java;
+
+import org.springframework.beans.factory.config.BeanDefinitionVisitor;
+
+public class VisitorInSpring {
+
+  public static void main(String[] args) {
+    BeanDefinitionVisitor beanDefinitionVisitor;
+  }
+}
+```

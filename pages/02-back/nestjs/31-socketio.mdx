@@ -1,0 +1,871 @@
+---
+title: '31-socketIO-기본'
+date: 2023/12/25
+---
+
+## 1. Websocket 이론
+
+- 채팅 서비스, 주식 관련 서비스, 가상화폐 서비스 같은 걸새로고침을 하지 않아도 서버에서 정보를 던져준다.
+- 웹소켓을 사용하시면. 이런 리얼타임 서비스를 저희가 구현할 수 있다.
+
+```
+// ************* 기존 클라이언트-서버 구조
+┌───────────┐                          ┌───────────┐
+│           │ ───────── (요청) ───────> │           │
+│  클라이언트  │                          │    서버    │
+│           │ <──────── (응답) ──────── │           │
+└───────────┘                          └───────────┘
+```
+
+- 기존의 클라이언트-서버 구조의 문제점은 단일 방향이라는 점이다.
+- 즉, 클라이언트에서부터 요청을 보내야지만, 요청한 거에 대한 응답을 받을 수 있다.
+
+```
+// ************* WebSocket
+┌───────────┐                          ┌───────────┐
+│           │ <───── (요청, 응답) ─────> │           │
+│  클라이언트  │                          │    서버    │
+│           │ <───── (요청, 응답) ─────> │           │
+└───────────┘                          └───────────┘
+```
+
+- e.g.) 채팅은 누가 메시지를 보내면, 사용자 따로 뭘 하지 않아도(요청하지 않아도) 메시지가 온다.
+- 이것이 real-time communication이고, 웹소켓이 해결해준다.
+- 그래서 이제는 양방향으로 커뮤니케이션을 할 수가 있게 된다.
+
+---
+
+## 2. Socket IO 이론
+
+![bidirectional-communication2](https://socket.io/images/bidirectional-communication2.png)
+
+- 공식문서 : https://socket.io/docs/v4/
+- `Socket IO`는 Websocket 프로토콜을 사용해서 만든
+  - low-latency(낮은 지연시간), bidirectional(양방향 소통), event based(이벤트 기반)으로
+  - 클라이언트와 서버가 통신할 수 있게 해주는 기능이다.
+- 즉, Socket IO는 결국에 웹소켓이다.
+
+---
+
+### 2.1 기본적인 통신법. emit & on
+
+- `emit` : 메시지를 보내는 것
+- `on` : 보낸 메시지를 리스닝하는 것
+
+서버 코드
+
+```ts server
+import { Server } from 'socket.io'
+
+// Socekt.IO 서버 생성
+const io = new Server(3000)
+
+/** 📌 on() : 클라이언트가 서버에 연결되면 실행되는 함수 정의
+ * on 함수를 실행하면 특정 이벤트(1번쨰 파라미터)가 있을떄,
+ * 콜백 함수를 실행할 수 있으며, (2번쨰 파라미터)
+ * 해당 콜백 함수는 메시지를 1번쨰 파라미터로 받는다.
+ * connection 이벤트는 미리 정의된 이벤트로 "연결됐을 떄" 실행한다.
+ */
+io.on('connection', socket => {
+  /** 📌 emit() : 메시지 보내기
+   * 1번 파라미터, 이벤트 이름
+   * 2번~이후 파라미터, 메시지
+   */
+  socket.emit('hello_form_server', 'this is message from server')
+
+  socket.on('hello_from_client', message => {
+    // 'this is message from clinet'
+    console.log(message)
+  })
+})
+```
+
+클라이언트 코드
+
+```ts client
+import { io } from 'socket.io-client'
+
+// 📌 (1) Socket.IO 서버에 연결
+const socket = io('ws://localhost:3000') // ws는 웹소캣의 약어
+
+// 'hello_from_clint' 이벤트를 듣고 있는 소켓에 메시지 보내기
+socket.emit('hello_form_server', 'this is message from server')
+
+// 'hello_from_server' 이벤트로 메시지가 오면 함수 실행하기
+socket.on('hello_from_client', message => {
+  // 'this is message from clinet'
+  console.log(message)
+})
+```
+
+- 웹소켓 연결은 무조건 클라이언트에서 먼저 시작한다.
+- 연결한 뒤에는 메시지를 서버가 먼저 보내든, 클라이언트가 먼저 보내든 상관없다.
+
+---
+
+### 2.2 Acknowledgement
+
+Acknowledgement는 한마디로 메시지를 잘 받았다고 ok 신호를 보내주는 겁니다.
+
+서버 코드
+
+```ts server
+/**
+ * 'hello' 룸에 'world'라는 메시지를 보낸다.
+ * 3번쨰 파라미터는 콜백 함수로 ㅁcknowledgment가 오면 실행한다.
+ */
+socket.emit('hello', 'world', response => {
+  console.log(response) // 수산 양호
+})
+```
+
+클라이언트 코드
+
+```ts client
+/**
+ * 1번쨰 파라미터 : 이벤트 이름
+ * 2번쨰 파라미터 : 메시지가 왔을 떄 실행할 함수
+ * 함수는 1번째 파라미너톨 메시지,
+ * 2번쨰 파라미터로 수신 응답할 수 있는 콜백함수가 주어짐
+ */
+socket.on('hello', (message, callback) => {
+  console.log(message) // world
+  callback('수신 양호') // 📌 emit을 날린 곳으로 다시 돌아감
+})
+```
+
+---
+
+### 2.3 Namespace & Room
+
+![namespace-room](https://raw.githubusercontent.com/berenickt/image-server/main/img/namespace-and-room.png)
+
+- 클라이언트(모바일, 웹)가 서버에 socket.io 요청들을 넣을떄,
+  - 아무것도 정의하지 않으면 namespace가 기본으로 `/`가 정의된다.
+  - 아무것도 넣지 않고 emit하면 `/` namespace로 정의된다.
+- REST API에서 path를 짜듯이, Namespace라는 거를 만들게 된다.
+  - 여러 개의 Namespace가 있으면, 원하는 Namespace를 골라서 요청할 수 있다
+- 근데 서버에서는 namespace 안에서 또 Room으로 나눌 수가 있다.
+  - `/chat`에 요청을 넣고 채팅을 한다.
+  - 이떄 `/chat`의 각각의 룸들은 카톡에서 각각의 채팅방 리스트와 같다.
+  - 그리고 `/noti/room1`과 `/chat/room1`은 완전 다르고, 연결이 안된다.
+
+---
+
+### 2.4 Namespace & Room (Server)
+
+```ts
+/***
+ * of를 이용하면 namespace를 정할 수 있다.
+ * namespace는 일반적으로 라우트 형태를 따라 지정한다.
+ */
+const chatNamespace = io.of('/chat')
+
+// chatNmaespace에 연결된 소켓만 아래 코드가 실행된다.
+chatNamespace.on('connection', socket => {
+  /***
+   * 현재 연결된 socket을 room1에 연결한다.
+   * 이 room1은 /chat namespace에만 존재하는 room이다.
+   */
+  socket.join('room1')
+  chatNamespace.to('room1').emit('hello', 'world')
+})
+
+// /noti namespace 생성
+const notiNamespace = io.of('/noti')
+
+// /noti chatNmaespace에 연결된 소켓만 실행된다.
+chatNamespace.on('connection', socket => {
+  /***
+   * 이 room1은 /chat namespace의 room1과 전혀 관련이 없다.
+   * 다른 namespace의 room1에는 들어갈 수 없다.
+   */
+  socket.join('room1')
+
+  // 역시나 /noti namespace의 room1에만 메시지를 보낸다.
+  chatNamespace.to('room1').emit('hello', 'world')
+})
+```
+
+---
+
+### 2.5 Namespace & Room (Client)
+
+```ts
+// 기본 namespace로 연결 -> /
+const socket = io('ws://localhost:3000') // ws는 웹소캣의 약어
+
+// 기본 namespace로 연결 -> /chat
+const chatSocket = io('ws://localhost:3000/chat')
+
+// 기본 namespace로 연결 -> /noti
+const notiSocket = io('ws://localhost:3000/noti')
+
+/**
+ * client에서는 room을 정할 수 있는 기능이 없다.
+ * room은 서버에서만 socket.join()을 실행해서,
+ * 특정 room에 들어가도록 할 수 있다.
+ */
+```
+
+---
+
+### 2.6 Emit & Broadcast
+
+```ts
+// 연결된 모든 socket들에게 메시지를 보낸다
+socket.emit('hello', 'world')
+
+// 나 빼고 모두에게 메시지를 보낸다
+socket.broadcast.emit('hello', 'world')
+```
+
+---
+
+## 3. Gateway 생성하고 메시지 리스닝하기
+
+먼저 3개의 패키지를 설치한다.
+
+```bash
+yarn add @nestjs/websockets @nestjs/platform-socket.io socket.io
+```
+
+그리고 버전 충돌을 막기 위해 nest 패키지들을 다시 설치한다. 이렇게 아래 패키지들을 다시설치하면 메이저 버전들이 맞춰진다.
+
+- @nestjs/common @nestjs/core @nestjs/jwt @nestjs/platform-express
+- @nestjs/platform-socket.io @nestjs/typeorm @nestjs/websockets
+- 그러면 이 패키지들에 `^10.3.0`이런 식으로 앞에 `^(캐럿)`이 붙는다.
+
+```bash
+yarn add @nestjs/common @nestjs/core @nestjs/jwt @nestjs/platform-express @nestjs/platform-socket.io @nestjs/typeorm @nestjs/websockets
+```
+
+이제 chats resource를 생성한다.
+
+```bash
+$ nest g resource
+? What name ? chats
+? What transport layer do you use? REST API
+? Would you like to generate CRUD entry points? No
+```
+
+`chats/chats.gateway.ts` 파일을 만든다.
+
+```ts chats/chats.gateway.ts
+import {
+  MessageBody,
+  OnGatewayConnection,
+  SubscribeMessage,
+  WebSocketGateway,
+} from '@nestjs/websockets'
+import { Socket } from 'socket.io'
+
+@WebSocketGateway({
+  // ws://localhost:3000/chats
+  namespace: 'chats',
+})
+export class ChatsGateway implements OnGatewayConnection {
+  handleConnection(socket: Socket) {
+    console.log(`on connect called : ${socket.id}`)
+  }
+
+  // socket.on('send_message', (message)=>{ console.log(message)})
+  @SubscribeMessage('send_message')
+  sendMessage(@MessageBody() message: string) {
+    console.log(message)
+  }
+}
+```
+
+위에서 만든 gateway를 등록하기 위해 chats 모듈에서 provider에 넣어준다.
+
+```ts chats.module.ts
+import { Module } from '@nestjs/common'
+import { ChatsService } from './chats.service'
+import { ChatsController } from './chats.controller'
+import { ChatsGateway } from './chats.gateway'
+
+@Module({
+  controllers: [ChatsController],
+  providers: [ChatsGateway, ChatsService],
+})
+export class ChatsModule {}
+```
+
+postman에 위쪽 new 버튼을 클릭하면, socket.io가 있다.
+
+- 새 프로젝트를 만들고. socket.io 요청으로 `User 1 /chats`라고 만든다.
+- `ws://{{host}}/chats`로 connect 요청을 보낸다.
+- 웹소켓 서버가 잘 생성되었으면, 터미널창에 아래와 같이 잘 연결되었다고 미리 작성해둔 메시지가 뜬다.
+  - `on connect called : xaTkfZRExjMqwUr0AAAB`
+- 포스트맨에서 emit하는 법은 Message 탭에서 써주고, 아래 Ack에 이벤트명을 넣어주면 된다.
+  - Message에 적을 내용 : hello form clinet
+  - Ack 이벤트명 : send_message
+
+---
+
+## 4. 서버에서 이벤트 전송
+
+이 namespace에 연결된 모든 소켓들한테 메시지를 보내는 기능을 만들자.
+
+```ts chats.gateway.ts
+import {
+  MessageBody,
+  OnGatewayConnection,
+  SubscribeMessage,
+  WebSocketGateway,
+  WebSocketServer,
+} from '@nestjs/websockets'
+import { Server, Socket } from 'socket.io'
+
+@WebSocketGateway({
+  // ws://localhost:3000/chats
+  namespace: 'chats',
+})
+export class ChatsGateway implements OnGatewayConnection {
+  @WebSocketServer()
+  server: Server
+
+  handleConnection(socket: Socket) {
+    console.log(`on connect called : ${socket.id}`)
+  }
+
+  // socket.on('send_message', (message)=>{ console.log(message)})
+  @SubscribeMessage('send_message')
+  sendMessage(@MessageBody() message: string) {
+    this.server.emit('receive_message', 'hello from server')
+  }
+}
+```
+
+포스트맨에서 서버에서 오는 메시지를 리스닝하려면,
+
+- Events 탭에서 파라미터를 넣는 것처럼 이벤트를 넣어주면 된다.
+
+| EVENTS          | LISTEN | DESCRIPTION |
+| --------------- | :----: | ----------- |
+| receive_message |  체크  |             |
+
+포스트맨에서 socket.io 요청을 만들고 `User 2 /chats` 라고 짓는다.
+
+- 그리고 `User 2 /chats`의 Events 탭을 다음과 같이 만든다.
+
+| EVENTS          | LISTEN | DESCRIPTION |
+| --------------- | :----: | ----------- |
+| receive_message |  체크  |             |
+
+그리고 터미널 창에 2개의 socket.io 연결을 보면, 두 소켓이 다른 값인 걸 알 수 있다.
+
+- 또 포스트맨에서 socket.io 요청을 만들고 `User 3 /chats` 라고 짓는다.
+- 마찬가지로 `User 3 /chats`의 Events 탭을 위와 똑같이 같이 만든다.
+
+| EVENTS          | LISTEN | DESCRIPTION |
+| --------------- | :----: | ----------- |
+| receive_message |  체크  |             |
+
+---
+
+## 5. Room 활용하기
+
+이번에는 방을 나눠 가지고 특정 방에 들어와 있는 사용자만 메시지를 받을 수 있도록 합니다.
+
+- 각각의 채팅방 별로 메시지를 보내기,
+- 그럴려면 채팅방에 들어가게 하는 기능이 필요하다,
+
+```ts chats.gateway.ts
+// chats.gateway.ts 생략
+@SubscribeMessage('enter_chat')
+enterChat(
+  @MessageBody() data: number[], //
+  @ConnectedSocket() socket: Socket,
+) {
+  for (const chatId of data) {
+    socket.join(chatId.toString())
+  }
+}
+
+// socket.on('send_message', (message)=>{ console.log(message)})
+@SubscribeMessage('send_message')
+sendMessage(@MessageBody() message: { message: string; chatId: number }) {
+  // 방에 들어간 사용자에게만 메시지 보내기
+  this.server
+    .in(message.chatId.toString()) //
+    .emit('receive_message', message.message)
+}
+```
+
+---
+
+## 6. Broadcasting
+
+Broadcasting : 나를 제외하고 다른사람들한테만 보내는 것
+
+```ts chats.gateway.ts
+// chats.gateway.ts 생략
+ @SubscribeMessage('send_message')
+sendMessage(
+  @MessageBody() message: { message: string; chatId: number },
+  @ConnectedSocket() socket: Socket, //
+) {
+  // **** socket은 현재 연결된 socket을 의미 (나를 제외하고 다른사람들한테만 보내기)
+  socket
+    .to(message.chatId.toString()) //
+    .emit('receive_message', message.message)
+
+  // **** 서버 전체 사용자에게만 메시지 보내기
+  // this.server
+  //   .in(message.chatId.toString()) //
+  //   .emit('receive_message', message.message)
+}
+```
+
+---
+
+## 7. Chat Entity 생성
+
+방을 만드는 API를 만든다.
+
+채팅생성 DTO를 위해 `src/chats/dto/create-chat.dto.ts` 파일을 만든다.
+
+```ts src/chats/dto/create-chat.dto.ts
+import { IsNumber } from 'class-validator'
+
+export class CreateChatDto {
+  @IsNumber({}, { each: true })
+  userIds: number[]
+}
+```
+
+또 `src/chats/entity/chats.entity.ts` 파일을 만든다.
+
+```ts src/chats/entity/chats.entity.ts
+import { Entity, ManyToMany } from 'typeorm'
+import { UsersModel } from '../../users/entities/users.entity'
+import { BaseModel } from 'src/common/entities/base.entity'
+
+@Entity()
+export class ChatsModel extends BaseModel {
+  @ManyToMany(() => UsersModel, user => user.chats)
+  users: UsersModel[]
+}
+```
+
+users 모델에 가서 다대다 관계로 연결할 chats 프로퍼티를 추가한다.
+
+```ts src/users/entities/users.entity.ts
+// src/users/entities/users.entity.ts 생략
+@ManyToMany(() => ChatsModel, chat => chat.users)
+@JoinTable()
+chats: ChatsModel[]
+```
+
+모듈의 위치를 찾아주게 하기 위해, app 모듈에서 chats 모델을 넣는다.
+
+```ts src/app.module.ts
+// entities폴더에 작성한 PostsModel 가져오기
+entities: [PostsModel, UsersModel, ImageModel, ChatsModel],
+```
+
+이제 typeorm에서 사용할거니 chats 모델에서 import 해준다.
+
+```ts src/chats/chats.module.ts
+import { Module } from '@nestjs/common'
+import { ChatsService } from './chats.service'
+import { ChatsController } from './chats.controller'
+import { ChatsGateway } from './chats.gateway'
+import { TypeOrmModule } from '@nestjs/typeorm'
+import { ChatsModel } from './entity/chats.entity'
+
+@Module({
+  imports: [TypeOrmModule.forFeature([ChatsModel])],
+  controllers: [ChatsController],
+  providers: [ChatsGateway, ChatsService],
+})
+export class ChatsModule {}
+```
+
+그리고 chats 서비스에 기능을 추가한다.
+
+```ts src/chats/chats.service.ts
+import { Injectable } from '@nestjs/common'
+import { InjectRepository } from '@nestjs/typeorm'
+import { ChatsModel } from './entity/chats.entity'
+import { Repository } from 'typeorm'
+import { CreateChatDto } from './dto/create-chat.dto'
+
+@Injectable()
+export class ChatsService {
+  constructor(
+    @InjectRepository(ChatsModel)
+    private readonly chatsRepository: Repository<ChatsModel>,
+  ) {}
+
+  async createChat(dto: CreateChatDto) {
+    const chat = await this.chatsRepository.save({
+      users: dto.userIds.map(id => ({ id })),
+    })
+
+    return this.chatsRepository.findOne({
+      where: { id: chat.id },
+    })
+  }
+}
+```
+
+이제 이 기능을 gateway에서 사용한다.
+
+```ts src/chats/chats.gateway.ts
+// 생략
+@WebSocketGateway({
+  // ws://localhost:3000/chats
+  namespace: 'chats',
+})
+export class ChatsGateway implements OnGatewayConnection {
+  constructor(private readonly chatService: ChatsService) {}
+
+  // 생략
+
+  @SubscribeMessage('create_chat')
+  async createChat(@MessageBody() data: CreateChatDto) {
+    const chat = await this.chatService.createChat(data)
+  }
+
+  // 생략
+}
+```
+
+---
+
+## 8. Pagination Chat API 생성
+
+`chats/dto/paginate-chat.dto.ts `파일을 만든다.
+
+```ts src/chats/dto/paginate-chat.dto.ts
+import { BasePaginationDto } from 'src/common/dto/base-pagination.dto'
+
+export class PaginateChatDto extends BasePaginationDto {}
+```
+
+작성한 DTO를 chats 서비스에 적용한다.
+
+```ts src/chats/chats.service.ts
+// 생략
+@Injectable()
+export class ChatsService {
+  constructor(
+    @InjectRepository(ChatsModel)
+    private readonly chatsRepository: Repository<ChatsModel>,
+    private readonly commonService: CommonService,
+  ) {}
+
+  paginateChats(dto: PaginateChatDto) {
+    return this.commonService.paginate(
+      dto, //
+      this.chatsRepository,
+      { relations: { users: true } },
+      'chats',
+    )
+  }
+  // 생략
+}
+```
+
+chats 컨트롤러에 엔드포인트를 추가한다.
+
+```ts src/chats/chats.controller.ts
+import { Controller, Get, Query } from '@nestjs/common'
+import { ChatsService } from './chats.service'
+import { PaginateChatDto } from './dto/paginate-chat.dto'
+
+@Controller('chats')
+export class ChatsController {
+  constructor(private readonly chatsService: ChatsService) {}
+
+  @Get()
+  paginateChat(@Query() dto: PaginateChatDto) {
+    return this.chatsService.paginateChats(dto)
+  }
+}
+```
+
+그리고 chats 모듈에 Common모듈을 import해준다.
+
+```ts src/chats/chats.module.ts
+// 생략
+@Module({
+  imports: [
+    TypeOrmModule.forFeature([ChatsModel]), //
+    CommonModule,
+  ],
+  controllers: [ChatsController],
+  providers: [ChatsGateway, ChatsService],
+})
+export class ChatsModule {}
+```
+
+---
+
+## 9. Enter Chat 이벤트 업데이트 & WSException 던지기
+
+Enterchat DTO를 구현하기 위해 `chats/dto/enter-chat.dto.ts`파일을 만든다.
+
+```ts src/chats/dto/enter-chat.dto.ts
+import { IsNumber } from 'class-validator'
+
+export class EnterChatDto {
+  @IsNumber({}, { each: true })
+  chatIds: number[]
+}
+```
+
+chats 서비스에 진짜 채팅방을 나갈건지 체크하는 기능을 추가한다.
+
+```ts src/chats/chats.service.ts
+// chats/chats.service.ts 생략
+async checkIfChatExists(chatId: number) {
+  const exists = await this.chatsRepository.exist({
+    where: {
+      id: chatId,
+    },
+  })
+  return exists
+}
+```
+
+작성한 기능을 chats gateway에 적용한다
+
+```ts src/chats/chats.gateway.ts
+// src/chats/chats.gateway.ts 생략
+@SubscribeMessage('enter_chat')
+async enterChat(@MessageBody() data: EnterChatDto, @ConnectedSocket() socket: Socket) {
+  for (const chatId of data.chatIds) {
+    const exists = await this.chatService.checkIfChatExists(chatId)
+    if (!exists) {
+      throw new WsException({
+        code: 100,
+        message: `존재하지 않는 채팅방입니다! ::: ChatID: ${chatId}`,
+      })
+    }
+  }
+  socket.join(data.chatIds.map(id => id.toString()))
+}
+```
+
+---
+
+## 10. 메시지 보내기 마무리
+
+`chats/messages/entity/messages.entity.ts` 파일을 만든다.
+
+```ts src/chats/messages/entity/messages.entity.ts
+import { IsString } from 'class-validator'
+import { ChatsModel } from 'src/chats/entity/chats.entity'
+import { BaseModel } from 'src/common/entities/base.entity'
+import { UsersModel } from 'src/users/entities/users.entity'
+import { Column, Entity, ManyToOne } from 'typeorm'
+
+@Entity()
+export class MessagesModel extends BaseModel {
+  @ManyToOne(() => ChatsModel, chat => chat.messages)
+  chat: ChatsModel
+
+  @ManyToOne(() => UsersModel, user => user.messages)
+  author: UsersModel
+
+  @Column()
+  @IsString()
+  message: string
+}
+```
+
+`src/chats/entity/chats.entity.ts`에서 연결해준다.
+
+```ts src/chats/entity/chats.entity.ts
+import { Entity, ManyToMany, OneToMany } from 'typeorm'
+import { UsersModel } from '../../users/entities/users.entity'
+import { BaseModel } from 'src/common/entities/base.entity'
+import { MessagesModel } from '../messages/entitiy/messages.entity'
+
+@Entity()
+export class ChatsModel extends BaseModel {
+  @ManyToMany(() => UsersModel, user => user.chats)
+  users: UsersModel[]
+
+  @OneToMany(() => MessagesModel, message => message.chat)
+  messages: MessagesModel[]
+}
+```
+
+`src/users/entities/users.entity.ts`에도 관계 연결해준다.
+
+```ts src/users/entities/users.entity.ts
+// src/users/entities/users.entity.ts 생략
+@OneToMany(() => MessagesModel, message => message.author)
+messages: MessagesModel[]
+```
+
+그리고 app 모듈에서 MessagesModel을 넣어준다
+
+```ts src/app.module.ts
+// src/app.module.ts 생략
+entities: [
+  PostsModel, //
+  UsersModel,
+  ImageModel,
+  ChatsModel,
+  MessagesModel,
+],
+```
+
+`src/chats/messages/dto/create-message.dto.ts` 파일을 만든다.
+
+```ts src/chats/messages/dto/create-message.dto.ts
+import { PickType } from '@nestjs/mapped-types'
+import { IsNumber } from 'class-validator'
+import { MessagesModel } from '../entitiy/messages.entity'
+
+export class CreateMessagesDto extends PickType(MessagesModel, ['message']) {
+  @IsNumber()
+  chatId: number
+}
+```
+
+`src/chats/messages/messages.service.ts` 파일을 만든다.
+
+```ts src/chats/messages/messages.service.ts
+import { Injectable } from '@nestjs/common'
+import { InjectRepository } from '@nestjs/typeorm'
+import { FindManyOptions, Repository } from 'typeorm'
+import { CommonService } from 'src/common/common.service'
+import { BasePaginationDto } from 'src/common/dto/base-pagination.dto'
+import { MessagesModel } from './entitiy/messages.entity'
+import { CreateMessagesDto } from './dto/create-messages.dto'
+
+@Injectable()
+export class ChatsMessagesService {
+  constructor(
+    @InjectRepository(MessagesModel)
+    private readonly messagesRepository: Repository<MessagesModel>,
+    private readonly commonService: CommonService,
+  ) {}
+
+  async createMessage(dto: CreateMessagesDto, authorId: number) {
+    const message = await this.messagesRepository.save({
+      chat: {
+        id: dto.chatId,
+      },
+      author: {
+        id: authorId,
+      },
+      message: dto.message,
+    })
+
+    return this.messagesRepository.findOne({
+      where: {
+        id: message.id,
+      },
+      relations: {
+        chat: true,
+      },
+    })
+  }
+
+  paginteMessages(
+    dto: BasePaginationDto,
+    overrideFindOptions: FindManyOptions<MessagesModel>,
+  ) {
+    return this.commonService.paginate(
+      dto, //
+      this.messagesRepository,
+      overrideFindOptions,
+      'messages',
+    )
+  }
+}
+```
+
+chats 모듈에다가 등록해준다.
+
+```ts chats.module.ts
+// 생략
+@Module({
+  imports: [
+    TypeOrmModule.forFeature([ChatsModel, MessagesModel]), //
+    CommonModule,
+  ],
+  controllers: [ChatsController],
+  providers: [
+    ChatsGateway,
+    ChatsService, //
+    ChatsMessagesService,
+  ],
+})
+export class ChatsModule {}
+```
+
+chats.gateway를 수정한다.
+
+```ts src/chats/chats.gateway.ts
+// 생략
+@WebSocketGateway({
+  // ws://localhost:3000/chats
+  namespace: 'chats',
+})
+export class ChatsGateway implements OnGatewayConnection {
+  constructor(
+    private readonly chatsService: ChatsService,
+    private readonly messageService: ChatsMessagesService,
+  ) {}
+  // 생략
+  @SubscribeMessage('send_message')
+  async sendMessage(
+    @MessageBody() dto: CreateMessagesDto,
+    @ConnectedSocket() socket: Socket,
+  ) {
+    const chatExists = await this.chatsService.checkIfChatExists(dto.chatId)
+
+    if (!chatExists) {
+      throw new WsException({
+        code: 100,
+        message: `존재하지 않는 채팅방입니다! ::: ChatID: ${dto.chatId}`,
+      })
+    }
+
+    const message = await this.messageService.createMessage(dto)
+    socket
+      .to(message.chat.id.toString())
+      .emit('receive_message', message.message)
+  }
+}
+```
+
+`messages.controller.ts` 파일을 만든다.
+
+```ts messages.controller.ts
+import { Controller, Get, Param, ParseIntPipe, Query } from '@nestjs/common'
+import { ChatsMessagesService } from './messages.service'
+import { BasePaginationDto } from 'src/common/dto/base-pagination.dto'
+
+@Controller('chats/:cid/messages')
+export class MessagesController {
+  constructor(private readonly messagesService: ChatsMessagesService) {}
+
+  @Get()
+  paginateMessage(
+    @Param('cid', ParseIntPipe) id: number, //
+    @Query() dto: BasePaginationDto,
+  ) {
+    return this.messagesService.paginteMessages(dto, {
+      where: {
+        chat: {
+          id,
+        },
+      },
+      relations: {
+        author: true,
+        chat: true,
+      },
+    })
+  }
+}
+```
