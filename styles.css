@@ -5,21 +5,38 @@ p {
 }
 
 strong {
-  color: palevioletred;
+  color: rgb(106, 153, 85);
 }
 
 code {
-  color: #218d10;
+  color: rgb(214, 86, 208);
 }
 
 .nx-mt-6 {
-  margin-top: 0.8rem !important;
+  margin-top: 0.4rem !important;
 }
 
 hr {
-  border-color: rgba(113, 110, 110, 0.7) !important;
+  margin-top: 20px;
+  margin-bottom: 20px;
+  border: 0;
+  border-top: 1px solid rgba(76, 76, 80, 0.8);
 }
 
 blockquote {
-  background-color: rgba(227, 226, 226, 0.3);
+  background-color: rgba(205, 205, 206, 0.1);
+  border: 1px solid rgb(10, 116, 202);
+  border-radius: 0.5rem;
+}
+
+img {
+  width: auto;
+  max-width: 100%;
+  display: block;
+  margin: 0 auto;
+  box-sizing: content-box;
+}
+
+table {
+  width: auto;
 }
