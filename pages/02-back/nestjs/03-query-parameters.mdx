@@ -104,7 +104,7 @@ export class PostsController {
 
 ## 3. ID Param을 이용한 Post 조회
 
-```ts posts.controller.ts
+```ts posts.controller.ts
 // posts.controller.ts 생략
 /*** 2) GET /posts/:id
  * id에 해당하는 post를 가져온다
@@ -121,7 +121,7 @@ getPost(@Param('id') id: string) {
 
 ## 4. Not Found Exception 던지기
 
-```ts posts.controller.ts
+```ts posts.controller.ts
 // posts.controller.ts 생략
 /*** 2) GET /posts/:id
  * id에 해당하는 post를 가져온다
@@ -156,7 +156,7 @@ getPost(@Param('id') id: string) {
 
 ## 6. Post 요청 만들기
 
-```ts posts.controller.ts
+```ts posts.controller.ts
 // posts.controller.ts 생략
 /*** 3) POST /posts
  * post를 생성한다
@@ -186,7 +186,7 @@ postPosts(
 
 ## 7. Patch Post 엔드포인트 생성
 
-```ts posts.controller.ts
+```ts posts.controller.ts
 // posts.controller.ts 생략
 /*** 4) PATCH /posts/:id
  * id에 해당하는 post를 부분 변경한다
@@ -222,7 +222,7 @@ putPost(
 
 ## 8. Delete 엔드포인트 생성
 
-```ts posts.controller.ts
+```ts posts.controller.ts
 // posts.controller.ts 생략
 /*** 5) DELETE /posts/:id
  * id에 해당하는 post를 삭제한다

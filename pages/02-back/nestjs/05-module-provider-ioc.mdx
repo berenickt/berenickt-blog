@@ -97,7 +97,7 @@ NestJS에서 A, C는 `controller`, B는 `service`라고 볼 수 있겠죠.
 contoller 파일에서 service의 기능을 어떻게 쓸 수 있을까?
 module 파일을 보면 2개의 파라미터를 받고 있다.
 
-```ts posts.module.ts
+```ts posts.module.ts
 import { Module } from '@nestjs/common'
 import { PostsService } from './posts.service'
 import { PostsController } from './posts.controller'
@@ -130,7 +130,7 @@ export class PostsModule {}
 
 또한 service에다가 `@Injectable()`을 해줘야지만 Provider로 사용할 수 있다.
 
-```ts posts.service.ts
+```ts posts.service.ts
 // posts.service.ts
 import { Injectable, NotFoundException } from '@nestjs/common'
 
@@ -148,7 +148,7 @@ export class PostsService {
 
 ## 3. AppModule, main.ts
 
-```ts app.module.ts
+```ts app.module.ts
 import { Module } from '@nestjs/common'
 import { AppController } from './app.controller'
 import { AppService } from './app.service'
@@ -172,7 +172,7 @@ NestJS는 여러가지 모듈들을 레고처럼 조합해서 합친다.
 
 NestJS가 app 모듈이 존재하는 걸 아는 건 `main.ts`를 보면 알 수 있다.
 
-```ts main.ts
+```ts main.ts
 import { NestFactory } from '@nestjs/core'
 import { AppModule } from './app.module'
 

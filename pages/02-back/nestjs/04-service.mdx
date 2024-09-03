@@ -18,7 +18,7 @@ date: 2023/12/25
 
 ## 2. Service로 모든 로직 옮기기
 
-```ts posts.controller.ts
+```ts posts.controller.ts
 import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common'
 import { PostsService } from './posts.service'
 
@@ -79,7 +79,7 @@ export class PostsController {
 }
 ```
 
-```ts posts.service.ts
+```ts posts.service.ts
 import { Injectable, NotFoundException } from '@nestjs/common'
 
 export interface PostModel {
