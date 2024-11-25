@@ -3,7 +3,7 @@ title: '07-보조기억장치'
 date: 2023/12/11
 ---
 
-# 1. 다양한 보조기억장치
+## 1. 다양한 보조기억장치
 
 ![MySelf-Architec-Oper_7_1](https://raw.githubusercontent.com/berenickt/image-server/main/img/MySelf-Architec-Oper_7_1.png)
 
@@ -15,7 +15,7 @@ date: 2023/12/11
 
 ---
 
-## 1.1 하드 디스크(HDD)
+### 1.1 하드 디스크(HDD)
 
 ![MySelf-Architec-Oper_7_2](https://raw.githubusercontent.com/berenickt/image-server/main/img/MySelf-Architec-Oper_7_2.png)
 
@@ -28,7 +28,7 @@ date: 2023/12/11
 
 ---
 
-### 1.1.1 스핀들, 플래터
+#### 1.1.1 스핀들, 플래터
 
 ![MySelf-Architec-Oper_7_3](https://raw.githubusercontent.com/berenickt/image-server/main/img/MySelf-Architec-Oper_7_3.png)
 
@@ -49,7 +49,7 @@ date: 2023/12/11
 
 ---
 
-### 1.1.2 헤드, 디스크암
+#### 1.1.2 헤드, 디스크암
 
 ![MySelf-Architec-Oper_7_4](https://raw.githubusercontent.com/berenickt/image-server/main/img/MySelf-Architec-Oper_7_4.png)
 
@@ -63,7 +63,7 @@ date: 2023/12/11
 
 ---
 
-### 1.1.3 트랙, 섹터
+#### 1.1.3 트랙, 섹터
 
 ![MySelf-Architec-Oper_7_5](https://raw.githubusercontent.com/berenickt/image-server/main/img/MySelf-Architec-Oper_7_5.png)
 
@@ -80,7 +80,7 @@ date: 2023/12/11
 
 ---
 
-### 1.1.4 트랙, 실린더
+#### 1.1.4 트랙, 실린더
 
 ![MySelf-Architec-Oper_7_6](https://raw.githubusercontent.com/berenickt/image-server/main/img/MySelf-Architec-Oper_7_6.png)
 
@@ -93,7 +93,7 @@ date: 2023/12/11
 
 ---
 
-### 1.1.5 헤드, 플러터
+#### 1.1.5 헤드, 플러터
 
 ![MySelf-Architec-Oper_7_7](https://raw.githubusercontent.com/berenickt/image-server/main/img/MySelf-Architec-Oper_7_7.png)
 
@@ -106,7 +106,7 @@ date: 2023/12/11
 
 ---
 
-### 1.1.6 저장된 데이터에 접근하는 과정
+#### 1.1.6 저장된 데이터에 접근하는 과정
 
 데이터가 하드 디스크의 섹터, 트랙, 실린더에 저장된다는 것을 알았다면,
 저장된 데이터에 접근하는 과정을 생각해 봅시다.
@@ -114,7 +114,7 @@ date: 2023/12/11
 
 ---
 
-#### (1) 탐색 시간(seek time)
+##### (1) 탐색 시간(seek time)
 
 ![MySelf-Architec-Oper_7_8](https://raw.githubusercontent.com/berenickt/image-server/main/img/MySelf-Architec-Oper_7_8.png)
 
@@ -122,7 +122,7 @@ date: 2023/12/11
 
 ---
 
-#### (2) 회전 지연(rotational latency)
+##### (2) 회전 지연(rotational latency)
 
 ![MySelf-Architec-Oper_7_9](https://raw.githubusercontent.com/berenickt/image-server/main/img/MySelf-Architec-Oper_7_9.png)
 
@@ -130,7 +130,7 @@ date: 2023/12/11
 
 ---
 
-#### (3) 전송 시간(transfer time)
+##### (3) 전송 시간(transfer time)
 
 ![MySelf-Architec-Oper_7_10](https://raw.githubusercontent.com/berenickt/image-server/main/img/MySelf-Architec-Oper_7_10.png)
 
@@ -183,7 +183,7 @@ date: 2023/12/11
 
 ---
 
-## 1.2 플래시 메모리
+### 1.2 플래시 메모리
 
 다음 그림에서 붉은 박스로 표기한 부분이 플래시 메모리입니다.
 
@@ -210,7 +210,7 @@ date: 2023/12/11
 
 ---
 
-### 1.2.1 셀(cell) : 최소 단위
+#### 1.2.1 셀(cell) : 최소 단위
 
 플래시 메모리에는 `셀(cell)`이라는 단위가 있습니다.
 
@@ -245,7 +245,7 @@ date: 2023/12/11
 
 ---
 
-#### (1) SLC 타입
+##### (1) SLC 타입
 
 ![MySelf-Architec-Oper_7_13](https://raw.githubusercontent.com/berenickt/image-server/main/img/MySelf-Architec-Oper_7_13.png)
 
@@ -263,7 +263,7 @@ date: 2023/12/11
 
 ---
 
-#### (2) MLC 타입
+##### (2) MLC 타입
 
 ![MySelf-Architec-Oper_7_14](https://raw.githubusercontent.com/berenickt/image-server/main/img/MySelf-Architec-Oper_7_14.png)
 
@@ -280,7 +280,7 @@ date: 2023/12/11
 
 ---
 
-#### (3) TLC 타입
+##### (3) TLC 타입
 
 ![MySelf-Architec-Oper_7_15](https://raw.githubusercontent.com/berenickt/image-server/main/img/MySelf-Architec-Oper_7_15.png)
 
@@ -306,7 +306,7 @@ date: 2023/12/11
 
 ---
 
-### 1.2.2 셀보다 더 큰 단위
+#### 1.2.2 셀보다 더 큰 단위
 
 이제 플래시 메모리의 가장 작은 단위인 셀보다 더 큰 단위를 알아봅시다.
 
@@ -335,7 +335,7 @@ date: 2023/12/11
 
 ---
 
-### 1.2.3 가비지 컬렉터
+#### 1.2.3 가비지 컬렉터
 
 ![MySelf-Architec-Oper_7_17](https://raw.githubusercontent.com/berenickt/image-server/main/img/MySelf-Architec-Oper_7_17.png)
 
@@ -376,7 +376,7 @@ date: 2023/12/11
 
 ---
 
-# 2. RAID의 정의와 종류
+## 2. RAID의 정의와 종류
 
 ![MySelf-Architec-Oper_7_20](https://raw.githubusercontent.com/berenickt/image-server/main/img/MySelf-Architec-Oper_7_20.png)
 
@@ -389,7 +389,7 @@ date: 2023/12/11
 
 ---
 
-## 2.1 RAID의 정의
+### 2.1 RAID의 정의
 
 ![MySelf-Architec-Oper_7_21](https://raw.githubusercontent.com/berenickt/image-server/main/img/MySelf-Architec-Oper_7_21.png)
 
@@ -412,7 +412,7 @@ date: 2023/12/11
 
 ---
 
-## 2.2 RAID의 종류
+### 2.2 RAID의 종류
 
 여러 개의 하드 디스크나 SSD를 마치 하나의 장치처럼 사용하는 RAID를 구성하는 방법은 여러 가지가 있습니다.
 
@@ -423,7 +423,7 @@ date: 2023/12/11
 
 ---
 
-### 2.2.1 RAID 0
+#### 2.2.1 RAID 0
 
 ![MySelf-Architec-Oper_7_23](https://raw.githubusercontent.com/berenickt/image-server/main/img/MySelf-Architec-Oper_7_23.png)
 
@@ -461,7 +461,7 @@ date: 2023/12/11
 
 ---
 
-### 2.2.2 RAID 1
+#### 2.2.2 RAID 1
 
 다음 그림은 4개의 하드 디스크를 RAID 1으로 구성한 모습입니다.
 
@@ -484,7 +484,7 @@ date: 2023/12/11
 
 ---
 
-### 2.2.3 RAID 4
+#### 2.2.3 RAID 4
 
 ![MySelf-Architec-Oper_7_28](https://raw.githubusercontent.com/berenickt/image-server/main/img/MySelf-Architec-Oper_7_28.png)
 
@@ -506,7 +506,7 @@ date: 2023/12/11
 
 ---
 
-### 2.2.4 RAID 5
+#### 2.2.4 RAID 5
 
 ![MySelf-Architec-Oper_7_29](https://raw.githubusercontent.com/berenickt/image-server/main/img/MySelf-Architec-Oper_7_29.png)
 
@@ -523,7 +523,7 @@ date: 2023/12/11
 
 ---
 
-### 2.2.5 RAID 6
+#### 2.2.5 RAID 6
 
 ![MySelf-Architec-Oper_7_31](https://raw.githubusercontent.com/berenickt/image-server/main/img/MySelf-Architec-Oper_7_31.png)
 
