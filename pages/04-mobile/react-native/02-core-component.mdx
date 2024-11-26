@@ -233,14 +233,7 @@ export default FlatListBasics
 
 ```tsx
 import React from 'react'
-import {
-  StyleSheet,
-  Text,
-  View,
-  SafeAreaView,
-  SectionList,
-  StatusBar,
-} from 'react-native'
+import { StyleSheet, Text, View, SafeAreaView, SectionList, StatusBar } from 'react-native'
 
 const DATA = [
   {
@@ -271,9 +264,7 @@ const SectionListBasics = () => (
           <Text style={styles.title}>{item}</Text>
         </View>
       )}
-      renderSectionHeader={({ section: { title } }) => (
-        <Text style={styles.header}>{title}</Text>
-      )}
+      renderSectionHeader={({ section: { title } }) => <Text style={styles.header}>{title}</Text>}
     />
   </SafeAreaView>
 )

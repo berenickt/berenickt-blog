@@ -78,11 +78,7 @@ import { sendGTMEvent } from '@next/third-parties/google'
 export function EventButton() {
   return (
     <div>
-      <button
-        onClick={() => sendGTMEvent({ event: 'buttonClicked', value: 'xyz' })}
-      >
-        Send Event
-      </button>
+      <button onClick={() => sendGTMEvent({ event: 'buttonClicked', value: 'xyz' })}>Send Event</button>
     </div>
   )
 }
@@ -166,11 +162,7 @@ import { sendGAEvent } from '@next/third-parties/google'
 export function EventButton() {
   return (
     <div>
-      <button
-        onClick={() => sendGAEvent({ event: 'buttonClicked', value: 'xyz' })}
-      >
-        Send Event
-      </button>
+      <button onClick={() => sendGAEvent({ event: 'buttonClicked', value: 'xyz' })}>Send Event</button>
     </div>
   )
 }

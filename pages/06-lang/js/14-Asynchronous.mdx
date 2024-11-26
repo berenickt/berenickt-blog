@@ -152,10 +152,7 @@ printWithDelay(() => console.log('async callback'), 2000)
 class UserStorage {
   loginUser(id, password, onSuccess, onError) {
     setTimeout(() => {
-      if (
-        (id === 'ellie' && password === 'dream') ||
-        (id === 'coder' && password === 'academy')
-      ) {
+      if ((id === 'ellie' && password === 'dream') || (id === 'coder' && password === 'academy')) {
         onSuccess(id)
       } else {
         onError(new Error('not found'))
@@ -476,9 +473,7 @@ async function getBanana() {
 
 function pickAllFruits() {
   // Promise.all : 병렬적으로 한번에 모든 Promise들을 실행
-  return Promise.all([getApple(), getBanana()]).then(fruits =>
-    fruits.join(' + '),
-  )
+  return Promise.all([getApple(), getBanana()]).then(fruits => fruits.join(' + '))
 }
 pickAllFruits().then(console.log) // 결과는 🍎 + 🍌
 ```

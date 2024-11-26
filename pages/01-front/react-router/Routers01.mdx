@@ -535,9 +535,7 @@ import { Outlet } from 'react-router-dom'
 export default function Layout() {
   return (
     <div>
-      <header style={{ background: 'lightgray', padding: 16, fontSize: 24 }}>
-        Header
-      </header>
+      <header style={{ background: 'lightgray', padding: 16, fontSize: 24 }}>Header</header>
       <main>
         <Outlet />
       </main>
@@ -714,26 +712,17 @@ export default function Articles() {
       <Outlet />
       <ul>
         <li>
-          <NavLink
-            to="/articles/1"
-            style={({ isActive }) => (isActive ? activeStyle : undefined)}
-          >
+          <NavLink to="/articles/1" style={({ isActive }) => (isActive ? activeStyle : undefined)}>
             게시글 1
           </NavLink>
         </li>
         <li>
-          <NavLink
-            to="/articles/2"
-            style={({ isActive }) => (isActive ? activeStyle : undefined)}
-          >
+          <NavLink to="/articles/2" style={({ isActive }) => (isActive ? activeStyle : undefined)}>
             게시글 2
           </NavLink>
         </li>
         <li>
-          <NavLink
-            to="/articles/3"
-            style={({ isActive }) => (isActive ? activeStyle : undefined)}
-          >
+          <NavLink to="/articles/3" style={({ isActive }) => (isActive ? activeStyle : undefined)}>
             게시글 3
           </NavLink>
         </li>
@@ -772,10 +761,7 @@ const ArticleItem = ({ id }) => {
   }
   return (
     <li>
-      <NavLink
-        to={`/articles/${id}`}
-        style={({ isActive }) => (isActive ? activeStyle : undefined)}
-      >
+      <NavLink to={`/articles/${id}`} style={({ isActive }) => (isActive ? activeStyle : undefined)}>
         게시글 {id}
       </NavLink>
     </li>

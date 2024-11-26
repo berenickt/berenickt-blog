@@ -308,10 +308,7 @@ type Message = {
 export function Thread({ messages }: { messages: Message[] }) {
   const [optimisticMessages, addOptimisticMessage] = useOptimistic<Message[]>(
     messages,
-    (state: Message[], newMessage: string) => [
-      ...state,
-      { message: newMessage },
-    ],
+    (state: Message[], newMessage: string) => [...state, { message: newMessage }],
   )
 
   return (

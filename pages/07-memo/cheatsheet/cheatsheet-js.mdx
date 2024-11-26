@@ -515,7 +515,7 @@ numbers.forEach((element, index, array) => {
 
 ```js
 const array1 = [1, 4, 9, 16]
-const map1 = array1.map((x) => x * 2)
+const map1 = array1.map(x => x * 2)
 
 console.log(map1) // Array [2, 8, 18, 32]
 ```
@@ -632,7 +632,7 @@ console.log(fruits.reverse()) // [ 'orange', 'melon', 'banana', 'apple' ]
 ```js
 const numberArr = [1, 2, 3, 4, 5]
 
-const numberFilterArr = numberArr.filter((item) => {
+const numberFilterArr = numberArr.filter(item => {
   return item % 2 === 0 // 해당조건에 부합으면 item을 넣어 배열 반환
 })
 
@@ -889,7 +889,7 @@ let some_age = users.some(function (users) {
 })
 console.log(some_age) // false
 
-let empty = [].some((item) => item > 16)
+let empty = [].some(item => item > 16)
 console.log(empty) // false
 ```
 
@@ -920,7 +920,7 @@ let some_age = users.every(function (users) {
 })
 console.log(some_age) // true
 
-let empty = [].every((item) => item > 16)
+let empty = [].every(item => item > 16)
 console.log(empty) // true
 ```
 

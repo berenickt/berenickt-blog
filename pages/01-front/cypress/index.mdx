@@ -387,10 +387,7 @@ describe('메인페이지', () => {
     cy.contains('상점 검색 >').next().contains('가위') // '가위'가 자동완성 되는지 확인
     cy.contains('가위 - 0').click() // '가위 - 0' 클릭
     // URL이 정상적으로 변경되는지 확인
-    cy.url().should(
-      'eq',
-      `http://localhost:3000/search?query=${encodeURIComponent('가위 - 0')}`,
-    )
+    cy.url().should('eq', `http://localhost:3000/search?query=${encodeURIComponent('가위 - 0')}`)
   })
 
   /*** (7)
@@ -423,10 +420,7 @@ describe('메인페이지', () => {
     cy.get('input[placeholder="상품명, 상점명 입력"]').type('가위') // '가위' 입력
     cy.contains('상점 검색 >').click() // 상점 검색 클릭
     // URL이 정상적으로 변경되는지 확인
-    cy.url().should(
-      'eq',
-      `http://localhost:3000/search/shop?query=${encodeURIComponent('가위')}`,
-    )
+    cy.url().should('eq', `http://localhost:3000/search/shop?query=${encodeURIComponent('가위')}`)
   })
 })
 ```

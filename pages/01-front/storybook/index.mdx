@@ -87,16 +87,10 @@ export default preview
 ```html preview-head.html
 <!-- 스토리북에 Google Material Symbols 적용 -->
 <!-- @see https://developers.google.com/fonts/docs/material_symbols?hl=ko#use_in_web -->
-<link
-  href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
-  rel="stylesheet"
-/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
 
 <!-- google font 적용 -->
-<link
-  href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&display=swap"
-  rel="stylesheet"
-/>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&display=swap" rel="stylesheet" />
 
 <link
   href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@100;200;300;400;500;600;700;800;900&display=swap"
@@ -196,7 +190,8 @@ export default function Button({
               'bg-orange-500': color === 'orange',
               'bg-red-500': color === 'red',
             },
-      )}>
+      )}
+    >
       {isLoading ? (
         <>
           {/* absolute : 요소를 절대위치로 띄움 */}
@@ -268,10 +263,7 @@ const Input = forwardRef(function Input(
     <input
       {...props}
       ref={ref} // ref를 전달
-      className={classNames(
-        props.className,
-        'border text-base p-2 outline-none text-black disabled:opacity-50',
-      )}
+      className={classNames(props.className, 'border text-base p-2 outline-none text-black disabled:opacity-50')}
     />
   )
 })
@@ -441,9 +433,9 @@ export default function Spinner({ size = 'md' }: Props) {
     <span
       className="material-symbols-outlined animate-spin"
       style={{
-        fontSize:
-          size === 'md' ? '1rem' : size === 'sm' ? '0.875rem' : '0.75rem',
-      }}>
+        fontSize: size === 'md' ? '1rem' : size === 'sm' ? '0.875rem' : '0.75rem',
+      }}
+    >
       progress_activity
     </span>
   )
@@ -511,13 +503,7 @@ dayjs.extend(relativeTime).locale('ko')
  * 상품 미리보기 컴포넌트
  * @returns
  */
-export default function Product({
-  title,
-  price,
-  createdAt,
-  imageUrl,
-  isSoldOut,
-}: Props) {
+export default function Product({ title, price, createdAt, imageUrl, isSoldOut }: Props) {
   return (
     <div className="flex flex-col border border-slate-300 relative">
       {/* 판매 완료 시 투명도 및 판매 완료 문구 표시 */}
@@ -527,17 +513,12 @@ export default function Product({
         </div>
       )}
       {/* 이미지 */}
-      <div
-        className="h-36 bg-cover bg-center"
-        style={{ backgroundImage: `url(${imageUrl})` }}
-      />
+      <div className="h-36 bg-cover bg-center" style={{ backgroundImage: `url(${imageUrl})` }} />
       {/* 설명 */}
       <div className="h-20 flex flex-col px-3 justify-center">
         {/* 제품명 */}
         {/* 텍스트가 너무 길어서 한 줄로 표시되지 않을 때, 넘치는 부분을 ...으로 표시 */}
-        <Text className="text-ellipsis overflow-hidden whitespace-nowrap block">
-          {title}
-        </Text>
+        <Text className="text-ellipsis overflow-hidden whitespace-nowrap block">{title}</Text>
         <div className="flex justify-between items-center flex-wrap">
           {/* 가격 */}
           {/* @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/toLocaleString#using_tolocalestring */}
@@ -636,14 +617,8 @@ export default function ShopProfileImage({ imageUrl, className }: Props) {
   // 이미지가 없는 경우
   if (!imageUrl) {
     return (
-      <div
-        className={classNames(
-          className,
-          'rounded-full bg-slate-200 w-14 h-14 flex justify-center items-center',
-        )}>
-        <span className="material-symbols-outlined text-slate-500">
-          storefront
-        </span>
+      <div className={classNames(className, 'rounded-full bg-slate-200 w-14 h-14 flex justify-center items-center')}>
+        <span className="material-symbols-outlined text-slate-500">storefront</span>
       </div>
     )
   }
@@ -651,10 +626,7 @@ export default function ShopProfileImage({ imageUrl, className }: Props) {
   // 이미지가 있는 경우
   return (
     <div
-      className={classNames(
-        className,
-        'rounded-full w-14 h-14 bg-cover bg-center',
-      )}
+      className={classNames(className, 'rounded-full w-14 h-14 bg-cover bg-center')}
       style={{ backgroundImage: `url(${imageUrl})` }}
     />
   )
@@ -749,14 +721,13 @@ export default function Shop({
           'flex-col': type === 'column',
         },
         type === 'column' && 'gap-1 items-center',
-      )}>
+      )}
+    >
       {/* 상점 이미지 영역 */}
       <div
-        className={classNames(
-          'w-14',
-          handleClickProfileImage && 'cursor-pointer',
-        )}
-        onClick={handleClickProfileImage}>
+        className={classNames('w-14', handleClickProfileImage && 'cursor-pointer')}
+        onClick={handleClickProfileImage}
+      >
         <ShopProfileImage imageUrl={profileImageUrl} />
       </div>
       {/* 상정 설명 영역 */}
@@ -765,7 +736,8 @@ export default function Shop({
           'flex flex-col overflow-hidden', // overflow-hidden : 요소 밖으로 삐져나오는 컨텐츠를 숨김
           type === 'row' && 'ml-3 justify-around',
           type === 'column' && 'w-full', // column 타입일 때 가로폭 100%
-        )}>
+        )}
+      >
         {/* 상점 설명 - 제목 */}
         <div
           className={classNames(
@@ -773,32 +745,28 @@ export default function Shop({
             type === 'column' && 'text-center',
             handleClickTitle && 'cursor-pointer',
           )}
-          onClick={handleClickTitle}>
+          onClick={handleClickTitle}
+        >
           <Text>{name}</Text>
         </div>
         {/* 상점 설명 - 상품 수, 팔로워 수 */}
         <Text
           size="sm"
           color={type === 'row' ? 'grey' : 'black'}
-          className={classNames(
-            'flex gap-2',
-            type === 'column' && 'justify-center',
-          )}>
+          className={classNames('flex gap-2', type === 'column' && 'justify-center')}
+        >
           {/* 상품 수 */}
           <div
-            className={classNames(
-              'text-center',
-              handleClickProductCount && 'cursor-pointer',
-            )}
-            onClick={handleClickProductCount}>
+            className={classNames('text-center', handleClickProductCount && 'cursor-pointer')}
+            onClick={handleClickProductCount}
+          >
             상품 {productCount.toLocaleString()}
-          </div>|{/* 팔로워 수 */}
+          </div>
+          |{/* 팔로워 수 */}
           <div
-            className={classNames(
-              'text-center',
-              handleClickFollowerCount && 'cursor-pointer',
-            )}
-            onClick={handleClickFollowerCount}>
+            className={classNames('text-center', handleClickFollowerCount && 'cursor-pointer')}
+            onClick={handleClickFollowerCount}
+          >
             팔로워 {followerCount.toLocaleString()}
           </div>
         </Text>
@@ -882,11 +850,7 @@ const btnClassName =
 /**
  * 페이지네이션을 표시하기 위한 컴포넌트
  */
-export default function Pagination({
-  currentPage,
-  count,
-  handlePageChange,
-}: Props) {
+export default function Pagination({ currentPage, count, handlePageChange }: Props) {
   const totalPage = Math.ceil(count / 10) // 한 페이지에 10개의 항목이 있다고 가정, 올림 처리
 
   // max함수를 이용해 1보다 작은 값이 나오지 않도록 처리
@@ -903,32 +867,29 @@ export default function Pagination({
   return (
     <div className="flex gap-1 my-3">
       {/* 이전 버튼 */}
-      <button
-        className={btnClassName}
-        disabled={currentPage === 1}
-        onClick={() => handlePageChange(currentPage - 1)}>
+      <button className={btnClassName} disabled={currentPage === 1} onClick={() => handlePageChange(currentPage - 1)}>
         이전
       </button>
       {/* 페이지 버튼 */}
-      {Array.from({ length: endPageIndex - startPageIndex + 1 }).map(
-        (_, idx) => {
-          const pageIndex = startPageIndex + idx
-          return (
-            <button
-              className={btnClassName}
-              key={pageIndex}
-              disabled={pageIndex === currentPage}
-              onClick={() => handlePageChange(pageIndex)}>
-              {pageIndex}
-            </button>
-          )
-        },
-      )}
+      {Array.from({ length: endPageIndex - startPageIndex + 1 }).map((_, idx) => {
+        const pageIndex = startPageIndex + idx
+        return (
+          <button
+            className={btnClassName}
+            key={pageIndex}
+            disabled={pageIndex === currentPage}
+            onClick={() => handlePageChange(pageIndex)}
+          >
+            {pageIndex}
+          </button>
+        )
+      })}
       {/* 다음 버튼 */}
       <button
         className={btnClassName}
         disabled={currentPage === totalPage}
-        onClick={() => handlePageChange(currentPage + 1)}>
+        onClick={() => handlePageChange(currentPage + 1)}
+      >
         다음
       </button>
     </div>

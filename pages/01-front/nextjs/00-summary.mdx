@@ -93,7 +93,7 @@ date: 2024/04/07
 ```tsx
 export default function RootLayout({ children }) {
   return (
-    <html lang='en'>
+    <html lang="en">
       <body>
         <main>{children}</main>
       </body>
@@ -199,7 +199,7 @@ export default async function Page() {
 ```tsx
 export default function RootLayout({ children }) {
   return (
-    <html lang='en'>
+    <html lang="en">
       <body>{children}</body>
     </html>
   )
@@ -487,7 +487,7 @@ export default function DashboardLayout({ children }) {
   return (
     <>
       <section>{children}</section>
-      <Script src='https://example.com/script.ts' />
+      <Script src="https://example.com/script.ts" />
     </>
   )
 }
@@ -525,8 +525,8 @@ Next.js에서 스크립트를 로드하고 실행하는데 사용되며, 다양�
 >
 > ```tsx
 > <Script
->   strategy='afterInteractive'
->   type='text/javascript'
+>   strategy="afterInteractive"
+>   type="text/javascript"
 >   src={`//dapi.kakao.com/v2/maps/...`}
 >   // 지도 option 설정해주는 함수 (지도 중간 좌표 및 레벨)
 >   onReady={loadKakaoMap}

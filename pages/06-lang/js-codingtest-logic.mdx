@@ -50,7 +50,7 @@ console.log(numbers) // [(9, 6, 5, 5, 5, 4, 3, 3, 2, 1, 1)]
 
 ```js
 const numbers = [1, 2, 3, 4, 5, 6]
-const ret = numbers.filter((ele) => ele % 2 === 0)
+const ret = numbers.filter(ele => ele % 2 === 0)
 console.log(ret) // [2, 4, 6]
 ```
 
@@ -60,7 +60,7 @@ console.log(ret) // [2, 4, 6]
 
 ```js
 const numbers = [1, 2, 3, 4, 5]
-const ret = numbers.map((el) => el * 2)
+const ret = numbers.map(el => el * 2)
 console.log(ret) // [ 2, 4, 6, 8, 10 ]
 ```
 
@@ -118,7 +118,7 @@ const dfs = (here, visited = new Set()) => {
   if (visited.has(here)) return
   visited.add(here)
   console.log(here)
-  graph[here].forEach((el) => dfs(el, visited))
+  graph[here].forEach(el => dfs(el, visited))
 }
 
 dfs(1)
@@ -170,7 +170,7 @@ let a = Array(50).fill(0)
 // 모든 원소가 1인 2차원배열
 let b = Array(5)
   .fill()
-  .map((el) => Array(5).fill(1))
+  .map(el => Array(5).fill(1))
 console.log(b)
 ```
 

@@ -205,7 +205,8 @@ export default function MyComponent() {
           id: Date.now(),
           title: 'Do Laundry',
         })
-      }}>
+      }}
+    >
       Todo 추가
     </button>
   )
@@ -679,12 +680,7 @@ interface Args extends IntersectionObserverInit {
 
 export function useIntersectionObserver(
   elementRef: RefObject<Element>,
-  {
-    threshold = 0,
-    root = null,
-    rootMargin = '0%',
-    freezeOnceVisible = false,
-  }: Args,
+  { threshold = 0, root = null, rootMargin = '0%', freezeOnceVisible = false }: Args,
 ): IntersectionObserverEntry | undefined {
   const [entry, setEntry] = useState<IntersectionObserverEntry>()
 
@@ -736,9 +732,7 @@ return (
     {/* 무한 스크롤을 위해, 맨 밑에 의미없는 div를 놓고, 그 div가 보이면, 추가 데이터 로드 */}
     {/* isLastPage가 true이거나, products가 비어있거나, products의 길이가 100개 이상이면, */}
     {/* 더 이상 불러올 데이터가 없다고 판단한다 */}
-    {!isLastPage && !!products.length && products.length < 100 && (
-      <div ref={ref} />
-    )}
+    {!isLastPage && !!products.length && products.length < 100 && <div ref={ref} />}
   </div>
 )
 ```

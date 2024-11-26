@@ -94,9 +94,7 @@ const ArticleText = props => (
   />
 )
 
-const AnotherComponent = () => (
-  <div css={[anotherStyle, style]}>Some text with an underline.</div>
-)
+const AnotherComponent = () => <div css={[anotherStyle, style]}>Some text with an underline.</div>
 
 const danger = css`
   color: red;
@@ -119,7 +117,8 @@ export default function EmotionExample() {
           &:hover {
             color: ${color};
           }
-        `}>
+        `}
+      >
         Hover to change color.
       </div>
       <Button>Hello</Button>
@@ -130,8 +129,7 @@ export default function EmotionExample() {
       <div>
         <div css={base}>This will be turquoise</div>
         <div css={[danger, base]}>
-          This will be also be turquoise since the base styles overwrite the
-          danger styles.
+          This will be also be turquoise since the base styles overwrite the danger styles.
         </div>
         <div css={[base, danger]}>This will be red</div>
       </div>
@@ -165,7 +163,8 @@ export default function EmotionExample() {
           @media (min-width: 420px) {
             font-size: 50px;
           }
-        `}>
+        `}
+      >
         Some text!
       </p>
     </>
@@ -193,7 +192,8 @@ export default function EmotionExample() {
           @media (min-width: 420px) {
             font-size: 50px;
           }
-        `}>
+        `}
+      >
         <Global
           styles={css`
             p {
@@ -247,7 +247,8 @@ export default function EmotionExample() {
           @media (min-width: 420px) {
             font-size: 50px;
           }
-        `}>
+        `}
+      >
         <Global
           styles={css`
             p {
@@ -261,7 +262,8 @@ export default function EmotionExample() {
       <div
         css={css`
           animation: ${bounce} 2s ease infinite;
-        `}>
+        `}
+      >
         some bouncing text!
       </div>
     </>
@@ -315,7 +317,8 @@ export default function EmotionExample() {
           @media (min-width: 420px) {
             font-size: 50px;
           }
-        `}>
+        `}
+      >
         <Global
           styles={css`
             p {
@@ -329,7 +332,8 @@ export default function EmotionExample() {
       <div
         css={css`
           animation: ${bounce} 2s ease infinite;
-        `}>
+        `}
+      >
         some bouncing text!
       </div>
       <ClassNames>
@@ -338,7 +342,8 @@ export default function EmotionExample() {
             wrapperClassName={css({ color: 'green' })}
             className={css`
               color: hotpink;
-            `}>
+            `}
+          >
             from children!!
           </SomeComponent>
         )}

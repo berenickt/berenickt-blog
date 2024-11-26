@@ -46,8 +46,6 @@ props 값에 따라 다른 스타일을 주기가 쉽다.
 
 ```tsx
 const MyComponent = ({ highlighted, theme }) => (
-  <div className={`MyComponent ${theme} ${highlighted ? 'highlighted' : ''}`}>
-    Hello
-  </div>
+  <div className={`MyComponent ${theme} ${highlighted ? 'highlighted' : ''}`}>Hello</div>
 )
 ```

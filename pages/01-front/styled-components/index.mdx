@@ -117,9 +117,7 @@ export default function StyledComponentsExample() {
     border-color: tomato;
   `
 
-  const ReversedButton = props => (
-    <Button {...props} children={props.children.split('').reverse()} />
-  )
+  const ReversedButton = props => <Button {...props} children={props.children.split('').reverse()} />
 
   // Use Title and Wrapper like any other React component – except they're styled!
   return (
@@ -140,9 +138,7 @@ export default function StyledComponentsExample() {
         Link with Tomato Button styles
       </TomatoButton>
 
-      <Button as={ReversedButton}>
-        Custom Button with Normal Button styles
-      </Button>
+      <Button as={ReversedButton}>Custom Button with Normal Button styles</Button>
     </>
   )
 }
