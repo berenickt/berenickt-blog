@@ -5,14 +5,59 @@ date: 2023/12/25
 
 ## 1. Class Validator와 DTO 사용
 
+### 1.1 Class Validator 특성
+
+- TS Decorator를 사용해서 클래스를 검증한다 (Validate)
+- 동기 (Synchronous), 비동기 (Asynchronous) 방식 모두를 지원한다.
+- Class Validator 자체적으로 제공해주는 Validator들을 사용 할 수 있다.
+- 커스텀 Validator를 쉽게 만들 수 있다.
+- 커스텀 에러 메세지를 반환 할 수 있다.
+
+---
+
+### 1.2 Class Validator 설치 및 사용법
+
+(1) Class Validator 설치
+
 ```bash
-yarn add class-validator class-transformer
+yarn add class-validator
 ```
+
+(2) Class Validator 사용법
+
+```ts
+class User {
+  @IsNotEmpty()
+  name: string
+
+  @IsEmail()
+  email: string
+}
+```
+
+어떤 Validator든 검증하고싶은 프로퍼티에 Class Validator에서 제공하는 Decorator로 붙여주면 된다.
+
+```tsx
+const user = new User()
+
+user.name = ''
+user.email = 'invalid-email'
+
+validate(user).then(errors => {
+  // 여기서 에러 반환
+})
+```
+
+`validate()`로 객체를 검증했을때, Class Validator에 부합하지 않은 값이 입력되면, 해당되는 에러가 반환된다.
+
+---
+
+### 1.3 DTO (Data Transfer Object)
 
 class-validator로 Body의 프로퍼티 값들을 하나의 클래스로 묶어서 관리할 수 있다.
 
 - 그리고 이렇게 묶은 형태의 클래스를 DTO라고 부른다.
-- DTO는 Data Transfer Object의 약자. 데이터를 전송하는 객체
+- DTO(Data Transfer Object; 데이터를 전송하는 객체)
   - 클라이언트로부터 서버에 데이터를 전송받으면,
   - 그 데이터를 서버에서 효율적으로 사용할 수 있게 관리해주는 객체라는 뜻
 
@@ -95,16 +140,73 @@ bootstrap()
 
 ---
 
-## 2. 다양한 Class Validator 정보 찾기
+## 2. 기본 제공 Class Validator
 
 - https://github.com/typestack/class-validator?tab=readme-ov-file#validation-decorators
 - Common validation decorators, Type validation decorators
-  - 2개를 자주 사용하는데,
-  - 다른 Validator도 찾아보고 사용하면 된다.
+  - 2개를 자주 사용하는데, 다른 Validator도 찾아보고 사용하면 된다.
+
+| 데코레이터                          | 설명                                                                                                                           |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| **공통 Validator**                  |                                                                                                                                |
+| @IsDefined(value: any)              | 값이 정의되었는지 확인(!== undefined, !== null).<br /> 이 데코레이터는 skipMissingProperties 옵션을 무시하는 유일한 데코레이터 |
+| @IsOptional                         | 주어진 값이 비어 있는지(=== null, === undefined 않음) 확인, <br />그렇다면 프로퍼티의 모든 유효성 검사기를 무시                |
+| @Equals                             | 값이 같음("===") 비교인지 확인                                                                                                 |
+| @NotEquals                          | 값이 같지 않은("!==") 비교인지 확인                                                                                            |
+| @IsEmpty                            | 주어진 값이 비어 있는지(=== '’, === null, === undefined) 확인                                                                  |
+| @IsNotEmpty                         | 주어진 값이 비어 있지 않은지(!== '', !== null, !== undefined) 확인                                                             |
+| @IsIn(values: any[])                | 값이 허용된 값의 배열에 있는지 확인                                                                                            |
+| @IsNotIn(values: any[])             | 허용되지 않는 값의 배열에 값이 없는지 확인                                                                                     |
+| **타입 Validator**                  |                                                                                                                                |
+| @Isboolean                          | 값이 boolean인지 확인                                                                                                          |
+| @IsDate                             | 값이 날짜인지 확인                                                                                                             |
+| @IsString                           | 값이 문자열인지 확인                                                                                                           |
+| @IsNumber(options: IsNumberOptions) | 값이 숫자인지 확인                                                                                                             |
+| @isInt                              | 값이 정수인지 확인                                                                                                             |
+| @IsArray                            | 값이 배열인지 확인                                                                                                             |
+| @IsEnum(entity: object)             | 값이 유효한 열거형인지 확인                                                                                                    |
+| **숫자 Validator**                  |                                                                                                                                |
+| @IsDivisibleBy                      | 값이 다른 값으로 나눌 수 있는 숫자인지 확인                                                                                    |
+| @isPositive                         | 값이 0보다 큰 양수인지 확인                                                                                                    |
+| @IsNegative                         | 값이 0보다 작은 음수인지 확인                                                                                                  |
+| @Min                                | 주어진 숫자가 주어진 숫자보다 크거나 같은지 확인                                                                               |
+| @Max                                | 주어진 숫자가 주어진 숫자보다 작거나 같은지 확인                                                                               |
+| **문자 Validator**                  |                                                                                                                                |
+| @Contains(seed: string)             | 문자열에 seed가 포함되어 있는지 확인                                                                                           |
+| @NotContains(seed: string)          | 문자열에 seed가 포함되어 있지 않은지 확인                                                                                      |
+| @IsAlphanumeric                     | 문자열에 문자와 숫자만 포함되어 있는지 확인                                                                                    |
+| @IsCreditCard                       | 문자열이 신용 카드인지 확인                                                                                                    |
+| @IsHexColor                         | 문자열이 16진수 색상인지 확인                                                                                                  |
+| @MaxLength                          | 문자열의 길이가 주어진 숫자보다 길지 않은지 확인                                                                               |
+| @MinLength                          | 문자열의 길이가 주어진 숫자보다 작지 않은지 확인                                                                               |
+| @IsUUID                             | 문자열이 UUID(버전 3, 4, 5 또는 모두 )인지 확인                                                                                |
+| @IsLatLong                          | 값의 형식이 위도, 경도 인지 확인                                                                                               |
 
 ---
 
-## 3. Class Validator 에러메시지 변경
+## 3. 반환 에러 구조
+
+```json
+{
+  target: Object;
+  property: string;
+  value: any;
+  constraints?: {
+  	[type: string]: string;
+	};
+	children?: ValidationError[];
+}
+```
+
+- `target`: 검증한 객체
+- `property`: 검증 실패한 프로퍼티
+- `value`: 검증 실패한 값
+- `constraints`: 검증 실패한 제약조건
+- `children`: 프로퍼티의 모든 검증 실패 제약 조건
+
+---
+
+### 3.1 Class Validator 에러메시지 변경
 
 ```ts create-post.dto.ts
 import { IsString } from 'class-validator'
@@ -121,6 +223,8 @@ export class CreatePostDto {
   content: string
 }
 ```
+
+Decorator의 `message 프로퍼티`에 **검증 실패했을때의 에러 메세지를 입력**해주면 된다
 
 ---
 
