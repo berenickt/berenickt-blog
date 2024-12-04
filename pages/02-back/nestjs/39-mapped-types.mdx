@@ -1,0 +1,142 @@
+---
+title: '39-Mapped Types'
+date: 2023/12/25
+---
+
+## 1. Mapped Types 정리
+
+- `Partial` : 클래스의 프로퍼티 정의를 모두 optional로 만든다
+- `Pick` : 특정 프로퍼티만 골라 사용 할 수 있다. (Omit의 반대)
+- `Omit` : 특정 프로퍼티만 생략 할 수 있다. (Pick의 반대)
+- `Intersection` : 두 타입의 프로퍼티를 모두 모아서 사용 할 수 있다
+- `Composition` : Mapped Types를 다양하게 조합해서 중첩 적용 가능하다
+
+---
+
+## 2. Partial
+
+```ts
+export class CreateUserDto {
+  @IsString()
+  readonly name: string
+
+  @IsEmail()
+  readonly email: string
+
+  @IsString()
+  readonly password: string
+}
+```
+
+```ts
+export class UpdateUserDto extends PartialType(CreateUserDto) {}
+/*
+{
+  name?: string;
+  email?: string;
+  password?: string;
+}
+*/
+```
+
+---
+
+## 3. Pick
+
+```ts
+export class CreateUserDto {
+  @IsString()
+  readonly name: string
+
+  @IsEmail()
+  readonly email: string
+
+  @IsString()
+  readonly password: string
+}
+```
+
+```ts
+export class LoginUserDto extends PickType(CreateUserDto, ['email', 'password'] as const) {}
+/*
+{
+  email: string;
+  password: string;
+}
+*/
+```
+
+---
+
+## 4. Omit
+
+```ts
+export class CreateUserDto {
+  @IsString()
+  readonly name: string
+
+  @IsEmail()
+  readonly email: string
+
+  @IsString()
+  readonly password: string
+}
+```
+
+```ts
+export class PublicUserDto extends OmitType(CreateUserDto, ['password'] as const) {}
+/*
+{
+  name: string;
+  email: string;
+}
+*/
+```
+
+---
+
+## 5. Intersection
+
+```ts
+export class UserDetailDto {
+  @IsString()
+  readonly name: string
+
+  @IsEmail()
+  readonly email: string
+}
+
+export class AddressDto {
+  @IsString()
+  readonly street: string
+
+  @IsString()
+  readonly city: string
+
+  @IsString()
+  readonly country: string
+}
+```
+
+```ts
+export class UserWithAddressDto extends IntersectionType(UserDetailDto, AddressDto) {}
+/*
+{
+  name: string;
+  email: string;
+  street: string;
+  city: string;
+  country: string;
+}
+*/
+```
+
+---
+
+## 6. Composition
+
+```ts
+export class UpdateCatDto extends PartialType(
+  OmitType(CreateCatDto, ['name'] as const), //
+) {}
+```

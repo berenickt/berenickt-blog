@@ -6,20 +6,20 @@ date: 2023/12/25
 ## 1. SQL 기본기
 
 ```sql
-# select {column} from {table}
+-- select {column} from {table}
 select id, author, title, content
 from post;
 
-# update {table} set {column} where {condition}
+-- update {table} set {column} where {condition}
 update post set likeCount = 0
 where id =3;
 
-# delete from {table} where {condition}
+-- delete from {table} where {condition}
 delete from post
 where author = 'newjeans_official';
 
-# insert into {table} {column1, column2, ...}
-# values {value1, value2, ...}
+-- insert into {table} {column1, column2, ...}
+-- values {value1, value2, ...}
 insert into posts (id, author, title)
 values (7, '나다', '제목');
 ```
