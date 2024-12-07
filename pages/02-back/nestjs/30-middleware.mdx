@@ -7,6 +7,35 @@ date: 2023/12/25
 
 ![nestjs-request-life-cycle](https://raw.githubusercontent.com/berenickt/image-server/main/img/nestjs-request-life-cycle.png)
 
+1. `Request`
+2. `Middleware`
+   - Global Middleware
+   - Module Middleware
+3. `Guard`
+   - Global Guards
+   - Controller Guards
+   - Route Guards
+4. `Interceptors`
+   - Global Interceptors
+   - Controller Interceptors
+   - Route Interceptors
+5. `Pipes`
+   - Global Pipes
+   - Controller Pipes
+   - Route Pipes
+   - Route Parameter Pipes
+6. `Controller`
+7. `Service`
+8. `Interceptor`
+   - Router Interceptor
+   - Controller Interceptor
+   - Global Interceptor
+9. `Exception Filters`
+   - Route
+   - Controller
+   - Global
+10. `Response`
+
 미들웨어는 가장 쉽고 가장 단순하고 가장 어떻게 보면 원초적인 기능이다.
 
 ![Middlewares_1](https://docs.nestjs.com/assets/Middlewares_1.png)
@@ -14,6 +43,19 @@ date: 2023/12/25
 - 공식문서 : https://docs.nestjs.com/middleware
 - 위 그림을 보면, 클라이언트 사이드에서 요청을 넣고, 라우트 핸들러까지 가기 전에 미들웨어를 거친다.
 - 전체 그림을 봤을 때도, 미들웨어가 가장 먼저 요청을 받는 역할을 한다.
+
+Middleware는 라우트 핸들러가 실행되기 전에 실행된다. Request와 Response 객체에 접근 할 수 있다.
+
+Middleware는 다음과 같은 작업을 할 수 있다.
+
+- 자유롭게 코드 실행
+- 요청과 응답 객체를 변경
+- 요청 응답 사이클 중단
+- 다음 미들웨어 실행하기
+
+---
+
+### 1.1 Middleware란?
 
 Nest 미들웨어는 기본적으로 [Express](https://expressjs.com/en/guide/using-middleware.html) 미들웨어와 동일하다. 공식 문서의 다음 설명은 미들웨어의 기능을 설명한다.
 
@@ -30,7 +72,7 @@ Nest 미들웨어는 기본적으로 [Express](https://expressjs.com/en/guide/us
 >   - 스택에서 다음 미들웨어 함수를 호출힌다.
 >   - 여러 개의 미들웨어를 순서대로 적용할 수 있는데, 적용된 순서대로 실행된다.
 >   - 즉, 미들웨어를 여러 개를 엮을 수 있다는 의미
-> - f the current middleware function does not end the request-response cycle,
+> - if the current middleware function does not end the request-response cycle,
 > - it must call `next()` to pass control to the next middleware function.
 > - Otherwise, the request will be left hanging.
 >   - 현재 미들웨어 함수가 요청-응답 주기를 종료하지 않는 경우, (=> 에러를 던지지 않는다면,)
@@ -39,7 +81,91 @@ Nest 미들웨어는 기본적으로 [Express](https://expressjs.com/en/guide/us
 
 ---
 
-## 2. Middleware 생성 및 사용
+## 2. Middleware 사용법
+
+### 2.1 Middleware 선언법
+
+```ts
+import { Injectable, NestMiddleware } from '@nestjs/common'
+import { Request, Response, NextFunction } from 'express'
+
+@Injectable()
+export class LogMiddleware implements NestMiddleware {
+  use(req: Request, res: Response, next: NextFunction) {
+    console.log(`[REQ] ${req.method} ${req.url} ${new Date().toLocaleString('kr')}`)
+    next()
+  }
+}
+```
+
+---
+
+### 2.2 Middleware 적용법
+
+적용법 1 : 모듈에 적용
+
+```ts
+import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common'
+import { LoggerMiddleware } from './common/middleware/logger.middleware'
+import { CatsModule } from './cats/cats.module'
+
+@Module({
+  imports: [CatsModule],
+})
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(LoggerMiddleware).forRoutes('cats')
+  }
+}
+```
+
+```ts
+import { Module, NestModule, RequestMethod, MiddlewareConsumer } from '@nestjs/common'
+import { LoggerMiddleware } from './common/middleware/logger.middleware'
+import { CatsModule } from './cats/cats.module'
+
+@Module({
+  imports: [CatsModule],
+})
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(LoggerMiddleware).forRoutes({ path: 'cats', method: RequestMethod.GET })
+  }
+}
+```
+
+적용법 2 : 컨트롤러에 적용
+
+```ts
+forRoutes({ path: 'cats', method: RequestMethod.ALL })
+```
+
+```ts
+consumer
+  .apply(LoggerMiddleware)
+  .exclude(
+    { path: 'cats', method: RequestMethod.GET }, //
+    { path: 'cats', method: RequestMethod.POST },
+    'cats/(.*)',
+  )
+  .forRoutes(CatsController)
+```
+
+```ts
+consumer.apply(cors(), helmet(), logger).forRoutes(CatsController)
+```
+
+적용법 3 : 글로벌 미들웨어에 적용
+
+```ts
+const app = await NestFactory.create(AppModule)
+app.use(logger)
+await app.listen(3000)
+```
+
+---
+
+## 3. Middleware 사용
 
 `common/middleware/log.middleware.ts` 파일을 만든다.
 

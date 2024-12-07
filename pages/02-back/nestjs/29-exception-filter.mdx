@@ -9,6 +9,8 @@ date: 2023/12/25
 
 - Exception Filter에서 수행한 부분들은 interceptor에서 추가 로직을 또 구현할 수 있다.
 - Exception Filter는 말 그대로 **예외를 필터링 하는 기능**이다.
+  - NestJS에서는 자체적으로 예외 레이어를 관리한다.
+  - 서버에서 발생한 예외가 따로 핸들링 되지 않으면 NestJS 예외 레이어에서 에러를 사용자 친화적으로 변환해서 응답 할 수 있다
 - 응답을 변형하는 부분은 사실 크게 쓸 일이 많지는 않다.
 - 왜냐면은 예외라는 것 자체가 예외가 던져졌을 때,
   - 던져진 의도 그대로 사용되어야 프론트엔드에서도 의미가 있는 경우가 되게 많다.
@@ -26,6 +28,31 @@ date: 2023/12/25
 - 이 Exceptions들은 모두 HTTP Exceptions을 Extend를 하고 있다.
   - 그래서 나중에 Exception 필터 클래스를 만들 때,
   - HTTP Exceptions에 해당되는 Exceptions들만 잡는 Exception 필터를 만듭니다.
+
+---
+
+### 1.1 Exception Filter 구현방법
+
+```ts
+import { ExceptionFilter, Catch, ArgumentsHost, HttpException } from '@nestjs/common'
+import { Request, Response } from 'express'
+
+@Catch(HttpException)
+export class HttpExceptionFilter implements ExceptionFilter {
+  catch(exception: HttpException, host: ArgumentsHost) {
+    const ctx = host.switchToHttp()
+    const response = ctx.getResponse<Response>()
+    const request = ctx.getRequest<Request>()
+    const status = exception.getStatus()
+
+    response.status(status).json({
+      statusCode: status,
+      message: exception.message,
+      timestamp: new Date().toLocaleString('kr'),
+    })
+  }
+}
+```
 
 ---
 

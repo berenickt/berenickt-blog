@@ -22,21 +22,58 @@ Pagination은 대표적으로 2가지가 존재한다.
 
 ### 1.1 Page Based Pagination
 
+![pagination-1_1](https://raw.githubusercontent.com/berenickt/image-server/refs/heads/main/nestjs/pagination-1_1.png)
+
 - 페이지 기준으로 데이터를 잘라서 요청하는 Pagination
 - 요청을 보낼때 원하는 데이터 갯수와 몇번째 페이지를 가져올지 명시
+- request로 페이지 번호를 보내면, 총 토탈 페이지와 현재 페이지 데이터를 리턴해주는 방식이다.
 - 페이지 숫자를 누르면 다음 페이지로 넘어가는 형태의 UI에서 많이 사용
 - 문제점 : Pagination 도중에 데이터베이스에서 데이터가 추가되거나 삭제될경우,
   - **저장되는 데이터가 누락되거나 중복될 수 있음**
 - Pagination 알고리즘이 매우 간단함
+- 100개의 데이터를 한번에 20개씩 가져온다면 5개의 페이지로 나눌 수 있다.
+
+---
+
+#### 1.1.1 Page Based Pagination 문제점
+
+(1) 데이터 삽입
+
+![pagination-1_2](https://raw.githubusercontent.com/berenickt/image-server/refs/heads/main/nestjs/pagination-1_2.png)
+
+Page Based Pagination의 문제점은 데이터 신규 삽입 시 중복된 데이터가 발생한다.
+
+- 위 그림에서 1페이지에서 화면에 1, 2, 3, 4에서 3.5란 신규 데이터가 삽입되었다.
+- 3.5 데이터가 삽입되면서 4번 데이터가 1페이지와 2페이지에 중복되어 나타난다.
+
+(2) 데이터 삭제
+
+![pagination-1_3](https://raw.githubusercontent.com/berenickt/image-server/refs/heads/main/nestjs/pagination-1_3.png)
+
+이번에는 id=4가 삭제된다고 가정하면, id=5가 누락된다.
 
 ---
 
 ### 1.2 Cursor Based Pagination
 
+![pagination-1_4](https://raw.githubusercontent.com/berenickt/image-server/refs/heads/main/nestjs/pagination-1_4.png)
+
 - 가장 최근에 가져온 데이터를 기준으로 다음 데이터를 가져오는 Pagination
 - 요청을 보낼때 마지막 데이터의 기준값(ID등 Unique 값)과 몇개의 데이터를 가져올지 명시
 - 스크롤 형태의 리스트에서 자주 사용 e.g.) 앱의 ListView
 - 장점 : 최근 데이터의 기준값을 기반으로 쿼리가 작성되기때문에 **데이터가 누락되거나 중복될 확률이 적음**
+- e.g. 마지막으로 불러온 데이터가 20번이었다면 다음 요청은 21번부터 가져온다
+
+(1) 데이터 삽입
+
+![pagination-1_5](https://raw.githubusercontent.com/berenickt/image-server/refs/heads/main/nestjs/pagination-1_5.png)
+
+- 특정 커서 위치부터 다음 데이터를 요청하기 때문에 중복된 데이터 없이 일관된 정보를 받을 수 있다.
+- 사용자가 현재까지 로드한 마지막 데이터의 위치를 기반으로 다음 데이터를 가져오기 때문에 서버 부하가 줄어든다.
+
+(2) 데이터 삭제
+
+![pagination-1_6](https://raw.githubusercontent.com/berenickt/image-server/refs/heads/main/nestjs/pagination-1_6.png)
 
 ---
 
