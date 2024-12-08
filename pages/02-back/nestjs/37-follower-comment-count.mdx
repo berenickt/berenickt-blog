@@ -1,5 +1,5 @@
 ---
-title: '37-follower-comment-count'
+title: '37-Follower Comment Count'
 date: 2023/12/25
 ---
 
@@ -221,10 +221,7 @@ comments 컨트롤러도 다음과 같이 수정한다.
 ```ts comments.controller.ts
 @Controller('posts/:postId/comments')
 export class CommentsController {
-  constructor(
-    private readonly commentsService: CommentsService,
-    private readonly postsService: PostsService,
-  ) {}
+  constructor(private readonly commentsService: CommentsService, private readonly postsService: PostsService) {}
 
   // 생략
 
