@@ -1,0 +1,2091 @@
+---
+title: '08-TypeORM-Theory'
+date: 2023/12/25
+---
+
+## 1. Typeorm공부용 프로젝트
+
+Typeorm공부용 새 프로젝트를 만듭시다.
+
+```bash
+nest new typeorm
+yarn add @nestjs/typeorm typeorm pg
+```
+
+```dockerfile docker-compose.yaml
+# 서비스정의
+services:
+  postgres:
+    image: postgres:15
+    # 실행시마다 재시작
+    restart: always
+    # 도커컴포즈 파일에 존재하는 위치에 실제 데이터를 hostOS에 저장
+    volumes:
+      # 현재 도커컴포즈 파일이 존재하는 경로 : 이미지안에존재하는 경로 매핑
+      - ./postgres-data:/var/lib/postgresql/data
+    ports:
+      # hostport:이미지의포트
+      # 5432포트 요청 -> 이미지의 포트로 요쳥
+      - '5808:5432'
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: typeormstudy
+```
+
+```ts app.module.ts
+import { Module } from '@nestjs/common'
+import { TypeOrmModule } from '@nestjs/typeorm'
+
+import { AppController } from './app.controller'
+import { AppService } from './app.service'
+
+@Module({
+  imports: [
+    TypeOrmModule.forRoot({
+      // 데이터베이스 타입
+      type: 'postgres',
+      host: '127.0.0.1',
+      port: 5808,
+      username: 'postgres',
+      password: 'postgres',
+      database: 'typeormstudy',
+      // entities폴더에 작성한 PostsModel 가져오기
+      entities: [],
+      synchronize: true,
+    }),
+  ],
+  controllers: [AppController],
+  providers: [AppService],
+})
+export class AppModule {}
+```
+
+---
+
+## 2. Column Annotation들
+
+`src/entity/user.entity.ts` 파일을 만듭니다.
+
+```ts user.entity.ts
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  Generated,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+  VersionColumn,
+} from 'typeorm'
+
+@Entity()
+export class UserModel {
+  /*** ID
+   * 자동으로 ID를 생성한다.
+   *
+   * 📌 @PrimaryGeneratedColumn()
+   * Primary Column은 모든 테이블에서 기본적으로 존재해야 한다
+   * 테이블 안에서 각각의 Row를 구분할 수 있는 컬럼이다.
+   * @PrimaryColumn()
+   *
+   * 📌 @PrimaryGeneratedColumn('uuid')
+   * PrimaryGeneratedColumn => 순서대로 위로 올라간다.
+   * 1, 2, 3, 4, 5 -> 999999
+   *
+   * UUID : 절대로 겹치지 않는 고유한 값을 만들어줌
+   * ea36ed96-8d1c-44d9-9fbe-4ec6960e95a8
+   */
+  @PrimaryGeneratedColumn()
+  id: number
+
+  @Column()
+  title: string
+
+  /** 데이터 생성 일자
+   * 데이터가 생성되는 날짜와 시간이 자동으로 찍힌다.
+   */
+  @CreateDateColumn()
+  createdAt: Date
+
+  /** 데이터 수정 일자
+   * 데이터가 업데이트되는 날짜와 시간이 자동으로 찍힌다.
+   */
+  @UpdateDateColumn()
+  updateAt: Date
+
+  /** 데이터가 업데이트 될 떄마다 1씩 올라간다
+   * 처음 생성되면 값은 1이다.
+   * save() 함수가 몇 번 불렸는지 기억한다.
+   */
+  @VersionColumn()
+  version: number
+
+  /**
+   * 📌 @Generated('increment')
+   * additionalId: number
+   * PrimaryColumn은 아닌데, 데이터 생성할 떄마다, 1씩 올라가는 컬럼
+   *
+   * 📌 Generated('uuid')
+   * additionalId: string
+   * 는 마찬가지로,
+   * PrimaryColumn은 아닌데, 데이터 생성할 떄마다, 고유값을 가지는 컬럼
+   */
+  @Column()
+  @Generated('uuid')
+  additionalId: string
+}
+```
+
+```ts app.module.ts
+import { Module } from '@nestjs/common'
+import { TypeOrmModule } from '@nestjs/typeorm'
+
+import { AppController } from './app.controller'
+import { AppService } from './app.service'
+import { UserModel } from './entity/user.entity'
+
+@Module({
+  imports: [
+    TypeOrmModule.forFeature([UserModel]),
+    TypeOrmModule.forRoot({
+      // 데이터베이스 타입
+      type: 'postgres',
+      host: '127.0.0.1',
+      port: 5808,
+      username: 'postgres',
+      password: 'postgres',
+      database: 'typeormstudy',
+      // entities폴더에 작성한 Model 가져오기
+      entities: [UserModel],
+      synchronize: true,
+    }),
+  ],
+  controllers: [AppController],
+  providers: [AppService],
+})
+export class AppModule {}
+```
+
+```ts app.controller.ts
+import { Controller, Get, Param, Patch, Post } from '@nestjs/common'
+import { InjectRepository } from '@nestjs/typeorm'
+import { UserModel } from './entity/user.entity'
+import { Repository } from 'typeorm'
+
+@Controller()
+export class AppController {
+  constructor(
+    @InjectRepository(UserModel)
+    private readonly userRepository: Repository<UserModel>,
+  ) {}
+
+  @Post('users')
+  postUser() {
+    return this.userRepository.save({
+      title: 'test title',
+    })
+  }
+
+  @Get('users')
+  getUsers() {
+    return this.userRepository.find()
+  }
+
+  @Patch('users/:id')
+  async patchUser(@Param('id') id: string) {
+    const user = await this.userRepository.findOne({
+      where: { id: parseInt(id) },
+    })
+
+    return this.userRepository.save({
+      ...user,
+      title: user.title + '0',
+    })
+  }
+}
+```
+
+---
+
+## 3. Column Property 정리
+
+|   속성(property)   | 설명                                                                     |
+| :----------------: | ------------------------------------------------------------------------ |
+| type : ColumnType  | 칼럼 타입. varchar, text, int, bool등 칼럼 타입                          |
+|   name : string    | 데이터베이스에 저장될 칼럼 이름, 기본값은 프로퍼티 이름을 따름           |
+| nullable : boolean | null 값이 가능한지 여부. 기본값은 false                                  |
+|  update : boolean  | 업데이트 가능 여부. false일 경우 저장 후 업데이트 불가. 기본값 true      |
+|  select : boolean  | 쿼리 실행 시 프로퍼티를 가져올지 결정. false일 경우 가져오지 않는게 기본 |
+|  default : string  | 칼럼 기본값                                                              |
+|  unique : boolean  | unique constraint 적용 여부. 기본 false                                  |
+|  comment : string  | 칼럼 코멘트. 모든 데이터베이스에서 지원되진 않음                         |
+|  enum : string[]   | 칼럼에 입력 가능한 값을 enum으로 나열                                    |
+|  Array : boolean   | 칼럼 array 타입으로 생성 (e.g. `int[]`)                                  |
+
+```ts user.entity.ts
+// user.entity.ts 생략
+@Column({
+  type: 'varchar',
+  name: 'title',
+  length: 300,
+  nullable: true,
+  update: true,
+  select: false,
+  default: 'default value',
+  unique: false,
+})
+title: string
+```
+
+```ts app.controller.ts
+// app.controller.ts 생략
+@Post('users')
+postUser() {
+  return this.userRepository.save({
+    // title: 'test title',
+  })
+}
+
+@Get('users')
+getUsers() {
+  return this.userRepository.find({
+    select: { id: true, title: true },
+  })
+}
+```
+
+---
+
+## 4. Enum Column
+
+```ts user.entity.ts
+export enum Role {
+  USER = 'user',
+  ADMIN = 'admin',
+}
+
+@Entity()
+export class UserModel {
+  // 생략
+  title: string
+
+  @Column({
+    type: 'enum',
+    enum: Role,
+    default: Role.USER,
+  })
+  role: Role
+
+  // 생략
+}
+```
+
+```ts app.controller.ts
+@Post('users')
+postUser() {
+  return this.userRepository.save({
+    // title: 'test title',
+    role: Role.ADMIN, // 관리자 역할을 넣고싶을 떄
+  })
+}
+
+// app.controller.ts의 select옵션 지우기
+@Get('users')
+getUsers() {
+  return this.userRepository.find({})
+}
+```
+
+---
+
+## 5. Entity Embedding
+
+`src/entity/person.entity.ts` 파일을 만든다.
+
+```ts person.entity.ts
+import { Column, Entity, PrimaryColumn } from 'typeorm'
+
+export class Name {
+  @Column()
+  first: string
+
+  @Column()
+  last: string
+}
+
+@Entity()
+export class StudentModel {
+  @PrimaryColumn()
+  id: number
+
+  @Column(() => Name)
+  name: Name
+
+  @Column()
+  class: string
+}
+
+@Entity()
+export class TeacherModel {
+  @PrimaryColumn()
+  id: number
+
+  @Column(() => Name)
+  name: Name
+
+  @Column()
+  salary: number
+}
+```
+
+`app.module.ts`에 생성한 모듈을 추가한다.
+
+```ts app.module.ts
+// 생략
+@Module({
+  imports: [
+    TypeOrmModule.forFeature([UserModel]),
+    TypeOrmModule.forRoot({
+      // 데이터베이스 타입
+      type: 'postgres',
+      host: '127.0.0.1',
+      port: 5808,
+      username: 'postgres',
+      password: 'postgres',
+      database: 'typeormstudy',
+      // entities폴더에 작성한 Model 가져오기
+      entities: [UserModel, StudentModel, TeacherModel],
+      synchronize: true,
+    }),
+  ],
+  controllers: [AppController],
+  providers: [AppService],
+})
+export class AppModule {}
+```
+
+DB에 들어간 컬럼명을 확인해보면, `nameFirst`, `nameLast`로 들어간 것을 확인할 수 있다.
+
+---
+
+## 6. Entity Inheritance
+
+`src/entity/inheritance.entity.ts` 파일을 만든다.
+
+```ts inheritance.entity.ts
+import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm'
+
+export class BaseModel {
+  @PrimaryGeneratedColumn()
+  id: number
+
+  @CreateDateColumn()
+  createdAt: Date
+
+  @UpdateDateColumn()
+  updateat: Date
+}
+
+@Entity()
+export class BookModel extends BaseModel {
+  @Column()
+  name: string
+}
+
+@Entity()
+export class CarModel extends BaseModel {
+  @Column()
+  brand: string
+}
+```
+
+`app.module.ts`에 생성한 모듈을 추가한다.
+
+```ts app.module.ts
+@Module({
+  imports: [
+    TypeOrmModule.forFeature([UserModel]),
+    TypeOrmModule.forRoot({
+      // 데이터베이스 타입
+      type: 'postgres',
+      host: '127.0.0.1',
+      port: 5808,
+      username: 'postgres',
+      password: 'postgres',
+      database: 'typeormstudy',
+      // entities폴더에 작성한 Model 가져오기
+      entities: [
+        UserModel,
+        StudentModel, //
+        TeacherModel,
+        BookModel,
+        CarModel,
+      ],
+      synchronize: true,
+    }),
+  ],
+  controllers: [AppController],
+  providers: [AppService],
+})
+export class AppModule {}
+```
+
+DB에 들어간 컬럼명을 확인해보면, 상속받은 속성이 들어간 것을 확인할 수 있다.
+평소에는 위와 같은 일반적인 상속을 쓰는 것이 좋다.
+다만, 굳이 하나의 테이블로 관리해야 하는 경우에는 다음과 같이 사용할 수 있다.
+
+```ts inheritance.entity.ts
+import {
+  ChildEntity,
+  Column,
+  CreateDateColumn,
+  Entity,
+  PrimaryGeneratedColumn,
+  TableInheritance,
+  UpdateDateColumn,
+} from 'typeorm'
+
+export class BaseModel {
+  @PrimaryGeneratedColumn()
+  id: number
+
+  @CreateDateColumn()
+  createdAt: Date
+
+  @UpdateDateColumn()
+  updateat: Date
+}
+
+@Entity()
+export class BookModel extends BaseModel {
+  @Column()
+  name: string
+}
+
+@Entity()
+export class CarModel extends BaseModel {
+  @Column()
+  brand: string
+}
+
+@Entity()
+@TableInheritance({
+  column: {
+    name: 'type',
+    type: 'varchar',
+  },
+})
+export class SingleBaseModel {
+  @PrimaryGeneratedColumn()
+  id: number
+
+  @CreateDateColumn()
+  createdAt: Date
+
+  @UpdateDateColumn()
+  updateat: Date
+}
+
+@ChildEntity()
+export class ComputerModel extends SingleBaseModel {
+  @Column()
+  brand: string
+}
+
+@ChildEntity()
+export class AirplaneModel extends SingleBaseModel {
+  @Column()
+  country: string
+}
+```
+
+마찬가지로 `app.module.ts`에 생성한 모듈을 추가한다.
+
+```ts app.module.ts
+@Module({
+  imports: [
+    TypeOrmModule.forFeature([UserModel]),
+    TypeOrmModule.forRoot({
+      // 데이터베이스 타입
+      type: 'postgres',
+      host: '127.0.0.1',
+      port: 5808,
+      username: 'postgres',
+      password: 'postgres',
+      database: 'typeormstudy',
+      // entities폴더에 작성한 Model 가져오기
+      entities: [
+        UserModel,
+        StudentModel, //
+        TeacherModel,
+        BookModel,
+        CarModel,
+        SingleBaseModel,
+        ComputerModel,
+        AirplaneModel,
+      ],
+      synchronize: true,
+    }),
+  ],
+  controllers: [AppController],
+  providers: [AppService],
+})
+export class AppModule {}
+```
+
+DB에 들어간 컬럼명을 확인해보면,
+자식 컬럼이 들어간 single_base_model 하나만 생성된 것을 확인할 수 있다.
+
+---
+
+## 7. Relationship 이론
+
+- cf. [관계형 데이터베이스 설계 (관계 종류 1:1 / 1:M / N:M )](https://hanamon.kr/%EA%B4%80%EA%B3%84%ED%98%95-%EB%8D%B0%EC%9D%B4%ED%84%B0%EB%B2%A0%EC%9D%B4%EC%8A%A4-%EC%84%A4%EA%B3%84-%EA%B4%80%EA%B3%84-%EC%A2%85%EB%A5%98/)
+
+TypeORM이 제공하는 4가지 Relationship
+
+|     관계      | 설명                                                            |
+| :-----------: | --------------------------------------------------------------- |
+|  `@OneToOne`  | A 테이블의 Row 하나와 B 테이블의 Row 하나가 연결되는 관계       |
+| `@ManyToOne`  | A 테이블의 Row 여러 개와 B 테이블의 Row 하나가 연결되는 관계    |
+| `@OneToMany`  | A 테이블의 Row 하나와 B 테이블의 Row 여러개가 연결되는 관계     |
+| `@ManyToMany` | A 테이블의 Row 여러 개와 B 테이블의 Row 여러 개가 연결되는 관계 |
+
+---
+
+### 7.1 Relationship Annotation 적용
+
+- 첫번째 파라미터에는 타입을 반환하는 함수를 입력한다. (Class Transformer Type과 같은 개념)
+- 두번째 파라미터에는 첫번째 파라미터에 입력한 클래스의 칼럼중 하나를 입력한다. 이 칼럼은 서로 관련지을 프로퍼티여야한다
+- e.g. ManyToOne 관계이니 photo 테이블에 user_id 칼럼이 생성되며 user 테이블과 관계가 형성된다
+- 특정 photo와 관련있는 user는 photo.user로 불러올 수 있고 user와 관련있는 photo들은 user.photos로 불러 올 수 있다
+
+```ts
+@Entity()
+export class Photo {
+  @PrimaryGeneratedColumn()
+  id: number
+
+  @Column()
+  url: string
+
+  // 첫번째 파라미터 : 타입을 반환하는 함수
+  // 두번째 파라미터 : 첫번째 파라미터에 입력한 클래스의 칼럼중 하나를 입력
+  @ManyToOne(() => User, user => user.photos)
+  user: User
+}
+```
+
+```ts
+@Entity()
+export class User {
+  @PrimaryGeneratedColumn()
+  id: number
+
+  @Column()
+  name: string
+
+  @OneToMany(() => Photo, photo => photo.user)
+  photos: Photo[]
+}
+```
+
+---
+
+### 7.2 ManyToOne & OneToMany 관계
+
+- photo 테이블에는 user_id 칼럼이 자동으로 생긴다. 네이밍 패턴은 `{상대 테이블 이름}_id`
+- user_id는 user 테이블의 id 칼럼을 Foreign Key로 레퍼런스한다
+- user 테이블은 추가로 칼럼이 생성되지 않는다.
+  - 원래 ManyToOne 또는 OneToMany 관계는 Foreign Key 레퍼런스를 들고있는 테이블이 Many 입장이다
+
+| Photo 테이블 |         |                            |
+| :----------: | :-----: | -------------------------- |
+|      id      |   int   | PRIMARY KEY AUTO_INCREMENT |
+|     url      | varchar |                            |
+|   user_id    | varchar | FOREIGN KEY                |
+
+| User 테이블 |         |                            |
+| :---------: | :-----: | -------------------------- |
+|     id      |   int   | PRIMARY KEY AUTO_INCREMENT |
+|    name     | varchar |                            |
+
+---
+
+### 7.3 OneToOne 관계
+
+- OneToOne Relationship도 마찬가지로 Annotation을 원하는 프로퍼티에 정의해주면 된다
+- ManyToOne은 상대의 레퍼런스를 갖는 테이블이 명확하다
+- OneToOne은 두 테이블 누가 레퍼런스를 들고 있어도 상관이 없기 때문에 어떤 테이블이 레퍼런스를 들고 있을지 명시해야 한다
+- `@JoinTable Annotation`을 사용해서 어떤 프로퍼티가 레퍼런스 들고 있을지 정해 줄 수 있다
+- `@JoinTable`은 꼭 한쪽에만 적용해야한다. 둘 모두 적용하는건 가능하고 의미도 없다
+
+```ts
+@Entity()
+export class Profile {
+  @PrimaryGeneratedColumn()
+  id: number
+
+  @Column()
+  gender: string
+
+  @Column()
+  photos: string
+
+  @OneToOne(() => User, user => user.profile)
+  user: User
+}
+```
+
+```ts
+@Entity()
+export class User {
+  @PrimaryGeneratedColumn()
+  id: number
+
+  @Column()
+  name: string
+
+  @OneToOne(() => Profile)
+  @JoinColumn()
+  profile: Profile
+}
+```
+
+---
+
+### 7.4 ManyToMany 관계
+
+- ManyToMany Relationship도 OneToOne Relationship과 마찬가지로 @JoinTable Annotation을 한쪽에 적용 해줘야한다
+- 중간 테이블이 생성될때 @JoinTable이 적용된 테이블 이름이 먼저 위치하게된다.
+- ManyToMany Annotation을 사용하면 자동으로 중간 테이블이 생성된다
+- 중간 테이블의 칼럼은 각각 레퍼런스 테이블의 `{테이블 이름}_id`로 정의된다
+
+```ts
+@Entity()
+export class Category {
+  @PrimaryGeneratedColumn()
+  id: number
+
+  @Column()
+  name: string
+
+  @ManyToMany(() => Question)
+  questions: Question[]
+}
+```
+
+```ts
+@Entity()
+export class Question {
+  @PrimaryGeneratedColumn()
+  id: number
+
+  @Column()
+  title: string
+
+  @Column()
+  text: string
+
+  @ManyToMany(() => Category)
+  @JoinTable()
+  categories: Category[]
+}
+```
+
+---
+
+## 8. 1:1 관계 작업
+
+`src/entity/profile.entity.ts` 파일을 만든다.
+
+```ts profile.entity.ts
+import { Column, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from 'typeorm'
+import { UserModel } from './user.entity'
+
+@Entity()
+export class ProfileModel {
+  @PrimaryGeneratedColumn()
+  id: number
+
+  // UserModel에 user의 profile 컬럼과 1:1 연결
+  @OneToOne(() => UserModel, user => user.profile)
+  // 상대방 테이블의 id를 가지고 있기(만약 상대방이 갖고있으면 상대방이 이 테이블 id를 가짐)
+  @JoinColumn()
+  user: UserModel
+
+  @Column()
+  profileImg: string
+}
+```
+
+연결할 모델(`user.entity.ts`)에 1:1로 연결할 모델을 추가한다.
+
+```ts user.entity.ts
+// 생략
+// ProfileModel에 profile의 user 컬럼과 1:1 연결
+@OneToOne(() => ProfileModel, profile => profile.user)
+profile: ProfileModel
+```
+
+`app.module.ts`에 생성한 모듈(`ProfileModel`)을 추가한다.
+
+```ts app.module.ts
+@Module({
+  imports: [
+    // ProfileModel 추가
+    TypeOrmModule.forFeature([UserModel, ProfileModel]),
+    TypeOrmModule.forRoot({
+      // 생략
+      // entities폴더에 작성한 Model 가져오기
+      entities: [
+        // 생략
+        ProfileModel,
+      ],
+      synchronize: true,
+    }),
+  ],
+  controllers: [AppController],
+  providers: [AppService],
+})
+```
+
+user 엔티티의 title을 지우고 대신, email 컬럼을 추가한다.
+기존 데이터가 저장되어있는 곳(postgres-data)을 지웠다가 다시 생성한다.(`docker-compose up`)
+
+```ts user.entity.ts
+// user.entity.ts
+// title: string은 주석처리
+@Column()
+email: string
+```
+
+app 컨트롤러는 다음과 같이 수정한다.
+
+```ts app.controller.ts
+// 생략
+@Controller()
+export class AppController {
+  constructor(
+    @InjectRepository(UserModel)
+    private readonly userRepository: Repository<UserModel>,
+    @InjectRepository(ProfileModel)
+    private readonly profileRepository: Repository<ProfileModel>,
+  ) {}
+
+  @Post('users')
+  postUser() {
+    return this.userRepository.save({})
+  }
+
+  @Get('users')
+  getUsers() {
+    return this.userRepository.find({
+      // 연동된 데이터 컬럼(profile)도 가져오기
+      relations: {
+        profile: true,
+      },
+    })
+  }
+
+  @Patch('users/:id')
+  async patchUser(@Param('id') id: string) {
+    const user = await this.userRepository.findOne({
+      where: { id: parseInt(id) },
+    })
+
+    return this.userRepository.save({
+      ...user,
+    })
+  }
+
+  @Post('user/profile')
+  async createUserAndProfile() {
+    const user = await this.userRepository.save({
+      email: 'asd@gmail.ai',
+    })
+    const profile = await this.profileRepository.save({
+      profileImg: 'asdf.png',
+      user,
+    })
+    return user
+  }
+}
+```
+
+---
+
+## 9. M:1 & 1:M 관계 구현
+
+`src/entity/post.entity.ts` 파일을 만든다.
+
+```ts post.entity.ts
+import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm'
+import { UserModel } from './user.entity'
+
+@Entity()
+export class PostModel {
+  @PrimaryGeneratedColumn()
+  id: number
+
+  // 1:M 관계이니 posts로 복수형으로 선언
+  @ManyToOne(() => UserModel, user => user.posts)
+  author: UserModel
+
+  @Column()
+  title: string
+}
+```
+
+테이블이 어느 지점을 바라보냐에 따라 M:1이나 1:M이 된다.
+
+```ts user.entity.ts
+// user.entity.ts 생략
+@OneToMany(() => PostModel, post => post.author)
+posts: PostModel[]
+```
+
+`app.module.ts`에 생성한 모듈(`PostModel`)을 추가한다.
+
+```ts app.module.ts
+@Module({
+  imports: [
+    TypeOrmModule.forFeature([
+      UserModel,
+      ProfileModel,
+      PostModel, // 추가
+    ]),
+    TypeOrmModule.forRoot({
+      // 생략
+      // entities폴더에 작성한 Model 가져오기
+      entities: [
+        // 생략
+        PostModel,
+      ],
+      synchronize: true,
+    }),
+  ],
+  controllers: [AppController],
+  providers: [AppService],
+})
+```
+
+확인용 api를 `app.controller.ts`에 만들고 포스트맨에서 확인해보세요.
+
+```ts app.controller.ts
+// 생략
+
+@Controller()
+export class AppController {
+  constructor(
+    @InjectRepository(UserModel)
+    private readonly userRepository: Repository<UserModel>,
+    @InjectRepository(ProfileModel)
+    private readonly profileRepository: Repository<ProfileModel>,
+    @InjectRepository(PostModel)
+    private readonly postRepository: Repository<PostModel>,
+  ) {}
+
+  // 생략
+  @Get('users')
+  getUsers() {
+    return this.userRepository.find({
+      relations: {
+        profile: true,
+        posts: true, // 추가
+      },
+    })
+  }
+
+  @Post('user/post')
+  async createUserAndPost() {
+    const user = await this.userRepository.save({
+      email: 'postuser@gmail.ai',
+    })
+    await this.postRepository.save({
+      author: user,
+      title: 'post 1',
+    })
+    await this.postRepository.save({
+      author: user,
+      title: 'post 2',
+    })
+
+    return user
+  }
+}
+```
+
+---
+
+## 10. M : M 관계 구현
+
+`src/entity/tag.entity.ts` 파일을 만든다.
+
+```ts tag.entity.ts
+import { Column, Entity, ManyToMany, PrimaryGeneratedColumn } from 'typeorm'
+import { PostModel } from './post.entity'
+
+@Entity()
+export class TagModel {
+  @PrimaryGeneratedColumn()
+  id: number
+
+  // M:M 연결이기 때문에 둘 다 복수로 선언
+  @ManyToMany(() => PostModel, post => post.tags)
+  posts: PostModel[]
+
+  @Column()
+  name: string
+}
+```
+
+`post.entity.ts`에 tags를 다대다 관계로 연결합니다.
+
+```ts post.entity.ts
+import { Column, Entity, JoinTable, ManyToMany, ManyToOne, PrimaryGeneratedColumn } from 'typeorm'
+import { UserModel } from './user.entity'
+import { TagModel } from './tag.entity'
+
+@Entity()
+export class PostModel {
+  @PrimaryGeneratedColumn()
+  id: number
+
+  // 1:M 관계이니 posts로 복수형으로 선언
+  @ManyToOne(() => UserModel, user => user.posts)
+  author: UserModel
+
+  // M:M 연결이기 때문에 둘 다 복수로 선언
+  @ManyToMany(() => TagModel, tag => tag.posts)
+  // M:M 연결에서 JoinTable은 둘 중 하나 아무군데 선언해주면 된다
+  @JoinTable()
+  tags: TagModel[]
+
+  @Column()
+  title: string
+}
+```
+
+`app.module.ts`에 생성한 모듈(`TagModel`)을 추가한다.
+
+```ts app.module.ts
+// 생략
+@Module({
+  imports: [
+    TypeOrmModule.forFeature([
+      UserModel,
+      ProfileModel, //
+      PostModel,
+      TagModel,
+    ]),
+    TypeOrmModule.forRoot({
+      // 생략
+      // entities폴더에 작성한 Model 가져오기
+      entities: [
+        // 생략
+        TagModel,
+      ],
+      synchronize: true,
+    }),
+  ],
+  controllers: [AppController],
+  providers: [AppService],
+})
+export class AppModule {}
+```
+
+app 컨트롤러에 tag 요청을 추가한다.
+
+```ts app.controller.ts
+// 생략
+@Controller()
+export class AppController {
+  constructor(
+    @InjectRepository(UserModel)
+    private readonly userRepository: Repository<UserModel>,
+    @InjectRepository(ProfileModel)
+    private readonly profileRepository: Repository<ProfileModel>,
+    @InjectRepository(PostModel)
+    private readonly postRepository: Repository<PostModel>,
+    @InjectRepository(TagModel)
+    private readonly tagRepository: Repository<TagModel>,
+  ) {}
+
+  // 생략
+
+  @Post('posts/tags')
+  async createPostsTags() {
+    const post1 = await this.postRepository.save({
+      title: 'NestJS 수업',
+    })
+
+    const post2 = await this.postRepository.save({
+      title: '프로그래밍 수업',
+    })
+
+    const tag1 = await this.tagRepository.save({
+      name: 'Javascript',
+      posts: [post1, post2],
+    })
+
+    const tag2 = await this.tagRepository.save({
+      name: 'Typescript',
+      posts: [post1],
+    })
+
+    const post3 = await this.postRepository.save({
+      title: 'NextJS 수업',
+      tags: [tag1, tag2],
+    })
+
+    return true
+  }
+
+  @Get('posts')
+  getPosts() {
+    return this.postRepository.find({
+      relations: {
+        tags: true,
+      },
+    })
+  }
+
+  @Get('tags')
+  getTags() {
+    return this.tagRepository.find({
+      relations: {
+        posts: true,
+      },
+    })
+  }
+}
+```
+
+포스트맨으로 요청해 확인해보세요.
+
+---
+
+## 11. Relation Options
+
+postgres-data 파일을 지워 데이터를 초기화하고 다시 시작합니다.
+`user.entity.ts`에서 관계로 넣을 수 있는 옵션에 대해 알아봅시다.
+
+```ts user.entity.ts
+// ProfileModel에 profile의 user 컬럼과 1:1 연결
+@OneToOne(() => ProfileModel, profile => profile.user, {
+  // find() 실행할 때마다 항상 같이 가져올 relation 설정(기본값 false)
+  eager: true,
+  // 저장할 떄, relation을 한 번에 같이 저장(기본값 false)
+  cascade: true,
+  // null이 가능한지 여부(기본값 true)
+  nullable: true,
+  // 관계를 삭제했을 떄, 어떻게 삭제할 것인지
+  // - NO ACTION : 아무것도 안함
+  // - CASCADE : 참조하는 row도 같이 삭제
+  // - SET NULL : 참조하는 row에서 참조 id를 null로 변경
+  // - set default : 기본 세팅으로 설정(테이블의 기본 세팅)
+  // - RESTRICT : 참조하고 있는 row가 있는 경우 참조당하는 row 삭제 불가
+  onDelete: 'NO ACTION',
+})
+profile: ProfileModel
+```
+
+관계 삭제 옵션 테스트용을 `app.controller.ts`에 넣어서 확인해본다
+
+```ts app.controller.ts
+@Delete('user/profile/:id')
+async deleteProfile(@Param('id') id: string) {
+  await this.profileRepository.delete(+id)
+}
+```
+
+---
+
+## 12. FindManyOptions 파라미터
+
+`app.controller.ts`에서 find()에 가져올 수 있는 옵션에 대해 알아봅시다.
+
+```ts app.controller.ts
+@Get('users')
+getUsers() {
+  return this.userRepository.find({
+    // 어떤 속성을 선택할지 (기본은 모든 속성을 가져옴)
+    // select를 정의하면, 정의한 속성만 가져온다
+    select: {
+      id: true,
+      email: true,
+      version: true,
+      profile: {
+        id: true,
+      },
+    },
+    // 필터링할 조건을 입력한다 ({}안에서는 전부 and 조건으로 필터링)
+    where: [
+      // id가 3이거나 or version이 1
+      {
+        id: 3,
+      },
+      {
+        version: 1,
+      },
+    ],
+    // ------ 다른 관계를 필터링하는 법
+    // where: {
+    //   profile: {
+    //     id: 3,
+    //   },
+    // },
+    // 관계를 가져오는 법
+    relations: {
+      profile: true,
+    },
+    // 오름차(ASC)-기본, 내림차(DESC)
+    order: {
+      id: 'DESC',
+    },
+    // 처음 몇 개를 제외할 지 (기본은 0) 1이면 1개 스킵
+    skip: 0,
+    // 몇 개를 가져올지 (기본값은 0, 전체) 1이면 1개만 가져옴
+    take: 0,
+  })
+}
+```
+
+---
+
+## 13. Typeorm 유틸리티 도구
+
+`app.controller.ts`에서 find()에 가져올 수 있는 유틸리티 옵션에 대해 알아보자.
+
+```ts app.controller.ts
+@Post('users')
+async postUser() {
+  for (let i = 0; i < 100; i++) {
+    await this.userRepository.save({
+      email: `user-${i}@google.com`,
+    })
+  }
+}
+
+@Get('users')
+getUsers() {
+  return this.userRepository.find({
+    where: {
+      // 📌 (1) 1이 아닌 경우 가져오기
+      id: Not(1),
+
+      // 📌 (2) 30 미만의 적은 경우 가져오기
+      id: LessThan(30),
+
+      // 📌 (3) 30 이하의 적은 경우 가져오기
+      id: LessThanOrEqual(30),
+
+      // 📌 (4) 30 초과의 많은 경우 가져오기
+      id: MoreThan(30)
+
+      // 📌 (5) 30 이상의 많은 경우 가져오기
+      id: MoreThanOrEqual(30)
+
+      // 📌 (6) 같은 경우 가져오기
+      id: Equal(30)
+
+      // 📌 (7) 유사값, %로 유사한 문자 찾기 (대소문자 구분함)
+      email: Like('%0@google%'),
+
+      // 📌 (8) 유사값, %로 유사한 문자 찾기 (대소문자 구분안함)
+      email: ILike('%GOOGLE%'),
+
+      // 📌 (9) 사이값, 10~15번 사이까지의 값
+      id: Between(10, 15),
+
+      // 📌 (10) 해당되는 여러 개의 값, 1, 3, 5, 7, 99의 id 찾기
+      id: In([1, 3, 5, 7, 99]),
+
+      // 📌 (11) ID가 null인 경우 찾기
+      id: IsNull(),
+    },
+    // 주석 생략
+  })
+}
+```
+
+데이터를 초기화하고, 1~100개의 임의의 유저를 만든 후, 각각의 유틸리티를 확인한다.
+
+---
+
+## 14. Repository
+
+- `Repository`는 지정한 Entity에 대한 CRUD 쿼리를 할 수 있게 해준다
+- TypeORM에 정의돼있는 메서드들을 사용해서 직접 SQL을 작성하지 않더라도 데이터 관리를 할 수 있다
+
+```ts
+const userRepository = dataSources.getRepository(User)
+const user = await userRepository.findOne({ id: 1 })
+user.name = '뭐시기'
+await userRepository.save(user)
+```
+
+Repository의 주요 기능들
+
+|     주요 기능들      | 주요 메서드                                                     |
+| :------------------: | --------------------------------------------------------------- |
+| Create & Delete 관련 | create(), save(), upsert(), delete(), softDelete(), restore()   |
+|     Update 관련      | update(), increment(), decrement()                              |
+|      Find 관련       | find(), findAndCount(), findOne(), exists(), preload(), query() |
+|  통계 관련 및 기타   | count(), sum(), average(), minimum(), maximum(), query()        |
+
+---
+
+### 14.1 create()
+
+- create() 메서드는 객체를 생성하는 역할을 한다
+- create()는 save()와 다르게 데이터베이스에 데이터를 생성하지 않고 "객체"를 생성만 한다는걸 꼭 기억하자!
+
+```ts
+// const user = new User();
+const user = repository.create()
+const user = repository.create({
+  id: 1,
+  firstName: 'Timber',
+  lastName: 'Saw',
+})
+```
+
+---
+
+### 14.2 save()
+
+- save() 메서드에 저장할 Entity를 입력 해주면 저장 할 수 있다
+- create()와 다르게 실제 데이터베이스에 저장이 된다.
+- 만약에 이미 Row가 존재한다면 (primary key 값으로 구분) 업데이트한다. (주의할 것!)
+- 여러 객체를 한번에 저장도 가능하다
+
+```ts
+await repository.save(user)
+await repository.save([category1, category2, category3])
+```
+
+---
+
+### 14.3 upsert()
+
+- update와 insert를 합친게 upsert()다
+- 데이터 생성 시도를 한 후 만약에 이미 존재하는 데이터라면 업데이트를 진행한다
+- save()와 다르게 upsert()는 하나의 transaction에서 작업이 실행된다
+
+```ts
+await repository.upsert(
+  [
+    { externalId: 'abc123', firstName: 'Timber' },
+    { externalId: 'bca321', firstName: 'Saw' },
+  ],
+  ['externalId'],
+)
+/** executes
+ * INSERT INTO user
+ * VALUES
+ *  (externalId: "abc123", firstName: 'Timber'),
+ *  (externalId: "bca321", firstName: 'Saw')
+ * ON CONFLICT (externalId) DO UPDATE firstName = EXCLUDED.firstName
+ */
+```
+
+---
+
+### 14.4 delete()
+
+- Row를 삭제할때 사용된다
+- 대체적으로 Primary Key를 사용해서 삭제한다
+- 원한다면 findOptionsWhere 조건으로 여러 값을 삭제 할 수도 있다.
+
+```ts
+await repository.delete(1)
+await repository.delete([1, 2, 3])
+await repository.delete({ firstName: 'Timber' })
+```
+
+---
+
+### 14.5 softDelete(), restore()
+
+- softDelete()는 비영구적으로 삭제하는 기능이다
+- restore()를 실행하면 softDelete() 했던 Row를 복구 할 수 있다
+
+```ts
+await repository.softDelete(1) // 삭제
+await repository.restore(1) // 복구
+```
+
+---
+
+### 14.6 update()
+
+- 첫번째 파라미터에 검색 조건을 입력해준다
+- 두번째 파라미터에 변경 필드를 입력해준다
+
+```ts
+// UPDATE user
+// SET category = ADULT
+// WHERE age = 18
+await repository.update({ age: 18 }, { category: 'ADULT' })
+
+// UPDATE user
+// SET firstName = 뭐시기
+// WHERE id = 1
+await repository.update(1, { firstName: '뭐시기' })
+```
+
+---
+
+### 14.7 find(), findOne(), findAndCount()
+
+- `find()` : 해당되는 Row를 모두 반환한다
+- `findOne()` : 해당되는 첫번째 Row를 반환한다. 없을경우 null
+- `findAndCount()` : 해당되는 Row와 전체 갯수를 반환한다.
+
+```ts
+const rows = await repository.find({
+  where: { firstName: 'Timber' },
+})
+const rows = await repository.findOne({
+  where: { firstName: 'Timber' },
+})
+const rows = await repository.findAndCount({
+  where: { firstName: 'Timber' },
+})
+```
+
+---
+
+#### 14.7.1 FindOptions
+
+```ts
+export interface FindOneOptions<Entity = any> {
+  select?: FindOneOptionsSelect<Entity> // 불러올 Column을 지정
+  where?: FindOptionsWhere<Entity>[] // 필터링할 조건을 설정
+  relations?: FindOptionsRelations<Entity> // 불러올 관계 테이블을 지정
+  order?: FindOneOptionsOrder<Entity> // 정렬을 지정
+  cache?: boolean | number // 캐싱 기간을 지정
+}
+
+export interface FindManyOptions<Entity = any> extends FindOneOptions<Entity> {
+  skip?: number
+  take?: number
+}
+```
+
+- 모든 find 관련된 API는 FindOptions를 아규먼트로 받는다.
+- FindOptions는 어떤 값들을 불러올지 필터링하는 역할을 한다.
+- FindOptions의 정확한 TS 타입 명칭은 FindOneOptions와 FindManyOptions로 정의돼있다.
+- FindManyOptions는 FindOneOptions를 상속받고 `skip`, `take` 2가지 프로퍼티가 더 존재한다
+
+---
+
+##### (1) where 속성
+
+```ts
+// 기본 사용법
+const users = await userRepository.find({
+  where: { isActive: true },
+})
+
+// 다중조건 사용법
+const users = await userRepository.find({
+  where: [
+    { firstName: 'John', lastName: 'Doe' },
+    { firstName: 'Jane', lastName: 'Smith' },
+  ],
+})
+
+// 중첩 사용법
+const users = await userRepository.find({
+  where: [
+    isActive: true,
+    profile : { age: MoreThan(25) },
+  ],
+})
+```
+
+---
+
+##### (2) order 속성
+
+```ts
+//  단일 정렬 사용법
+const users = await userRrepository.find({
+  order: { firstName: 'ASC' },
+})
+
+// 복수 정렬 사용법
+const users = await userRrepository.find({
+  order: { lastName: 'ASC', firstName: 'DESC' },
+})
+```
+
+---
+
+##### (3) relation 속성
+
+```ts
+const users = await userRepository.find({
+  relations: ['profile', 'photos'],
+})
+```
+
+---
+
+##### (4) select 속성
+
+```ts
+const users = await userRepository.find({
+  select: ['firstName', 'lastName'],
+})
+```
+
+---
+
+##### (5) cache 속성
+
+```ts
+// 기본 사용법
+const users = await userRepository.find({
+  cache: true,
+})
+
+// 기간 직접 정의
+const users = await userRepository.find({
+  cache: 60000, // 60초
+})
+```
+
+---
+
+#### 14.7.2 FindManyOptions
+
+```ts
+const users = await userRepository.find({
+  skip: 10, // 처음 10개를 제외하고 가져온다
+  take: 5, // 처음 5개만 가져온다
+})
+```
+
+- `Skip` : 정렬 후 스킵할 데이터 갯수를 정할 수 있다
+  - 기본값은 0, 1이면 1개를 제외하고 가져온다
+- `Take` : 처음 몇개의 데이터를 불러올지 정할 수 있다
+  - 기본값은 0, 1이면 1개만 가져온다
+
+---
+
+#### 14.7.3 Advanced Options
+
+| 주요 오퍼레이터 | 주요 메서드                                                                     |
+| :-------------: | ------------------------------------------------------------------------------- |
+|      비교       | Equal, Not, LessThan, LessThanOrEqual, MoreThan, <br />MoreThanOrEqual, Between |
+|    패턴매칭     | Like, ILike                                                                     |
+|      집합       | In, ArrayContains, ArrayContainedBy, ArrayOverlap                               |
+|      기타       | IsNull, Or, And, Raw                                                            |
+
+---
+
+##### (1) Equal 오퍼레이터
+
+```ts
+// Equal : 같은 값을 찾을때 사용
+const users = await userRepository.find({
+  where: { age: Equal(25) },
+})
+```
+
+---
+
+##### (2) Not 오퍼레이터
+
+```ts
+// Not : 아닌 값을 찾을때 사용
+const users = await userRepository.find({
+  where: { age: Not(25) },
+})
+```
+
+---
+
+##### (3) LessThan & LessThanOrEqual 오퍼레이터
+
+```ts
+// 적은값 & 적거나 같은 값을 찾을때 사용
+const users = await userRepository.find({
+  where: { age: LessThan(30) },
+})
+const users = await userRepository.find({
+  where: { age: LessThanOrEqual(30) },
+})
+```
+
+---
+
+##### (4) MoreThan & MoreThanOrEqual 오퍼레이터
+
+```ts
+// 더 큰값 & 크거나 같은 값을 찾을때 사용
+const users = await userRepository.find({
+  where: { age: MoreThan(20) },
+})
+const users = await userRepository.find({
+  where: { age: MoreThanOrEqual(20) },
+})
+```
+
+---
+
+##### (5) Between
+
+```ts
+// 사이 값을 찾을때 사용
+const users = await userRepository.find({
+  where: { age: Between(20, 30) },
+})
+```
+
+---
+
+##### (6) Like & ILike
+
+```ts
+// 스트링에 매칭되는 값을 찾을때 사용한다. Like는 대소문자 구분할때, ILike는 대소문자 구분하지 않을때 사용
+const users = await userRepository.find({
+  where: { firstName: Like('Co%') },
+})
+const users = await userRepository.find({
+  where: { firstName: ILike('co%') },
+})
+```
+
+---
+
+##### (7) In
+
+```ts
+// 리스트에 매칭되는 값을 찾는다
+const users = await userRepository.find({
+  where: { age: In([20, 25, 30]) },
+})
+```
+
+---
+
+##### (8) ArrayContains & ArrayContainedBy & ArrayOverlap
+
+```ts
+// ArrayContains : 엔티티 리스트 값이 타겟 리스트와 완전 똑같은 경우를 필터링
+const users = await userRepository.find({
+  where: { roles: ArrayContains(['admin']) },
+})
+
+// ArrayContainedBy : 엔티티 리스트 값이 타겟 리스트 안에 모두 포함되는 경우를 필터링
+const users = await userRepository.find({
+  where: { roles: ArrayContainedBy(['admin', 'user']) },
+})
+
+// ArrayOverlap : 엔티티 리스트 값이 하나라도 타겟 리스트와 겹치는 경우를 필터링
+const users = await userRepository.find({
+  where: { roles: ArrayOverlap(['admin', 'guest']) },
+})
+```
+
+(8-1) ArrayContains
+
+```ts
+// Record 1
+{
+  id: 1,
+  tags: ['admin', 'user', 'manager'],
+}
+// Record 2
+{
+  id: 2,
+  roles: ['user', 'guest'],
+}
+```
+
+```ts
+const users = await getRepository(User).find({
+  // Record 2의 Tags가 완전히 같으니 Record 2만 반환
+  tags: ArrayContains(['user', 'guest']),
+})
+```
+
+(8-2) ArrayContainedBy
+
+```ts
+// Record 1
+{
+  id: 1,
+  tags: ['admin', 'user', 'manager'],
+}
+// Record 2
+{
+  id: 2,
+  roles: ['user', 'guest'],
+}
+```
+
+```ts
+const users = await getRepository(User).find({
+  // Record 1과 Record 2의 Tags들이 모두 필터 리스트에 포함되기 때문에 둘 다 반환
+  tags: ArrayContainedBy(['admin', 'user', 'guest', 'manager']),
+})
+```
+
+(8-3) ArrayOverlap
+
+```ts
+// Record 1
+{
+  id: 1,
+  tags: ['admin', 'user', 'manager'],
+}
+// Record 2
+{
+  id: 2,
+  roles: ['user', 'guest'],
+}
+```
+
+```ts
+const users = await getRepository(User).find({
+  // Record 1의 Tags와 Record 2의 Tags가 모두 필터 리스트와 겹치는 부분이 있기 때문에 둘 다 반환
+  tags: ArrayOverlap(['guest', 'admin']),
+})
+```
+
+---
+
+##### (9) IsNull
+
+```ts
+const users = await userRepository.find({
+  where: { age: IsNull() }, // age가 null인 경우
+})
+```
+
+---
+
+##### (10) Or
+
+```ts
+const loadedPosts = await dataSource.getRepository(Post).findBy({
+  // 2개의 조건 중 하나라도 만족하면 반환
+  title: Or(Equal('About #2'), ILike('About%')),
+})
+```
+
+---
+
+##### (11) And
+
+```ts
+const loadedPosts = await dataSource.getRepository(Post).findBy({
+  // 2개의 조건 모두 만족하면 반환
+  title: And(Not(Equal('About #2'), ILike('About%'))),
+})
+```
+
+---
+
+#### 14.7.4 복잡한 레포지토리 쿼리
+
+```ts
+const users = await userRepository.find({
+  where: [
+    { isActive: true, age: MoreThan(25) },
+    { firstName: 'John', age: LessThan(50) },
+  ],
+  order: { fistName: 'ASC' },
+  relations: ['profile'],
+  select: ['firstName', 'lastName'],
+  skip: 0,
+  take: 10,
+  cache: true,
+  loadRelationIds: true,
+  loadEagerRelations: false,
+  withDeleted: false,
+})
+```
+
+---
+
+### 14.7 exists()
+
+- `exists()` : 특정 조건의 Row가 존재하는지 boolean 값을 반환 받을 수 있다
+
+```ts
+const exists = await repository.exists({
+  where: {
+    firstName: 'Timber',
+  },
+})
+```
+
+---
+
+### 14.8 preload()
+
+- preload()는 데이터베이스에 저장된 값을 Primary Key 기준으로 불러오고 입력된 객체의 값으로 프로퍼티를 덮어쓴다
+- 덮어쓰는 과정에서 데이터베이스에 업데이트 요청이 보내지지는 않는다
+
+```ts
+const partiaIUser = {
+  id: 1,
+  firstName: 'Timber',
+  profile: { id: 1 },
+}
+const user = await repository.preload(partiaIUser)
+```
+
+---
+
+## 15. 각종 통계
+
+- `count()` : 해당되는 개수를 반환한다
+- `sum()` : 해당되는 속성들의 값을 전부 합친 값을 반환한다
+- `average()` : 해당되는 속성들의 평균값을 반환한다
+- `minimum()` : 해당되는 속성들의 최소값을 반환한다
+- `maximum()` : 해당되는 속성들의 최대값을 반환한다
+
+```ts
+// firstName이 Timber인 값들의 개수
+const count = await repository.count({
+  where: { firstName: 'Timber' },
+})
+// age 컬럼의 firstName이 Timber인 값들의 합계
+const sum = await repository.sum('age', {
+  firstName: 'Timber',
+})
+// age 컬럼의 firstName이 Timber인 값들의 평균값
+const average = await repository.average('age', {
+  firstName: 'Timber',
+})
+// age 컬럼의 firstName이 Timber인 값들의 최소값
+const minimum = await repository.minimum('age', {
+  firstName: 'Timber',
+})
+// age 컬럼의 firstName이 Timber인 값들의 최대값
+const maximum = await repository.maximum('age', {
+  firstName: 'Timber',
+})
+```
+
+---
+
+## 16. Repository 실습
+
+`user.entity.ts`에 count 컬럼을 추가한다.
+
+```ts
+@Column({ default: 0 })
+count: number
+```
+
+app 컨트롤러에 sample 요청을 만들고 실습한다.
+
+```ts app.controller.ts
+ @Post('sample')
+async sample() {
+  // 📌 (1) 모델에 해당되는 객체 생성 - 저장은 안함
+  const user1 = await this.userRepository.create({
+    email: 'test@gmail.ai',
+  })
+
+  // 📌 (2) 모델에 해당되는 객체 생성 - DB에 저장함
+  const user2 = await this.userRepository.save({
+    email: 'test@gmail.ai',
+  })
+
+  /*** 📌 (3) preload
+   * 입력된 값을 기반으로 DB에 데이터를 불러오고,
+   * 추가입력된 값으로 DB에 가져온 값들을 대체함
+   * 저장하지는 않음
+   */
+  const user3 = await this.userRepository.preload({
+    id: 101,
+    email: 'test변경-저장x@gmail.ai',
+  })
+
+  // 📌 (4) 삭제하기
+  await this.userRepository.delete(101)
+
+  // 📌 (5) 숫자형 컬럼 증가 (id가 1인 count 컬럼을 2만큼 증가)
+  await this.userRepository.increment(
+    { id: 1 }, //
+    'count',
+    2,
+  )
+
+  // 📌 (6) 숫자형 컬럼 감소 (id가 1인 count 컬럼을 1만큼 감소)
+  await this.userRepository.decrement(
+    { id: 1 }, //
+    'count',
+    1,
+  )
+
+  // 📌 (7) 개수 카운팅하기
+  const count = await this.userRepository.count({
+    where: {
+      email: ILike('%0%'),
+    },
+  })
+
+  // 📌 (8) sum : 속성들의 값 전부 합치기
+  const sum = await this.userRepository.sum('count', {
+    email: ILike('%0%'),
+  })
+
+  // 📌 (9) average : 속성의 평균값 구하기
+  const average = await this.userRepository.average('count', {
+    id: LessThan(4),
+  })
+
+  // 📌 (10) min : 속성의 최소값 구하기
+  const min = await this.userRepository.minimum('count', {
+    id: LessThan(4),
+  })
+
+  // 📌 (10) max : 속성의 최대값 구하기
+  const max = await this.userRepository.maximum('count', {
+    id: LessThan(4),
+  })
+
+  // 📌 (11) find와 findOne도 있음(많이 다뤘으니 생략)
+  const userOne = await this.userRepository.findOne({
+    where: { id: 3 },
+  })
+
+  // 📌 (12) 3개의 값을 가져오는데, 전체 행 개수도 반환해줌
+  const usersAndCount = await this.userRepository.findAndCount({
+    take: 3,
+  })
+
+  return usersAndCount
+}
+```
+
+---
+
+## 17. QueryBuilder
+
+```tsx
+const users = await userRepository
+  .craeteQueryBuilder('user') // user 테이블을 기반으로 QueryBuilder 생성
+  .leftJoinAndSelect('user.profile', 'profile') // user.profile 테이블을 조인
+  .where('user.isActive = :isActive', { isActive: true }) // isActive가 true인 값만 가져오기
+  // 사용법 : where("컬럼 = :변수명", { 변수명: 값 })
+  .orderBy('user.firstName', 'ASC') // firstName을 기준으로 오름차순 정렬
+  .skip(10) // 처음 10개 제외하고 가져오기
+  .take(5) // 처음 5개만 가져오기
+  .getMany() // 결과값을 가져오기
+```
+
+- 복잡하지 않은 일반적인 쿼리를 실행할 때는 Repository를 사용하는게 편리하다.
+- 조금 더 복잡한 쿼리를 실행 해야하거나 다이나믹하게 쿼리를 만들어가야 할 경우 Query Builder를 사용해야한다
+
+---
+
+### 17.1 Query Builder의 5가지 실행 타입 : (1) select
+
+```tsx
+const movie = await dataSource
+  .createQueryBuilder()
+  .select('movie')
+  .from(Movie, 'movie')
+  .leftJoinAndSelect('movie.detail', 'detail') // movie.detail 테이블을 조인
+  .leftJoinAndSelect('movie.director', 'director')
+  .leftJoinAndSelect('movie.genres', 'genres')
+  .where('movie.id = :id', { id: 1 })
+  .getOne() // 결과값을 하나만 가져오기
+```
+
+---
+
+### 17.2 Query Builder의 5가지 실행 타입 : (2) insert
+
+```tsx
+await dataSource
+  .createQueryBuilder()
+  .insert()
+  .into(Movie)
+  .values([{ title: 'New Movie', genre: 'Action', director: director, genres: genres }])
+  .execute()
+```
+
+---
+
+### 17.3 Query Builder의 5가지 실행 타입 : (3) update
+
+```tsx
+await dataSource
+  .createQueryBuilder()
+  .update(Movie)
+  .set({ title: 'Updated Movie', genre: 'Drama' })
+  .where('id = :id', { id: 1 })
+  .execute()
+```
+
+---
+
+### 17.4 Query Builder의 5가지 실행 타입 : (4) delete
+
+```tsx
+await dataSource
+  .createQueryBuilder()
+  .delete()
+  .from(Movie)
+  .where('id = :id', { id: 1 }) // id가 1인 값을 삭제
+  .execute()
+```
+
+---
+
+### 17.5 Query Builder의 5가지 실행 타입 : (5) relations
+
+```tsx
+const genres = await dataSource
+  .createQueryBuilder()
+  .relation(Movie, 'genres')
+  .of(1) // id가 1인 값을 가져오기
+  .loadMany() // 결과값을 가져오기
+```
+
+---
+
+### 17.6 getOne(), getMany(), select()
+
+```tsx
+// 단일 Row만 가져올 때
+const uesrs = await connection
+  .getRepository(User)
+  .createQueryBuilder('user')
+  .select(['user.id', 'user.firstName', 'user.lastName'])
+  .getOne()
+
+// 복수 Row만 가져올 때
+const users = await connection
+  .getRepository(User)
+  .craeteQueryBuilder('user')
+  .select(['user.id', 'user.firstName', 'user.lastName'])
+  .getMany()
+```
+
+---
+
+### 17.7 where()
+
+```tsx
+// 하나의 필터링 조건 적용
+const users = await connection
+  .getRepository(User) // User 테이블을 기반으로 Repository 생성
+  .createQueryBuilder('user') // user 테이블을 기반으로 QueryBuilder 생성
+  .where('user.isActive = :isActive', { isActive: true })
+  .getMany()
+
+// 다수의 필터링 조건 적용
+const users = await connection
+  .getRepository(User)
+  .createQueryBuilder('user')
+  .where('user.firstName = :firstName', { firstName: 'Timber' })
+  .andWhere('user.lastName = :lastName', { lastName: 'Saw' })
+  .getMany()
+```
+
+---
+
+### 17.8 orderBy()
+
+```tsx
+const users = await connection
+  .getRepository(User)
+  .createQueryBuilder('user')
+  .orderBy('user.lastName', 'ASC') // lastName을 기준으로 오름차순 정렬
+  .addOrderBy('user.firstName', 'DESC') // firstName을 기준으로 내림차순 정렬
+  .getMany()
+```
+
+---
+
+### 17.9 skip(), take()
+
+```tsx
+const users = await connection
+  .getRepository(User)
+  .createQueryBuilder('user')
+  .skip(10) // 처음 10개 제외하고 가져오기
+  .take(5) // 처음 5개만 가져오기
+  .getMany()
+```
+
+---
+
+### 17.10 join()
+
+```tsx
+// Inner Join
+const users = await connection
+  .getRepository(User)
+  .createQueryBuilder('user')
+  .innerJoinAndSelect('user.profile', 'profile') // user.profile 테이블을 조인
+  .getMany()
+
+// Left Join
+const users = await connection
+  .getRepository(User)
+  .createQueryBuilder('user')
+  .leftJoinAndSelect('user.photos', 'photos') // user.photos 테이블을 조인
+  .getMany()
+```
+
+---
+
+### 17.11 Aggregation
+
+```tsx
+const userCount = await connection
+  .getRepository(User)
+  .creawteQueryBuilder('user')
+  .select('COUNT(user.id)', 'count')
+  .getRawOne()
+```
+
+---
+
+### 17.12 Subquery
+
+```tsx
+const users = await connection
+  .getRepository(User)
+  .createQueryBuilder('user')
+  .where(qb => {
+    const subQuery = qb
+      .subQuery()
+      .select('subUser.id')
+      .from(User, 'subUser')
+      .where('subUser.isActive = :isActive', { isActive: true })
+      .getQuery()
+    return 'user.id IN ' + subQuery
+  })
+  .setParameters('isActive', true)
+  .getMany()
+```
+
+---
+
+### 17.12 Raw Query
+
+```tsx
+const users = await connection
+  .getRepository(User)
+  .createQueryBuilder()
+  .select('user')
+  .from(User, 'user')
+  .where('user.isActive = :isActive', { isActive: true })
+  .getRawMany()
+```

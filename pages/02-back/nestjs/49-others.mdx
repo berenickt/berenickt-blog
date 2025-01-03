@@ -1,0 +1,257 @@
+---
+title: '49-Others'
+date: 2023/12/25
+---
+
+## 1. Order Microservice
+
+### 1.1 Entity 구성하기
+
+- Order (주문 정보 통합 정보)
+  - Customer (주문한 사람)
+  - DeliveryAddress (주문 배송 주소)
+  - Payment (주문 결제 방법)
+  - Product (주문 상품)
+
+---
+
+### 1.2 SQL vs NoSQL
+
+NoSQL의 가장 강력한 장점은 구조화되지 않은 데이터를 하나의 Document로 한번에 저장할 수 있다는 것이다.
+populate를 통한 join 기능이 가능하긴 하지만, 보통 하나의 Document가 통째로 유의미한 데이터를 보여주게 된다.
+
+SQL은 관계형 데이터베이스로 다양한 Join 기능과 함께 “현재 상태”를 정확히 보여 줄 수 있다.
+
+- 그렇다면 “Order (주문)” 데이터는 “최신 현재 상태”를 반영해야하는 데이터일까?
+- Order 객체의 Customer, DeliveryAddress, Product, Payment는 매번 최신 데이터가 반영돼야하는가?
+
+---
+
+## 2. Microservice Transporters
+
+### 2.1 TCP말고 다른 옵션
+
+![nestjs-fastcam-others_49-1](https://raw.githubusercontent.com/berenickt/image-server/refs/heads/main/nestjs/nestjs-fastcam-others_49-1.png)
+
+---
+
+### 2.2 Synchronous Networking vs Asynchronous Networking
+
+`Broker`란 메세지 또는 이벤트를 중개하는 소프트웨어를 명칭한다!
+
+- `Synchronous Networking`
+  - 요청을 보낸 후 응답이 돌아올 때까지 기다리는 방식이다.
+  - 요청 응답이 끝난다음 다음 작업을 진행한다.
+  - 응답 시간이 긴 용청이 있을 경우 시스템 전체의 성능이 저하될 수 있다.
+  - 통신하는 Microservice끼리 Tight Coupling이 된다.
+  - 전화 통화를 상상하면 된다. 전화를 걸면 상대방이 전화를 받아야하고 통화가 끝날때까지 기다려야한다.
+- `Asynchronous Networking`
+  - 요청을 보낸 후 응답이 올때까지 기다리지 않고 다른 작업을 처리 할 수 있는 방식이다.
+  - 응답 대기 시간 동안 다른 작업을 처리 할 수 있기 때문에 자원을 효율적으로 사용 할 수 있다.
+    - (대규모 트래픽에 적합)
+  - 코드가 복잡해질 수 있고 관리가 어려워질 수 있다.
+  - 메세지/이벤트가 한번 이상 전달되는 상황을 고려해야 한다.
+  - 이메일을 생각하면 된다.
+    - 이메일을 보내두면 언젠가 상대방이 이메일을 읽을걸 생각하고 다른 작업을 하고 있을 수 있다.
+
+모든 통신을 Synchronous 또는 Asynchronous로 작업하는건 적절하지 않다.
+Synchronous와 Asynchronous의 특성을 잘 살려서 통신의 특성에 따라 적합한 기술을 사용해주는게 중요하다.
+
+---
+
+### 2.3 Broker란?
+
+![nestjs-fastcam-others_49-2](https://raw.githubusercontent.com/berenickt/image-server/refs/heads/main/nestjs/nestjs-fastcam-others_49-2.png)
+
+---
+
+### 2.4 Broker 종류 비교
+
+|                               |        Redis        |         MQTT         |               NATS               |             RabbitMQ             |
+| :---------------------------: | :-----------------: | :------------------: | :------------------------------: | :------------------------------: |
+|           주요 패턴           |  Pub/Sub, Streams   |       Pub/Sub        |      Pub/Sub, Request/Reply      |  Pub/Sub, Queue, Request/ Reply  |
+| Quality of Service<br />(QoS) |        없음         |     QoS(0, 1, 2)     |               없음               | Acknowledgement<br />(확답 받기) |
+|            확장성             |   클러스터링 필요   |    서버 확장 가능    | 기본적으로 <br />클러스터링 지원 | Exchange/Binding 통한 확장 가능  |
+|            내구성             | Streams 사용시 제공 | QoS 설정에 따라 다름 |    NATS Streaming 사용시 제공    |           높은 내구성            |
+
+(1) Redis
+
+- `통신방식` : Pub/Sub 패턴을 사용하여 메시지를 주고받는다.
+  - 간단한 메시지 큐로서 동작할 수 있으나,
+  - 메시지를 보장하지 않기 때문에 신뢰성 있는 메시지 전송이 필요할 때는 Redis Streams를 사용해야 한다.
+- `성능` : 매우 빠르며, 메모리 기반이므로 짧은 응답 시간과 높은 처리량을 제공한다
+- `신뢰성` : 기본 Pub/Sub에서는 메시지 손실이 발생할 수 있다.
+  - Redis Streams는 메시지 보장을 제공하지만,
+  - 여전히 RabbitMQ나 NATS만큼의 완벽한 메시지 내구성을 제공하지 않는다
+- `확장성` : Redis는 분산 시스템으로 확장할 수 있지만,
+  - 자체적인 메시징 보장이나 고가용성을 위해서는 추가적인 설정이 필요하다.
+- `사용 사례` : 캐싱, 빠른 데이터 처리, 실시간 알림 등. 단순한 메시지 패턴이 요구될 때 적합하다.
+
+(2) MQTT
+
+- `통신방식` : Pub/Sub 패턴 기반의 경량 메시지 프로 토콜이다.
+  - 저전력 및 네트워크 대역폭이 제한된 환경에서 효율적이다.
+- `성능` : 메시지 크기가 작고 전송 속도가 빠르다.
+  - 매우 효율적으로 동작하며, 저비용 장치 간의 통신에 적합하다.
+- `신뢰성` : QoS(서비스 품질) 레벨에 따라 메시지 전달을 보장할 수 있다.
+  - 메시지를 한번만 전 달하거나, 최소 한 번, 또는 적어도 한 번 전달할 수 있는 옵션을 제공한다.
+- `확장성` : 브로커를 통한 확장이 가능하지만, Redis 나 NATS에 비해 복잡한 확장이 필요할 수 있다.
+- `사용 사례` : IoT 디바이스 간의 통신, 저전력 장치 및 네트워크 대역폭이 제한된 상황에 적합하 다
+
+(3) NATS
+
+- `통신방식` :주로 Pub/Sub과 Request/Reply 패턴 을 지원하며, 분산 시스템을 위한 경량 메시징 시스템이다.
+- `성능` : 메시지 전송 속도와 응답 시간이 매우 빠르다. 특히 고성능 분산 시스템에서 사용 하기에 적합하다.
+- `신뢰성` : NATS는 기본적으로 메시지 전달에 있어 신뢰성을 보장하지 않지만,
+  - NATS Streaming(현 재 JetStream)은 메시지 내구성, 확인 응답 (ACK), 메시지 저장 등을 제공한다
+- `확장성` : NATS는 클러스터링을 통해 매우 쉽게 확 장할 수 있으며,
+  - 글로벌 분산 시스템에서 도 매우 유연하게 동작한다.
+- `사용 사례` : 경량 메시징 시스템이 필요할 때, 높은 성 능과 낮은 대기 시간을 요구하는 분산 시스템에 적합하다
+
+(4) RabbitMQ
+
+- `통신방식` : AMQP(Advanced Message Queuing Protocol)를 사용하며,
+  - Pub/Sub, Queue, Request/Reply 등의 다양한 메시징 패턴을 지원한다.
+- `성능` : 메시지 전달 지연 시간이 상대적으로 길 수 있지만, 메시지 내구성, 전달 보장 등에서 강력하다
+- `신뢰성` : 메시지 내구성, 메시지 보장(확인 응답), 재시도 메커니즘을 통해 매우 높은 신뢰성 을 제공한다.
+- `확장성` : 클러스터링 및 고가용성을 지원하며, 큰 규모의 시스템에서도 유연하게 확장할 수 있다.
+  - 성능이 중요한 경우 일부 설정 조정 이 필요할 수 있다.
+- `사용 사례` : 금융 서비스, 주문 처리 시스템, 트랜잭션 보장 등 신뢰성이 중요한 곳에서 널리 사용된다.
+
+---
+
+### 2.5 Redis의 작동 방식
+
+![nestjs-fastcam-others_49-3](https://raw.githubusercontent.com/berenickt/image-server/refs/heads/main/nestjs/nestjs-fastcam-others_49-3.png)
+
+---
+
+### 2.6 Rabbitmq의 작동 방식
+
+![nestjs-fastcam-others_49-4](https://raw.githubusercontent.com/berenickt/image-server/refs/heads/main/nestjs/nestjs-fastcam-others_49-4.png)
+
+![nestjs-fastcam-others_49-5](https://raw.githubusercontent.com/berenickt/image-server/refs/heads/main/nestjs/nestjs-fastcam-others_49-5.png)
+
+---
+
+## 3. gRPC
+
+### 3.1 gRPC란?
+
+gRPC는 Google는 Protocol Buffer를 사용하는 Microservice에서 사용하기 적합한 높은 퍼포먼스를 보여주는 통신 프로토콜이다.
+
+RPC는 Remote Procedure Call의 약자로 내부 함수를 실행하는 것처럼 다른 서버의 함수를 실행 할 수 있다.
+실제 요청은 네트워크 통신으로 전달되지만 실행하는 방식은 내부 함수처럼 실행 할 수 있다.
+
+gRPC를 사용하면 language agnostic (언어와 관계없이) 일관된 언어로 통신 규칙을 규정 할 수 있다
+
+gRPC 주요 포인트
+
+- HTTP/2를 사용한다.
+- HTTP/2는 메세지를 바이너리로 인코딩 하기 때문에 JSON 보다 빠르게 전송될 수 있다.
+- Unary, Server Streaming, Client Streaming, Bi-Directional Streaming이 가능하다.
+
+---
+
+### 3.2 Unary
+
+![nestjs-fastcam-others_49-6](https://raw.githubusercontent.com/berenickt/image-server/refs/heads/main/nestjs/nestjs-fastcam-others_49-6.png)
+
+---
+
+### 3.3 Server Streaming
+
+![nestjs-fastcam-others_49-7](https://raw.githubusercontent.com/berenickt/image-server/refs/heads/main/nestjs/nestjs-fastcam-others_49-7.png)
+
+---
+
+### 3.4 Client Streaming
+
+![nestjs-fastcam-others_49-8](https://raw.githubusercontent.com/berenickt/image-server/refs/heads/main/nestjs/nestjs-fastcam-others_49-8.png)
+
+---
+
+### 3.5 Bi-Directional Streaming
+
+![nestjs-fastcam-others_49-9](https://raw.githubusercontent.com/berenickt/image-server/refs/heads/main/nestjs/nestjs-fastcam-others_49-9.png)
+
+---
+
+### 3.6 Protobuf 문법
+
+```ts
+syntax = "proto3";
+
+package codefactory;
+
+service UserService {
+	rpc Unary(UserRequest) returns (UserResponse)
+	rpc ClientSideStreaming(stream UserRequest) returns (UserResponse)
+	rpc ServerSideStreaming(UserRequest) returns (stream UserResponse)
+	rpc BiDirectionalStreaming(stream UserRequest) returns (stream UserResponse)
+}
+
+message UserRequest {
+	string name = 1;
+}
+
+message UserResponse {
+	string result = 1;
+}
+```
+
+---
+
+### 3.7 Scalar Type 종류
+
+- `기본 타입`
+  - bool → 불리언 타입
+  - string → 스트링 타입
+  - bytes → 바이트 타입 (raw data, binary data)
+  - enum → enum 타입
+- `Integer Type `
+  - int32, int64 → 32비트, 64비트 정수 타입
+  - uin32, uint64 → 32비트, 64비트 양의 정수 타입
+  - sint32, sint64 → 32비트, 64비트 음의 정수 타입
+- `Modifier`
+  - repeated > Array 타입
+- `Floating Point Type`
+  - float → 32비트 소수 타입 (single precision)
+  - double → 64비트 소수 타입 (double precision)
+
+---
+
+### 3.8 gRPC to Typescript
+
+```ts
+syntax = "proto3";
+
+package greeter
+
+service Greeter {
+	rpc SayHello (HelloRequest) returns (HelloResponse)
+}
+
+message HelloRequest {
+	string name = 1;
+}
+
+message HelloResponse {
+	string age = 1;
+}
+```
+
+```ts
+import { Injectable } from '@nestjs/common'
+import { HelloRequest, HelloReply } from './interfaces/greeter.interface'
+
+@Injectable()
+export class GreeterService {
+  @GrpcMethod('Greeter', 'SayHello')
+  sayHello(data: HelloRequest): HelloResponse {
+    return { message: `Hello, ${date.age}!` }
+  }
+}
+```
+
+![nestjs-fastcam-others_49-10](https://raw.githubusercontent.com/berenickt/image-server/refs/heads/main/nestjs/nestjs-fastcam-others_49-10.png)

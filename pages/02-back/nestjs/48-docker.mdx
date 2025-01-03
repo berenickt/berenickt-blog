@@ -1,0 +1,210 @@
+---
+title: '48-Docker'
+date: 2023/12/25
+---
+
+## 1. Docker란?
+
+Docker는 애플리케이션을 컨테이너로 개발, 배포, 실행할 수 있게 해주는 플랫폼이다.
+
+- 컨테이너는 개발자가 애플리케이션과 모든 의존성을 함께 패키징할 수 있게 해주어,
+  - 다양한 환경에서 일관성을 유지할 수 있다.
+- 도커는 하나의 시스템 전체를 패키징 할 수 있도록 도와준다.
+- 마치 가상 머신에 스크립트를 실행시키는 것과 비슷한 느낌이 들지만 둘은 상당한 차이가 있다
+
+---
+
+### 1.1 컨테이너 vs 가상머신
+
+![nestjs-fastcam-docker_48-1](https://raw.githubusercontent.com/berenickt/image-server/refs/heads/main/nestjs/nestjs-fastcam-docker_48-1.png)
+
+- `가상 머신(VM)`: 운영체제(OS) 전체를 포함하고 있어서 리소스를 많이 차지한다.
+- `컨테이너`: 호스트 OS 커널을 공유하면서 애플리케이션을 독립된 환경에서 실행한다. 컨테이너는 훨씬 가볍다
+
+---
+
+### 1.2 이미지와 컨테이너
+
+OOP와 비교하면 매우 쉽게 이해 할 수 있다. `이미지`는 `Class`고, `컨테이너`는 `Class로 생성한 객체`다.
+
+- 미리 정의돼있는 Image를 다운받을 수 있다.
+- 이미지를 실행하면 Container라고 부른다.
+- Class 하나로 여러개의 객체를 만들 수 있는 것 처럼 Image 하나로 여러개의 Container를 실행 할 수 있다.
+
+> 💡 이미지와 컨테이너
+>
+> - `이미지` : 애플리케이션의 스냅샷
+> - `컨테이너` : 이미지의 실행 인스턴스
+
+---
+
+#### 1.2.1 이미지 다운 및 실행
+
+```bash
+docker pull nginx
+```
+
+`이미지 다운로드` : Nginx가 정의돼있는 이미지를 다운받을 수 있다
+
+```bash
+docker run -d -p 80:80 --name my-nginx nginx
+```
+
+`이미지 실행 (컨테이너 실행)` : Nginx를 다운받지 않더라도 Nginx를 원하는 갯수만큼 Container로 실행할 수 있다
+
+한번 실행하고 삭제하는데 매우 오래걸리는 가상머신과 다르게,
+Docker 컨테이너는 매우 빠르고 편리하게 컨테이너를 실행하고 삭제할 수 있으며 월등히 적은 리소스를 필요로 한다.
+
+---
+
+## 2. 기본 Docker 명령어
+
+### 2.1 이미지 다운로드
+
+```bash
+docker pull nginx
+```
+
+---
+
+### 2.2 컨테이너 실행
+
+```bash
+docker run -d -p 80:80 --name my-nginx nginx
+# 결과 : 컨테이너 IOD 출력
+```
+
+---
+
+### 2.3 실행중인 컨테이너 조회
+
+```bash
+docker ps
+# 결과 : 컨테이너 리스트 아웃풋
+```
+
+---
+
+### 2.4 컨테이너 중지 및 삭제
+
+```bash
+docker stop my-nginx
+docker rm my-nginx
+# 결과 : 커맨드별 이미지 이름 하나씩 출력
+```
+
+---
+
+### 2.5 이미지 삭제
+
+```bash
+docker images    # 이미지 리스트 출력
+docker rmi nginx # 삭제된 이미지 출력
+```
+
+---
+
+### 2.6 Docker Hub로 Push
+
+```bash
+docker pull redis
+docker push your-dockerhub-usename/your-image
+```
+
+---
+
+## 3. Dockerfile
+
+```dockerfile
+# 공식 Node.js 런타임을 베이스 이미지로 사용
+# 아래 빌드 과정 명ㅊ잉을 development라고 정의
+FROM node:14 AS development
+
+# 작업 디렉토리 설정
+WORKDIR /usr/src/app
+
+# package.json 복사 및 의존성 설치
+COPY package*.json ./
+RUN npm install
+
+# 애플리케이션 파일 복사
+COPY . .
+
+# 애플맄이션이 사용할 포트 노출
+EXPOSE 3000
+
+# 애플리케이션 실행 명령어
+CMD ["npm", "start"]
+```
+
+`Dockerfile`은 **도커 이미지를 만들기 위한 설정 파일**이다.
+
+- 프로그램을 실행하기 위한 환경을 정의하고,
+  - 그 소프트웨어를 컨테이너로 패키징할 때 필요한 명령어들이 정의돼있다.
+- 일반적으로 Dockerfile은 기본적으로 사용할 베이스 이미지, 파일 복사, 필요한 패키지 설치, 포트 설정, 명령어 실행 등을 포함한다.
+- 도커는 이 Dockerfile을 바탕으로 이미지를 빌드하고,
+  - 그 이미지를 이용해 동일한 환경을 여러 곳 에서 쉽게 재현할 수 있게 해준다
+
+```bash
+# Dockerfile 기반 이미지 빌드
+docker build -t my-node-app .
+```
+
+```bash
+# 빌드한 컨테이너 실행
+docker run -d -p 3000:3000 \ --name node-app my-node-app
+```
+
+---
+
+## 4. Docker Compose
+
+Compose는 여러 개의 컨테이너로 이루어진 애플리케이션을 하나의 docker-compose.yml 파일로 정의하고 관리할 수 있다.
+
+- 여러 컨테이너를 하나하나 실행하고 관리하면 너무 복잡하니,
+  - 하나의 커맨드로 통일해서 관리 할 수 있게 하기 위해 발명됐다.
+- 프로덕션 환경 에선 잘 사용하지 않고 개발환경에서 많이 사용된다
+
+---
+
+### 4.1 docker-compose.yml
+
+```yaml
+version: '3'
+sevices:
+	web:
+		image: my-node-app
+		ports :
+			- "3000:3000"
+    depends_on:
+    	- db
+  db:
+  	image: mysql
+  	environment:
+  		MYSQL_ROOT_PASSWORD: my-secret-pw
+    volumes:
+    	- db-date:/var/lib/mysql
+
+volumes:
+	db-data:
+```
+
+Docker Compose 파일은 여러 컨테이너로 구성된 애플리케이션을 정의하고,
+동시에 실행할 수 있게 해주는 YAML 형식의 설정 파일이다.
+
+- 이 파일에 여러개의 Docker Container를 어떤 방식으로 실행할지 정의할 수 있다
+
+---
+
+### 4.2 Docker Compose 커맨드
+
+```bash
+# 모든 컨테이너 실행
+docker-compose up
+
+# 모든 컨테이너 빌드 후 실행
+docker-compose up --build
+
+# 모든 컨테이너 종료
+docker-compose down
+```

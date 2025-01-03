@@ -1,0 +1,119 @@
+---
+title: '45-Websocket & Queue'
+date: 2023/12/25
+---
+
+## 1. Websocket 이란?
+
+- TCP 연결 하나로 완전한 리얼타임 양방향 통신이 가능하다
+- 요청 응답마다 단발적인 연결이 생성되는 HTTP와 다르게 Websocket은 지속적인 연결을 유지한다
+- 레이턴시 (Latency)가 낮다
+- Hand Shake 이후 최소한의 데이터만 서로 전송하기 때문에 데이터 전송량을 최소화 할 수 있다
+- 양방향 통신이 가능하기 때문에 클라이언트와 서버 사이드 그 어디든 먼저 통신을 주도 할 수 있다
+
+---
+
+### 1.1 HTTP vs Websocket
+
+```bash
+# HTTP
+클라이언트  --- 요청 --> 서버
+         <-- 응답 ---
+
+# Websocket
+클라이언트  --- 요청/응답 --> 서버
+         <-- 요청/응답 ---
+```
+
+---
+
+## 2. Socket IO
+
+Socket IO는 Websocket 프로토콜을 사용해서 만든 low-latency (낮은 지연 시간), bidirectional (양방향 소통), event based(이벤트 기반)으로 클라이언트와 서버가 통신 할 수 있게 해주는 기능이다
+
+---
+
+### 2.1 Socket IO의 주요 기능
+
+- `폴백 메커니즘` : websocket이 지원되지 않거나 문제가 생긴 상황에서도 통신이 유지되도록 다양한 프로토콜을 같이 사용한다
+- `이벤트기반 아키텍처` : 특정 메세지를 listening 하고있는 이벤트 기반의 아키텍처를 사용한다
+- `Room &  Namespace` : Namespace를 이용해 효율적으로 연결을 나누고 Room을 이용해서 Broadcasting을 조율한다
+
+---
+
+### 2.2 SocketIO로 구현 가능한 예제
+
+- `채팅 앱` : 앱의 사용자가 실시간으로 서로 채팅 을 주고받는 기능
+- `라이브 노티피케이션` : 스포츠 점수 현황, 뉴스 알림, 주식시 장 실시간 정보 기능등
+- `협업 툴` : 여러 사용자들이 동시에 하나의 문서 를 수정하는 기능
+- `온라인 게임` : 동시에 여러 사용자들이 상호작용을 할 수 있는 게임
+
+---
+
+### 2.3 Namespace & Room
+
+![namespace-room-1_1](https://raw.githubusercontent.com/berenickt/image-server/refs/heads/main/nestjs/namespace-room-1_1.png)
+
+- `Namespace` : Socket IO에서 리소스를 나누는 방법이다.
+  - REST API URL처럼 정의하며 비즈니스 로직과 이벤트를 격리하는데 사용된다
+- `Room` : Namespace에서 한번 더 그룹으로 나눌 수 있게 해준다.
+  - 하나의 연결은 여러개의 Room 에 동시에 들어갈 수 있으며 Broadcasting에 유용하다
+
+```ts
+// Namespace
+const to = require('socket.io')(3000)
+
+const chatNamespace = io.of('/chat')
+chatNamespace.on('connection', (socket) => {
+  console.log('User connected to chat namespace')
+  socket.on('message', (msg) => {
+    console.log(;'Chat message:', msg)
+  })
+})
+
+const newsNamespace = io.of('/news')
+newsNamespace.on('connection', (socket) => {
+  console.log('User connected to news namespace')
+  socket.on('update', (news) => {
+    console.log('News update:', news)
+  })
+})
+```
+
+```ts
+// Room
+const io = require('socket.io')(3000)
+
+io.on('connection', socket => {
+  console.log('User connected')
+
+  // Room 입장하기
+  socket.join('room1')
+
+  // 'room1'에 브로드캐스팅
+  socket.to('room1').emit('message', 'Hello room1')
+
+  // Room 나오기
+  socket.leave('room1')
+})
+```
+
+---
+
+## 3. NestJS Queue
+
+![nestjs-queue_1-1](https://raw.githubusercontent.com/berenickt/image-server/refs/heads/main/nestjs/nestjs-queue_1-1.png)
+
+### 3.1 Queue의 장점
+
+- 서버 성능 최적화가 가능하다.
+  - 오래 걸리는 작업을 따로 Worker Node에게 전가할 수 있다.
+- 스케일링이 자유롭다
+  - Worker Node만 따로 스케일링 가능하다.
+  - 여러개의 Worker Node를 생성하고 동시에 작업을 프로세싱 할 수 있다.
+- 작업이 유실될 확률이 적다
+  - 실패한 작업 재시도
+  - 실패한 작업 메타데이터 유지
+- 우선순위 지정 가능
+  - 중요한 작업을 우선 처리하도록 할 수 있다.
+- Request -> Response 라이프사이클에 딜레이를 줄여 줄 수 있다.

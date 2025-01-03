@@ -1,0 +1,540 @@
+---
+title: '00-Next.js 요약'
+date: 2024/04/07
+---
+
+## 1. React
+
+개념:
+
+- 페이스북에서 개발한 자바스크립트 라이브러리로, 사용자 인터페이스를 만들기 위한 컴포넌트 기반 라이브러리
+- 가상 DOM을 사용한 효율적 업데이트, 단방향 데이터 바인딩, 컴포넌트 재사용
+  장점:
+- 가상 DOM: 변경 사항을 최소화하고 효율적으로 UI를 업데이트
+- 컴포넌트 기반: 코드를 재사용 가능한 작은 컴포넌트로 나누어 개발 (쉬운 유지보수 & 확장성)
+- 단방향 데이터 바인딩: 상태와 UI를 동기화하기 위한 단방향 데이터 흐름 (쉬운 디버깅 & 쉬운 코드)
+- JSX 문법: JSX(자바스크립트 확장 문법)를 사용하여 보다 가독성 높은 코드를 작성
+- 방대한 커뮤니티: 방대한 커뮤니티와 다양한 라이브러리, 도구들이 존재하여 개발 생산성 높임
+
+---
+
+### 1.1 React 18
+
+- `React 18`: 기존 리액트의 문제점을 개선하고 성능을 향상시키기 위해 새로운 기능 추가
+- `Concurrent Feature (동시성 모드)`:
+  - `Suspense`: 사용자에게 보여주고 싶은 컴포넌트를 먼저 렌더링하고, 해당 컴포넌트가 완료되기 전까지 fallback 내부의 컴포넌트를 보여줌으로써 사용자 경험을 향상
+  - `Transition`: 상태 업데이트의 우선순위를 구분하여 처리하여 UI 전환과 같은 기능을 더욱 효율적으로 수행
+- `Automatic Batching (자동 배치)`: 여러 상태 업데이트를 하나로 통합하여 단일 리렌더링으로 처리함으로써 성능을 향상
+- `New Hooks (새로운 훅)`:
+  - startTransition(), useTransition(), useDeferredValue() 등
+  - `useTransition()` : 기존 업데이트보다 낮은 우선순위의 새로운 상태 업데이트를 생성
+  - `useDeferredValue()` : 값의 복사본을 만들어서 더 높은 우선순위의 업데이트가 컴파일되면 새 값을 렌더링
+
+---
+
+## 2. Next.js
+
+- `Next.js`: React 기반의 서버사이드 렌더링 및 정적 사이트 생성을 지원하는 프레임워크
+
+주요 개념 및 장점
+
+- `서버사이드 렌더링(SSR)`: 검색 엔진 최적화(SEO) 및 초기 로딩 성능을 향상시키는 SSR을 지원
+- `정적 사이트 생성(SSG)`: 정적 페이지를 빌드하여 빠른 렌더링 및 뛰어난 성능을 제공
+- `페이지/앱 기반(Next.js 13) 라우팅`: 페이지/앱 구조(Next.js 13) 마다 별도의 파일로 라우팅하여 개발자에게 직관적이고 유지보수가 쉬운 구조를 제공
+- `SEO 최적화`: SSR 및 SSG로 검색엔진 최적화 용이, 페이지 제목, 메타 태그 설정 용이
+- `확장성`: 기존 리액트 앱을 쉽게 마이그레이션 가능, 다양한 데이터 fetching 및 라이브러리 통합
+
+---
+
+### 2.1 Next.js 13 업데이트
+
+- 2022년 10월 25일 Next.js Conf 에서 Next.js 13을 공식 발표
+
+주요 개념
+
+- `app/Directory`: 기존 Pages 라우터가 아닌, App 라우터라는 새로운 구조로 작업할 수 있음
+  - Layouts(공통 레이아웃), React Server Components, Streaming UI 등 가능해짐
+- `Turbopack`: Rust 기반 Webpack 대체제로, 속도가 최대 700배 빨라짐
+- `New next/image`: 네이티브 브라우저 lazy loading으로 더 빨라짐
+- `New @next/font`: 레이아웃 이동이 없는 자동 자체 호스트 글꼴이 추가됨
+- `Improved next/link`: 자동 a 태그로 API를 단순화
+
+---
+
+### 2.2 Next.js Route Handlers
+
+- 페이지나 API 엔드포인트에 대한 핸들러 함수를 정의하여 커스텀 로직을 수행하도록 하는 기능
+- 라우트 핸들러는 app 디렉터리 내의 route.js 또는 route.ts 파일에 정의
+- GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS 메서드가 지원됨
+- `커스텀 로직 구현`: 페이지나 API에 대한 커스텀 로직을 구현
+- `동적 라우팅`: 동적인 URL을 처리
+- `API 엔드포인트`: API 엔드포인트를 직접 정의
+- `미들웨어 & RESTful API 구축
+
+---
+
+### 2.3 app/ Directory (Stable)
+
+![app/ Directory](https://nextjs.org/_next/image?url=%2Fdocs%2Flight%2Fterminology-component-tree.png&w=3840&q=75)
+
+- 기존의 Pages 폴더 기반 파일 시스템 라우터를 ‘app’ 디렉토리로 변경하며 라우팅 및 레이아웃 개선
+  - 라우팅 구조의 변경 외에도 Layout, Server Component, Streaming, Data Fetching 등 업뎃
+- `Layout`: 리렌더링 방지를 위한 레이아웃 제공
+- `Server Component`: app 디렉토리 내 파일은 디폴트로 서버 컴포넌트로 동작
+- `Streaming`: app 디렉토리는 렌더링되는 UI 단위를 점진적으로 렌더링 & 스트리밍할 수 있는 기능 제공
+- `Data Fetching 지원`: fetch() Web API를 사용할 수 있게 되어, 컴포넌트 레벨에서도 SSR 적용 가능
+
+---
+
+### 2.4 Layouts
+
+![Layouts](https://nextjs.org/_next/image?url=%2Fdocs%2Flight%2Flayout-special-file.png&w=3840&q=75)
+
+```tsx
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en">
+      <body>
+        <main>{children}</main>
+      </body>
+    </html>
+  )
+}
+```
+
+- app/ 파일 구조에서는 기본 레이아웃을 정의할 수 있음
+- 복잡한 상태를 더 쉽게 관리할 수 있고, 리렌더링을 방지하면서 경로간 공통 UI를 쉽게 공유할 수 있음
+- 또한, 레이아웃을 중첩하거나 라우트, 컴포넌트, 테스트 및 스타일과 함께 앱 코드를 배치할 수 있음
+- 여러 페이지들이 동일한 UI를 공유할 때 레이아웃 기능 사용
+- e.g. 네비게이션에 레이아웃을 적용하면 상태를 유지하면서 상호작용을 하고 리렌더링 방지
+- cf. https://nextjs.org/docs/app/building-your-application/routing/pages-and-layouts
+
+---
+
+### 2.5 React Server Components
+
+- app/ 디렉토리에서는 Server Components 아키텍쳐를 지원
+  - app/ 디렉토리 내부에서는 기본적으로 모든 컴포넌트가 서버 컴포넌트로 동작함
+  - 클라이언트 컴포넌트를 사용하려면, 파일 상단에 ‘use client’라는 directive 명시
+- 서버 컴포넌트를 사용하면 클라이언트로 전송되는 JS 양을 줄여 초기 페이지 로드 속도를 줄일 수 있음
+- `성능 최적화`: 렌더링하는 데 필요한 데이터만 서버에서 가져오고, 이를 브라우저로 전달 (로딩 속도 개선)
+- `SSR 및 SEO`: 서버에서 초기 페이지 렌더링을 수행하므로 검색 엔진 최적화(SEO)와 성능 향상
+- `실시간 업데이트`: 클라이언트 측 JS가 필요하지 않으므로, 실시간 업데이트와 같은 기능을 구현하기 쉬움
+- `서버측 데이터 흐름 관리`: 데이터 흐름을 더욱 효율적으로 관리
+
+---
+
+### 2.6 Streaming
+
+![Streaming](https://nextjs.org/_next/image?url=%2Fdocs%2Flight%2Fserver-rendering-with-streaming.png&w=3840&q=75)
+
+```tsx
+export default function Loading() {
+  // 로딩 내부에는 Skeleton을 포함하여 어떤 UI도 추가할 수 있습니다.
+  return <LoadingSkeleton />
+}
+```
+
+- app/ 파일 구조는 렌더링된 단위 별 UI를 클라이언트에 점진적으로 렌더링하고 스트리밍할 수 있는 기능을 제공
+- loading.js 파일을 생성하면 React Suspense와 함께 로딩 UI를 생성할 수 있음
+- 페이지 내용을 로드하는 동안, 서버로부터 즉시 로딩 상태를 표시하고, 렌더링이 완료되면 컨텐츠 표시
+- 또한, 렌더링된 단위 별 UI를 클라이언트에 점진적으로 렌더링하고 스트리밍할 수 있는 기능을 제공
+- 페이지의 HTML을 더 작은 청크로 분할하고, 서버에서 점진적으로 클라이언트로 전송
+- cf. https://nextjs.org/docs/app/building-your-application/routing/loading-ui-and-streaming
+
+---
+
+### 2.7 Data Fetching
+
+```tsx
+export default async function Page() {
+  // 이 요청은 수동으로 무효화될 때까지 캐시해야 합니다.
+  // `getStaticProps`와 유사합니다. - SSG 동작
+  // `force-cache`가 기본값이며 생략할 수 있습니다.
+  const staticData = await fetch(`https://...`, { cache: 'force-cache' })
+
+  // 이 요청은 모든 요청에서 다시 가져와야 합니다.
+  // `getServerSideProps`와 유사합니다. - SSR 동작
+  const dynamicData = await fetch(`https://...`, { cache: 'no-store' })
+
+  // 이 요청은 10초의 수명으로 캐시되어야 합니다.
+  // 'revalidate(재검증)` 옵션이 있는 `getStaticProps`와 유사합니다. - ISR 동작
+  const revalidatedData = await fetch(`https://...`, {
+    next: { revalidate: 10 },
+  })
+
+  return <div>...</div>
+}
+```
+
+- fetch() Web API를 사용할 수 있게 되면서, 컴포넌트 레벨에서도 SSR의 적용이 가능
+- cf. https://nextjs.org/docs/app/api-reference/functions/fetch
+
+---
+
+### 2.8 Turbopack (beta)
+
+![Turbopack](https://nextjs.org/_next/image?url=%2Fstatic%2Fblog%2Fnext-13%2Fturbopack.png&w=3840&q=75)
+
+- Next.js 13에는 Webpack의 새로운 Rust 기반 후속 제품인 Turbopack이 포함됨
+- Webpack 보다 700배 빠른 업데이트가 가능하며, Vite 보다 10배 빠른 업데이트
+- Turbopack은 개발에 필요한 최소한의 asset만 번들링하므로 시작 시간이 매우 빠름
+- cf. https://nextjs.org/blog/next-13#introducing-turbopack-alpha
+
+---
+
+### 2.8 13 App Router
+
+![App Router](https://nextjs.org/_next/image?url=%2Fdocs%2Flight%2Froute-segments-to-path-segments.png&w=3840&q=75)
+
+- `앱 라우터`: 새로운 app 디렉토리에서 작동하며, 기존 pages 디렉토리와 병렬로 작동하여 점진적인 적용을 가능
+- app 디렉토리 안에 page.js 파일을 만들어서 공개적으로 접근 가능한 URL 경로를 만들 수 있음
+- 기본적으로 app 디렉토리 내부의 컴포넌트는 리액트 서버 컴포넌트로 동작 (성능 최적화)
+- cf. https://nextjs.org/docs/app/building-your-application/routing/defining-routes
+
+---
+
+### 2.9 레이아웃: Root Layout과 Template
+
+```tsx
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en">
+      <body>{children}</body>
+    </html>
+  )
+}
+```
+
+```tsx
+export default function Template({ children }) {
+  return <div>{children}</div>
+}
+```
+
+- `Root Layout (필수)`: app 디렉토리 루트에 필수로 루트 레이아웃을 정의해야함
+  - 반드시 html, body 태그가 있어야 함
+- `중첩 레이아웃`: 기본적으로 레이아웃은 중첩됨
+  - Children props를 통해 하위의 경로 감쌈
+- `Templates`: 템플릿은 레이아웃과 비슷하게 layout, page를 감싸지만, 상태 유지 X. (새로운 인스턴스 생성)
+  - 특별한 상황이 아닌 경우, Layout 사용 권장
+- cf. https://nextjs.org/docs/app/building-your-application/routing/pages-and-layouts
+
+---
+
+### 2.10 라우트 그룹 (Route Groups)
+
+![라우트 그룹](https://nextjs.org/_next/image?url=%2Fdocs%2Flight%2Froute-group-organisation.png&w=3840&q=75)
+
+- 폴더를 Route 그룹으로 표시하여 해당 폴더가 경로의 URL 경로에 포함되지 않도록 할 수 있음
+- 왜? Route Group을 통해 URL 경로 구조에 영향을 주지않고, 라우트 세그먼트와 프로젝트 파일을 논리적으로 구성
+- `컨벤션`: 폴더 이름을 괄호로 묶음으로써 생성 (name)
+  - 각각의 Route Group 마다 같은 URL 계층을 가져도, 다른 layout을 적용
+- (marketing), (shop)은 app 하단의 최상위 루트지만, Route Group을 이용해서 별개의 레이아웃 구성
+
+---
+
+## 3. 12버전과 13버전 데이터 페칭 차이
+
+| Next.js 12                        | Next.js 13                                                                                  |
+| --------------------------------- | ------------------------------------------------------------------------------------------- |
+| getStaticProps (SSG)              | fetch(Web API) 함수와 Caching, Revalidating 정책을 사용해 SSG, SSR, ISR 요청을 보낼 수 있음 |
+| getServerSideProps (SSR)          |                                                                                             |
+| getStaticProps + revalidate (ISR) |                                                                                             |
+| getStaticPaths                    |                                                                                             |
+| ...                               |                                                                                             |
+
+> 💡 페이지 별 렌더링 메서드 설계
+>
+> 1. `SSG`
+>    - **데이터 변경 빈도가 낮으며**, SEO 최적화 및 빠른 렌더링에 필요한 **정적 페이지**에서 SSG 사용
+>    - FAQ 페이지: FAQ는 변경 빈도가 낮으며, 일반적으로 동적으로 업데이트할 필요가 없는 정보이므로 SSG 사용
+> 2. `SSR`
+>    - 서버 측 렌더링(SSR)을 사용하여 **동적으로 페이지를 업데이트가 필요한 경우** SSR 사용
+>    - 숙박 예약하기: 예약 과정은 사용자 지속적인 입력 및 업데이트를 필요로 하므로 서버 측 렌더링(SSR)을 사용하여 동적으로 페이지를 업데이트
+> 3. `ISR`
+>    - 일반적으로 변경 빈도가 낮지만, 가끔 업데이트가 필요한 경우 ISR 사용
+>    - 숙소 정보 페이지: 숙소 정보 페이지는 일반적으로 변경 빈도가 낮지만, 가끔 업데이트가 필요한 경우 ISR를 사용할 수 있음.
+>    - 즉, 숙소에 새로운 정보가 추가될 때만 페이지를 업데이트 할 수 있도록 적절한 시간 설정
+> 4. `CSR`
+>    - 클라이언트 측에서 동적인 웹 페이지를 생성하는 CSR 방법
+>    - 결제하기: 결제 페이지는 보안 문제와 관련이 있으며, 사용자 입력에 따라 동적으로 변경되어야 함.
+>    - 따라서, 보안을 위해 클라이언트 측 렌더링(CSR)을 사용하고, 결제 처리는 API Route 서버에서 이루어지도록 해야함
+>    - 그 외 사용자 스크롤에 따라 데이터를 가져오는 무한 스크롤, 세션과 관련된 마이페이지 등 사용
+
+---
+
+### 3.1 Data Fetching 13 예시
+
+```tsx
+async function getData() {
+  const res = await fetch('https://api.example.com/...')
+
+  if (!res.ok) {
+    throw new Error('Failed to fetch data')
+  }
+
+  return res.json()
+}
+
+export default async function Page() {
+  const data = await getData()
+
+  return <main></main>
+}
+```
+
+- Next.js 13 부터는 fetch Web API를 사용해서 데이터를 가져올 수 있음 (단, App Router에서만 가능)
+- 캐싱 및 revalidation 설정을 직접 할 수 있으며, 각 설정에 따라 SSR, SSG, ISR 등 구현 가능
+- Server Components 내부에서 async/await를 함께 사용해서 fetch API를 사용할 수 있음
+
+---
+
+### 3.2 Fetching 예시: SSR
+
+```tsx
+async function getData() {
+  // 캐싱을 하지 않고, 매번 새로운 데이터틀 불러옴
+  const res = await fetch('https://api.example.com/...', {
+    cache: 'no-store',
+  })
+
+  if (!res.ok) {
+    throw new Error('Failed to fetch data')
+  }
+
+  return res.json()
+}
+```
+
+- `SSR(Server-Side Rendering)`: 클라이언트가 요청할 때마다 서버에서 페이지를 동적으로 렌더링하여 HTML을 생성하고 클라이언트에게 전달하는 방법
+- 캐싱 정책: `no-store`
+
+---
+
+### 3.3 Fetching 예시: SSG
+
+```tsx
+async function getData() {
+  // 항상 캐싱된 데이터를 가져온다.
+  const res = await fetch('https://api.example.com/...', {
+    cache: 'force-cache',
+  })
+
+  if (!res.ok) {
+    throw new Error('Failed to fetch data')
+  }
+
+  return res.json()
+}
+```
+
+- `SSG(Static Site Generation)`: 빌드 시간에 페이지를 렌더링하여 정적인 HTML 파일을 생성하는 방법
+- 캐싱 정책: `force-cache` (디폴트값, 생략가능)
+
+---
+
+### 3.4 Fetching 예시: ISR
+
+```tsx
+async function getData() {
+  // 10초마다 새로운 데이터를 가져온다.
+  const res = await fetch('https://api.example.com/...', {
+    next: {
+      revalidate: 10,
+    },
+  })
+
+  if (!res.ok) {
+    throw new Error('Failed to fetch data')
+  }
+
+  return res.json()
+}
+```
+
+- `ISR(Incremental Static Regeneration)`: SSG의 한 변형으로, 페이지는 빌드 시간에 정적으로 생성되지만,
+  - 특정 갱신 주기 동안에는 이전에 생성된 페이지를 서빙하고, 그 주기가 지나면 새로운 페이지를 생성하는 방법
+- revalidate 옵션 사용
+
+---
+
+### 3.5 실습 : 랜덤 숫자 생성 API
+
+- 랜덤 숫자 생성 API: https://www.random.org/
+- 위 API를 활용하여 각 Data Fetching를 실습.
+- 크롬 개발자 도구의 네트워크 탭을 사용해서 데이터가 변경 되었는지 아닌지 E-Tag 값을 확인
+  - `E-Tag`: 웹 서버가 리소스의 상태를 식별하는 데 사용되는 문자열
+- 예상 결과:
+  - `SSG`: 빌드 하지 않는 이상, 숫자가 계속 동일하게 나타남
+  - `SSR`: 새로고침 할 때마다 숫자가 새롭게 변경됨
+  - `ISR`: Revalidation에 넣는 시간마다 새롭게 변경됨. 평소에는 동일한 숫자값 보여줌
+
+---
+
+## 4. 13버전 Route Handlers
+
+### 4.1 Route Handler
+
+![](https://nextjs.org/_next/image?url=%2Fdocs%2Flight%2Froute-special-file.png&w=3840&q=75)
+
+- `Route Handler`: Web Request 및 Response API를 사용하여, **특정 경로에 대한 사용자 정의 요청 핸들러를 생성**할 수 있게 해줌
+- Route Handlers는 앱 디렉터리 내에서만 사용 가능하며, 페이지 디렉터리 내의 API Routes와 동일한 역할을 함
+- Route Handlers는 app디렉터리 내의 `route.js`또는 `route.ts`파일에 정의
+- 지원되는 HTTP 메서드로는 GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS이 있음
+- `캐싱`: GET 메서드를 사용할 때, Route Handlers는 기본적으로 Response 객체와 함께 캐시됨
+
+---
+
+### 4.2 예시: GET
+
+```tsx
+// app/items/route.ts
+export async function GET() {
+  const res = await fetch('https://data.mongodb-api.com/...', {
+    header: {
+      'Content-Type': 'application/json',
+      'API-Key': process.env.DATA_API_KEY,
+    },
+  })
+  const data = await res.json()
+
+  return Response.json({ data })
+}
+```
+
+- GET 이라는 함수를 생성해서 원하는 데이터 처리를 한 후, 응답값을 return 해줌
+
+---
+
+### 4.3 예시: POST
+
+```tsx
+// app/items/route.ts
+export async function POST() {
+  const res = await fetch('https://data.mongodb-api.com/...', {
+    method: 'POST'
+    header: {
+      'Content-Type': 'application/json',
+      'API-Key': process.env.DATA_API_KEY,
+    },
+    body: JSON.stringify({ time: new Date().toISOString() }),
+  })
+
+  const data = await res.json()
+
+  return Response.json(data)
+}
+```
+
+- POST 라는 함수를 생성해서 원하는 데이터 처리를 한 후, 응답값을 return 해줌
+
+---
+
+### 4.4 예시: DELETE
+
+```tsx
+// app/api/rooms/route.ts
+export async function DELETE(req: Request) {
+  const { searchParams } = new URL(req.url)
+  const id = searchParams.get('id') as string
+
+  // 데이터 삭제를 처리한다
+  if (id) {
+    const result = await prisma.room.delete({
+      where: {
+        id: parseInt(id),
+      },
+    })
+    return NextResponse.json(result, { status: 200 })
+  }
+  return NextResponse.json(null, { status: 500 })
+}
+```
+
+- DELETE 라는 함수를 생성해서 원하는 데이터 처리를 한 후, 응답값을 return 해줌
+- searchParams에서 삭제를 원하는 데이터 id를 받아, 특정 데이터만 삭제할 수 있음
+
+---
+
+### 4.5 예시: 숙박 리스트 가져오기
+
+```tsx
+// app/api/room/route.ts
+import { NextResponse } from 'next/server'
+import prisma from '@/db'
+
+export async function GET() {
+  const data = await prisma.room.findMany()
+
+  return NextResponse.json(data, {
+    status: 200,
+  })
+}
+```
+
+- `/app/api/room/route.ts` 파일에서 GET 이름의 Route Handler 함수를 생성
+- Prisma Client를 사용해서 Room 데이터를 모두 가져온 후, 응답으로 리턴해줌
+
+---
+
+## 5. Script 컴포넌트
+
+```tsx
+import Script from 'next/script'
+
+export default function DashboardLayout({ children }) {
+  return (
+    <>
+      <section>{children}</section>
+      <Script src="https://example.com/script.ts" />
+    </>
+  )
+}
+```
+
+- 웹 페이지에 스크립트를 쉽게 추가할 수 있도록 도와주는 도구.
+  - 서버 및 클라이언트 모두에서 JavaScript 코드를 실 행하고 데이터를 초기화하는 데 사용되는 컴포넌트 (SSR, CSR 모두 적용 가능함)
+- 서버에서 데이터를 미리 가져와 클라이언트로 전달하거나, 클라이언트 측에서 라우팅 또는 페이지 진입 시 특정 작업 을 수행할 수 있음
+- 특징:
+  - next/script는 스크립트의 로딩 동작을 조절하 는 strategy 속성을 제공
+  - beforeInteractive, afterInteractive, lazyOnload, worker 등의 전략을 사용하여 스크립트의 로딩 시점을 조절할 수 있음
+
+---
+
+### 5.1 Script 컴포넌트 주요 속성
+
+Next.js에서 스크립트를 로드하고 실행하는데 사용되며, 다양한 속성을 제공하여 스크립트의 동작을 조절할 수 있음
+
+| 속성명 (props) | 설명 및 예시                                                                         |
+| :------------: | ------------------------------------------------------------------------------------ |
+|      src       | 로드할 스크립트 파일 경로 지정 (e.g. `src="http://example.com/script"`)              |
+|    strategy    | 스크립트의 로드 전략 설정 (언제 로드/실행 하는지) (e.g. `strategy=“lazyOnload"`)     |
+|     onLoad     | 스크립트가 로드되면 실행할 함수 지정 (e.g. `onLoad={onLoadFunc}` )                   |
+|    onReady     | 스크립트가 준비되면 실행할 함수 지정 (e.g. `onReady={onReadyFunc}` )                 |
+|    onError     | 스크립트 로드 중에 오류가 발생할 때 실행할 함수 지정 (e.g. `onError={onErrorFunc}` ) |
+
+> 💡 `Strategy 속성`: 스크립트의 로드 전략을 설정할 수 있는 옵션. 스크립트가 언제 로드되고 실행할 지 지정
+>
+> - `afterInteractive` : (기본값) 스크립트가 페이지 상호 작용 가능한 후에 로드 되고 실행
+> - `beforeInteractive` : 스크립트가 페이지의 상호 작용 가능한 상태 이전에 로드되고 실행 (hydration 이전)
+> - `lazyOnLoad` : 스크립트가 페이지가 완전히 로드된 후에 로드되고 실행 (브라우저 idle 타임에)
+> - `worker(experimental)` : Service Worker와 같은 백그라운드 워커 스크립트를 로드하고 실행하는데 사용
+
+> 💡 onReady vs onLoad
+>
+> ```tsx
+> <Script
+>   strategy="afterInteractive"
+>   type="text/javascript"
+>   src={`//dapi.kakao.com/v2/maps/...`}
+>   // 지도 option 설정해주는 함수 (지도 중간 좌표 및 레벨)
+>   onReady={loadKakaoMap}
+> />
+> ```
+>
+> - `onLoad`: 스크립트 파일이 브라우저에 성공적으로 로드될 때 호출
+>   - 스크립트 파일에 추가적인 초기화 작업이 필요한 경우, onLoad를 사용해서 수행가능
+>   - beforeInteractive과는 사용 불가함. (onReady 사용 권장)
+> - `onReady`: 스크립트 파일이 브라우저에 로드되고, 스크립트 내 모든 작업이 완료되었으며, 페이지가 상호 작 용 가능한 상태가 될 때 호출
+>   - 스크립트가 완전히 초기화 되고, 페이지의 모든 요소 초기화 + 상호 작용 작업 완료된 후 호출

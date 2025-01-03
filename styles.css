@@ -1,0 +1,42 @@
+/* 글자 색상, 강조 색상 */
+p {
+  white-space: pre-line;
+  font-style: normal;
+}
+
+strong {
+  color: rgb(106, 153, 85);
+}
+
+code {
+  color: rgb(214, 86, 208);
+}
+
+.nx-mt-6 {
+  margin-top: 0.4rem !important;
+}
+
+hr {
+  margin-top: 20px;
+  margin-bottom: 20px;
+  border: 0;
+  border-top: 1px solid rgba(76, 76, 80, 0.8);
+}
+
+blockquote {
+  background-color: rgba(205, 205, 206, 0.1);
+  border: 1px solid rgb(10, 116, 202);
+  border-radius: 0.5rem;
+}
+
+img {
+  width: auto;
+  max-width: 100%;
+  display: block;
+  margin: 0 auto;
+  box-sizing: content-box;
+}
+
+table {
+  width: auto;
+}

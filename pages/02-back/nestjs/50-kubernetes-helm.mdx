@@ -1,0 +1,538 @@
+---
+title: '50-kubernetes-helm'
+date: 2023/12/25
+---
+
+## 1. Kubernetes
+
+### 1.1 Kubernetes란?
+
+Kubernetes는 Google에서 만든 컨테이너 Orchestration 시스템이다.
+많은 회사들이 기여하고 사용 할 수 있도록 CNCF에 기부 되었고,
+현재 전세계에서 가장 많이 사용하는 Orchestration 기술이다
+
+- `자동 배포 및 스케일링` : 트래픽에 따라 컨테이너들을 자동으로 업스케일링 또는 다운스케일링 할 수 있다.
+- `자가치유 (self-healing)` : 컨테이너가 반응이 없어지면 자동으로 새로운 컨테이너로 교체한다.
+- `Load Balancing` : 여러 컨테이너에 트래픽을 자동으로 분산시킨다.
+- `Service Discovery` : 복잡한 절차 없이 자동으로 컨테이너간 통신을 제공한다.
+- `Resource Management` : CPU와 메모리를 효율적으로 배분하여 하드웨어 사용을 최적화한다.
+- `Rolling Update / Rollback` : 다운타임 없이 롤링 업데이트를 진행하고 손쉽게 롤백을 할 수 있다
+
+---
+
+### 1.2 Kubernetes Node
+
+![nestjs-fastcam-kubernetes_50-1](https://raw.githubusercontent.com/berenickt/image-server/refs/heads/main/nestjs/nestjs-fastcam-kubernetes_50-1.png)
+
+Kubernetes가 사용 할 수 있는 물리적인 컴퓨터 자원을 Node라고 명칭한다.
+
+Node의 종류
+
+- `Master Node (Control Plane Node)` : API Server, Scheduler, Controller, Manager 등이 실행되고 있으며 쿠버네티스 클러 터 전체를 통제한다. Master Node에는 Pod를 실행하지 않는다.
+- `Worker Node` : 사용자가 정의한 애플리케이션 컨테이너들이 실행되는 Node이다
+
+Worker Node의 구성
+
+- `Kubelet` : Master Node와 통신하는 역할을 한다. 정확한 스펙으로 Pod가 실행되고 있는지 확인하고 Pod들의 라이프 사이클을 트롤한다.
+- `Container Runtime` : Docker, ContainerD같은 컨테이너를 실행하고 관리하는 런타임이다.
+- `Kube Proxy` : 각 노드의 네트워크 룰을 정의하고 있다
+- `Pod` :쿠버네티스에서 사용하는 용어중 가장 작은 단위이다. 하나의 Pod에 여러개의 컨테이너가 실행 될 수 있으나 보통 하나의 Po 만 실행하게 된다.
+
+---
+
+### 1.3 Kubernetes Pod
+
+![nestjs-fastcam-kubernetes_50-2](https://raw.githubusercontent.com/berenickt/image-server/refs/heads/main/nestjs/nestjs-fastcam-kubernetes_50-2.png)
+
+- Kubernetes Node에는 Pod를 실행 할 수 있다.
+- Pod는 Kubernetes에서 사용하는 가장 작은 애플리케이션 단위이다.
+
+---
+
+### 1.4 Multiple Kubernetes Pod
+
+![nestjs-fastcam-kubernetes_50-3](https://raw.githubusercontent.com/berenickt/image-server/refs/heads/main/nestjs/nestjs-fastcam-kubernetes_50-3.png)
+
+- 리소스만 허락한다면 여러개의 Pod를 Node에서 실행 할 수 있다. (실제 목적)
+- 여러개의 Node에 균등하게 또는 설정을 통해 특정 Node에만 Pod가 실행되도록 할 수 있다.
+
+---
+
+### 1.5 Multiple Containers in Pod
+
+![nestjs-fastcam-kubernetes_50-4](https://raw.githubusercontent.com/berenickt/image-server/refs/heads/main/nestjs/nestjs-fastcam-kubernetes_50-4.png)
+
+- Pod 하나에는 하나의 컨테이너를 실행하는게 일반적이다.
+- 하지만 컨테이너와 밀접한 통신을 요구하는 경우 Pod에 여러개의 컨테이너를 실행 할 수도 있다.
+
+![nestjs-fastcam-kubernetes_50-5](https://raw.githubusercontent.com/berenickt/image-server/refs/heads/main/nestjs/nestjs-fastcam-kubernetes_50-5.png)
+
+- A Pod의 보조 역할을 하는 B Pod가 존재한다고 가정한다면 A Pod가 생성 될때마다 B Pod를 항상 함께 생성해야한다.
+- 매번 두개의 Pod를 실행하고 삭제하려면 매우 번거럽고 Pod간의 통신도 설정해줘야한다.
+- 그래서 밀접한 관계가 있는 경우 하나의 Pod에 여러개의 컨테이너를 실행한다
+
+---
+
+### 1.6 ReplicaSet
+
+ReplicaSet은 Kubernetes 스케일링 기능의 핵심으로 명시된 Pod 갯수가 항상 실행되고 있을 수 있도록 보장해주는 역할을 한다.
+
+- `High Availability` : 한국어로 흔히 “고가용성”이라고 이야기한다.
+  - 똑같은 Pod를 여러개 복제해서 어느 한 Pod가 문제가 생기거 죽더라도,
+    - 다른 Pod가 역할을 대체 할 수 있도록 설계하는걸 이야기한다.
+  - Kubernetes에서만 사용하는 용어가 아니고 공학적인 개념 이다.
+- `Load Balancing` :
+  - 여러개의 Pod를 실행하면 같은 역할을 하고있는 Pod간 트래픽을 분산해줄 수 있는 시스템이 필요하다.
+  - Kubernetes는 자동으로 Load Balancing을 해준다
+- `Scaling` : 설정한 Pod의 갯수만큼 자동으로 Pod 갯수가 늘어나고 줄어들도록 해준다.
+  - ReplicaSet은 하나의 `Node에 귀속되지 고 여러 Node에 걸쳐 설정 될 수 있다.
+- `Label Selector` : 레이블 정의에 따라 ReplicaSet 정의에 입력해두지 않은 Pod들도 ReplicaSet에 의해 관리되도록 할 수 있다.
+
+![nestjs-fastcam-kubernetes_50-6](https://raw.githubusercontent.com/berenickt/image-server/refs/heads/main/nestjs/nestjs-fastcam-kubernetes_50-6.png)
+
+ReplicaSet은 같은 레이블의 Pod들이 정의된 갯수만큼 항상 실행되고 있도록한다.
+
+---
+
+### 1.7 Deployment
+
+![nestjs-fastcam-kubernetes_50-7](https://raw.githubusercontent.com/berenickt/image-server/refs/heads/main/nestjs/nestjs-fastcam-kubernetes_50-7.png)
+
+- Deployment를 생성하면 자동으로 ReplicaSet을 생성한다
+- Deployment는 ReplicaSet에 Rolling Update와 Rollback 기능이 추가돼있다
+
+---
+
+### 1.8 Rolling Update
+
+![nestjs-fastcam-kubernetes_50-8](https://raw.githubusercontent.com/berenickt/image-server/refs/heads/main/nestjs/nestjs-fastcam-kubernetes_50-8.png)
+
+- Blue Green Update를 업데이트 할때 리소스가 두배로 필요하다.
+- Rolling Update를 하면 최소한의 추가 리소스로 전체 업데이트를 진행 할 수 있다.
+- Blue Green Update는 네트워크 설정이 조금 엇나가면 서비스에 다운타임이 생길 수 있다.
+- Rolling Update는 서서히 업데이트를 진행하기 때문에 다운타임이 생기지 않는다.
+
+![nestjs-fastcam-kubernetes_50-9](https://raw.githubusercontent.com/berenickt/image-server/refs/heads/main/nestjs/nestjs-fastcam-kubernetes_50-9.png)
+
+---
+
+### 1.9 Namespaces
+
+![nestjs-fastcam-kubernetes_50-10](https://raw.githubusercontent.com/berenickt/image-server/refs/heads/main/nestjs/nestjs-fastcam-kubernetes_50-10.png)
+
+- Namespace는 Kubernetes 클러스터에서 환경을 분리하는데 사용된다.
+- Namespace가 다른 Pod끼리 통신은 가능하지만 kubectl CLI를 사용할때 현재 지정돼있는 namespace를 기준으로 실행된다
+
+---
+
+### 1.10 ConfigMaps/Secrets
+
+- ConfigMap과 Secret은 Kubernetes에서 애플리케이션 설정을 관리하는 리소스다.
+- Pod에 ConfigMap이나 Secret에 설정된 값들을 환경변수로 주입 해줄 수 있다.
+- ConfigMap은 Plain Text로 민감하지 않은 데이터를 저장할때 사용된다.
+  - 좋은 예제로는 URL, 포트 정보등이 있다.
+- Secret은 암호화가 필요한 값들을 저장할때 사용된다. 좋은 예제로는 비밀번호, API 키, 인증서등이 있다
+
+---
+
+### 1.11 Readiness Probe / Liveness Probe
+
+![nestjs-fastcam-kubernetes_50-11](https://raw.githubusercontent.com/berenickt/image-server/refs/heads/main/nestjs/nestjs-fastcam-kubernetes_50-11.png)
+
+- Readiness Probe와 Liveliness Probe는 모두 Container의 상태를 모니터링 하는데 사용된다
+
+---
+
+### 1.12 Readiness Probe / Liveness Probe
+
+|             |               Liveness Probe                |                                           Readiness Probe                                           |
+| ----------- | :-----------------------------------------: | :-------------------------------------------------------------------------------------------------: |
+| 목적        | Container가 잘 작동하고 살아있는지 확인한다 |                          Container가 트래픽을 받을 준비가 됐는지 확인한다                           |
+| 실패시 액션 |           Container를 재시작한다            | Pod를 서비스 엔드포인트에서 제거한다. <br />더이상 트래픽을 받지 못하게 된다 (재시작은 하지 않는다) |
+
+---
+
+### 1.13 Kubernetes Services
+
+- Kubernetes Service는 Pod들을 네트워크로 연결할때 사용한다.
+- Kubernetes Service는 대표적으로 NodePort, ClusterIP가 존재한다.
+
+---
+
+### 1.14 NodePort
+
+![nestjs-fastcam-kubernetes_50-12](https://raw.githubusercontent.com/berenickt/image-server/refs/heads/main/nestjs/nestjs-fastcam-kubernetes_50-12.png)
+
+- NodePort는 말 그대로 “외부에서” Node에 접속 할 수 있게 해주는 포트를 의미한다.
+- 30000번 포트부터 32767번 포트까지 사용 가능하다.
+- 여러개의 Pod를 Load Balancing 할 수 있고 여러개의 Node를 포괄 할수도 있다.
+
+---
+
+### 1.15 ClusterIP
+
+![nestjs-fastcam-kubernetes_50-13](https://raw.githubusercontent.com/berenickt/image-server/refs/heads/main/nestjs/nestjs-fastcam-kubernetes_50-13.png)
+
+- ClusterIP는 Kubernetes의 Pod끼리 통신 할 수 있도록 해주는 서비스다.
+- Kubernetes에서는 자연스럽게 같은 Pod를 여러개 실행해서 Horizontal Scaling을 하고,
+  - 언제나 Pod가 사라지고 새로 생겨서 IP 가 변동적이니 같은 Pod들을 묶어주는 역할이 필요하다.
+  - ClusterIP가 바로 이 역할을 해준다.
+
+---
+
+### 1.16 Ingress
+
+![nestjs-fastcam-kubernetes_50-14](https://raw.githubusercontent.com/berenickt/image-server/refs/heads/main/nestjs/nestjs-fastcam-kubernetes_50-14.png)
+
+- NodePort 대신 LoadBalancer를 사용하면 클라우드 LoadBalancer를 프로비져닝 하도록 할 수 있다.
+- 문제는 서비스가 많아질수록 LoadBalancer가 너무 많아지고,
+  - LoadBalancer 별로 세팅을 따로 해줘야한다는 점이다.
+
+![nestjs-fastcam-kubernetes_50-15](https://raw.githubusercontent.com/berenickt/image-server/refs/heads/main/nestjs/nestjs-fastcam-kubernetes_50-15.png)
+
+- Ingress는 복잡한 Kubernetes와 외부 트래픽을 한번에 연동 해줄 수 있도록 도와준다.
+
+---
+
+### 1.17 Persistent Volue & Claim
+
+![nestjs-fastcam-kubernetes_50-15](https://raw.githubusercontent.com/berenickt/image-server/refs/heads/main/nestjs/nestjs-fastcam-kubernetes_50-16.png)
+
+- Persistent Volume은 특정 Pod와 관계 없이 저장 리소스를 배정할때 사용된다.
+  - 원하는 크기로 PV를 배정해두면 Pod에서 PV가 필 요할때 PVC를 통해 적절한 PV를 할당받게 된다.
+- PVC는 PV를 점유할때 사용된다.
+  - Pod에서 필요한 스펙의 저장 공간을 PVC로 정의하면,
+  - Kubernetes에서 자동으로 현재 사용 할 수 있는 PV 중에 적합한 저장소를 배정해준다
+
+---
+
+### 1.18 Pod Definition
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-pod
+  labels:
+    app: proxy
+    type: back-end
+
+spec:
+  containers:
+    - name: nginx-container
+      image: nginx:1.14.2
+      ports:
+        - containerPort: 80
+```
+
+---
+
+### 1.19 Replicaset
+
+```yaml
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: nginx-replicaset
+  labels:
+    app: nginx-app
+    type: back-end
+
+spec:
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        app: nginx-app
+        type: back-end
+    spec:
+      containers:
+        - name: nginx-container
+          image: nginx
+          ports:
+            - containerPort: 80
+    selector:
+      matchLabels:
+        app: nginx-app
+        type: back-end
+```
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-pod
+  labels:
+    app: proxy
+    type: back-end
+
+spec:
+  containers:
+    - name: nginx-container
+      image: nginx:1.14.2
+      ports:
+        - containerPort: 80
+```
+
+---
+
+### 1.20 Deployment
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  labels:
+    app: nginx-app
+    type: back-end
+
+spec:
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        app: nginx-app
+        type: back-end
+    spec:
+      containers:
+        - name: nginx-container
+          image: nginx
+          ports:
+            - containerPort: 80
+    selector:
+      matchLabels:
+        app: nginx-app
+        type: back-end
+```
+
+---
+
+## 2. Helm
+
+### 2.1 Helm 소개
+
+Helm은 Kubernetes 애플리케이션 배포와 관리를 간소화하기 위한 패키지 관리 도구다.
+
+- Helm 주요 단위는 Chart다. Chart는 Kubernetes 리소스(YAML 파일)의 모음으로, Kubernetes 애플리케이션 배포에 필요한 모 든 설정과 템플릿을 포함한다.
+- Helm을 사용하면 복잡한 Kubernetes 배포를 코드로 관리하고 재사용할 수 있다.
+
+Helm의 주요 기능
+
+- `Chart 관리` : Helm을 사용하여 애플리케이션을 패키지로 구성하고 공유할 수 있고 리포지토리에서 쉽게 가져와 배포할 수 있다.
+- `간편한 배포와 업그레이드` : Helm 명령어를 통해 간단히 차트를 설치하고 설정할 수 있고 동일한 애플리케이션을 여러 환경에 쉽게 배포하고 관리할 수 있다.
+- `버전 관리` : Helm은 릴리즈 버전을 통해 배포 상태를 관리할 수 있다. 원하는 버전으로 쉽게 롤백하거나 최신 상태로 업그레이드할 수 있다. (Kubernetes의 메이저 약점 중 하나)
+- `템플릿화` : YAML 파일을 템플릿화하여 환경에 따라 다양한 설정을 적용 할 수 있다. 동일한 차트를 다양한 환경에 맞게 커스터마이징 할 수 있다.
+
+---
+
+### 2.2 Helm Chart의 구성
+
+`Chart.yaml`
+
+- 차트에 대한 기본 정보를 담고 있는 파일이다. 차트의 이름, 버전, 설명, 관리자, 애플리케이션 버전을 입력하는 공간이다.
+- 차트의 핵심 정보를 정의하고 있으며 배포될 애플리케이션의 버전을 쉽게 관리할 수 있게 해준다
+
+`values.yaml`
+
+- 기본 설정 값을 정의하는 파일이다.
+- 차트의 템플릿 파일에서 이 값을 참조하여 변수를 동적으로 대체 할 수 있다.
+- 같은 Kubernetes 애플리케 이션을 쉽게 다양한 환경에서 다양한 조건으로 실행 할 수 있게 해주는 핵심 요소다.
+
+`templates 폴더`
+
+- 실제 Kubernetes 리소스를 정의하는 YAML 템플릿 파일들이 포함된 공간이다.
+- Deployment, Service, ConfigMap 등 모든 Kubernetes 파일을 포함할 수 있으며,
+  - values.yaml 파일에 정의된 값들을 변수로 사용하여 동적으로 설정할 수 있다.
+
+`helpers.tpl`
+
+- 여러 템플릿에서 반복적으로 사용하는 코드를 함수로 만들어 저장 해두는 파일이다.
+- `{{ include "test-function" . }}`과 같은 방식으로 호출하 여 사용할 수 있다.
+
+`Charts 폴더`
+
+- 차트 의존성을 정의하는 곳이다
+
+---
+
+### 2.3 Charts.yaml
+
+```yaml
+apiVersion: v2
+name: my-chart
+version: 1.0.0
+description: A Helm chart for Kubernetes
+appVersion: 1.0.0
+```
+
+---
+
+### 2.4 values.yaml
+
+```yaml
+replicaCount: 3
+image:
+  repository: nginx
+  tag: latest
+service:
+  type: ClusterIP
+  port: 80
+```
+
+---
+
+### 2.5 values.yaml 사용법
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-app
+  labels:
+    app : {{ .Release.Name }}-app
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-app
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-app
+    spec:
+      containers:
+        - name: {{ .Release.Name }}-container
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          ports:
+            - containerPort: {{ .Values.service.port }}
+          env:
+            - name: ENVIRONMENT
+              value: {{ .Values.environment }}
+```
+
+```yaml
+replicaCount: 2
+
+image:
+  repository: nginx
+  tag: latest
+
+service:
+  port: 80
+
+environment: 'development'
+```
+
+---
+
+### 2.6 Helm CLI 기능 - 배포
+
+```bash
+# 문법
+helm install <release-name> <chart-directory> --values <values-file>
+
+# 예제
+helm install my-app ./my-chart
+```
+
+```bash
+NAME: my-app
+LAST DEPLOYED: Thu Nov 7 12:00:00 2024
+NAMESPACE: default
+STATUS: deployed
+REVISION: 1
+NOTES:
+1. Get the application URL by running these commands:
+  export POD_NAME=$(kubectl get pods --namespace default -l "app=my-app" -o jsonpath="{.items[0].metadata.name}")
+  echo "Visit http://127.0.0.1:8080 to use youur application"
+  kubectl port-forward $POD_NAME 8080:80
+```
+
+---
+
+### 2.7 Helm CLI 기능 - 업데이트
+
+```bash
+# 문법
+helm upgrade <release-name> <chart-directory> --set <variables>
+
+# 예제
+helm upgrade my-app ./my-chart --set image.tag=2.0.0
+```
+
+```bash
+Release "my-app" has been upgraded. Happy Helming!
+NAME: my-app
+LAST DEPLOYED: Thu Nov 7 12:05:00 2024
+NAMESPACE: default
+STATUS: deployed
+REVISION: 2
+```
+
+---
+
+### 2.8 Helm CLI 기능 - 릴리스 히스토리 확인
+
+```bash
+# 문법
+helm history <release-name>
+
+# 예제
+helm history my-app
+```
+
+```bash
+REVISION  UPDATED                  STATUS     CHART         APP VERSION  DESCRIPTION
+1         Thu Nov 7 12:00:00 2024  deployed   my-chart-1.0  1.0          Install complete
+2         Thu Nov 7 12:05:00 2024  superseded my-chart-1.0  2.0          Upgrade complete
+3         Thu Nov 7 12:10:00 2024  deployed   my-chart-1.0  1.0          Rollback to 1
+```
+
+---
+
+### 2.9 Helm CLI 기능 - 롤백
+
+```bash
+# 문법
+helm rellback <release-name> <revision>
+
+# 예제
+helm rellback my-app 1
+```
+
+```bash
+Rollback was a success! Happy Helming!
+```
+
+---
+
+### 2.10 Helm CLI 기능 - 현재 릴리즈 확인
+
+```bash
+# 문법
+helm status <release-name>
+
+# 예제
+helm status my-app
+```
+
+```bash
+NAME: my-app
+LAST DEPLOYED: Thu Nov 7 12:10:00 2024
+NAMESPACE: default
+STATUS: deployed
+REVISION: 3
+NOTES:
+1. Get the application URL by running these commands:
+  export POD_NAME=$(kubectl get pods --namespace default -l "app=my-app" -o jsonpath="{.items[0].metadata.name}")
+  echo "Visit http://127.0.0.1:8080 to use youur application"
+  kubectl port-forward $POD_NAME 8080:80
+```
+
+---
+
+### 2.11 기타 기능
+
+- Artifact Hub에 Helm Chart를 업로드하고 공유 할 수 있다.
+- Templating을 사용해서 복잡한 기능을 미리 정의 해둘 수 있다.

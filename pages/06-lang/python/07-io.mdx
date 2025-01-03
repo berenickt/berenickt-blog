@@ -1,0 +1,289 @@
+---
+title: '07-입출력'
+date: 2023/09/23
+---
+
+## 1. 표준입력
+
+### 1.1 input()
+
+```py
+answer = input("아무 값이나 입력하세요 : ")
+print("입력한 값은 " + answer + "입니다.")
+
+print(type(answer))
+
+answer = input("아무 값이나 입력하세요 : ")
+print("입력한 값은 " + answer + "입니다.")
+
+print(type(answer))  # <class 'str'>
+print(type(int(answer)))  # <class 'int'>
+answer = 10
+print(type(answer))  # <class 'int'>
+```
+
+---
+
+### 1.2 sep
+
+```py
+print("파이썬", "자바")  # 파이썬 자바
+print("파이썬" + "자바")  # 파이썬자바
+
+print("파이썬", "자바")  # 파이썬 자바
+
+# 값을 쉼표로 구분
+print("파이썬", "자바", sep=",")  # 파이썬,자바
+
+print("파이썬", "자바", "자바스크립트")  # 파이썬 자바 자바스크립트
+
+# 값을 ' vs '로 구분
+print("파이썬", "자바", "자바스크립트", sep=" vs ")  # 파이썬 vs 자바 vs 자바스크립트
+```
+
+---
+
+### 1.3 end
+
+```py
+# end="? " : 문장의 끝 부분을 ? 로 뒷문장과 연결
+print("파이썬", "자바", sep=", ", end="? ")
+print("무엇이 더 재미있을까요?")
+# 파이썬, 자바? 무엇이 더 재미있을까요?
+
+print("파이썬", "자바", sep=", ")  # 파이썬, 자바
+print("무엇이 더 재미있을까요?")  # 무엇이 더 재미있을까요?
+```
+
+---
+
+### 1.4 stdout, stderr
+
+```py
+import sys
+
+print("파이썬", "자바", file=sys.stdout)  # 파이썬 자바
+print("파이썬", "자바", file=sys.stderr)  # 파이썬 자바, 에러가 발생시 에러처리
+```
+
+---
+
+### 1.5 ljust, rjust
+
+```py
+scores = {"수학": 0, "영어": 50, "코딩": 100}
+
+for subject, score in scores.items():  # (key, value)
+    print(subject, score)
+"""위 코드의 실행결과
+수학 0
+영어 50
+코딩 100
+"""
+
+""" 💡 ljust와 rjust
+ljust(8) : 왼쪽으로 8칸 공간을 확보한 상태에서 왼쪽으로 정렬 후 출력
+rjust(4) : 오른쪽으로 4칸 공간을 확보한 상태에서 오른쪽으로 정렬 후 출력
+"""
+scores = {"수학": 0, "영어": 50, "코딩": 100}
+
+for subject, score in scores.items():
+    print(subject.ljust(8), str(score).rjust(4), sep=":")
+"""위 코드의 실행결과
+수학      :   0
+영어      :  50
+코딩      : 100
+"""
+```
+
+---
+
+### 1.6 zfill
+
+```py
+for num in range(1, 21):  # 1~20의 숫자
+    print("대기번호 : " + str(num))
+"""
+대기번호 : 1
+대기번호 : 2
+대기번호 : 3
+...
+대기번호 : 20
+"""
+
+"""zfill(3)
+3칸 만들고, 값이 없는 빈 공간은 0을 채움
+"""
+
+for num in range(1, 21):  # 1~20의 숫자
+    print("대기번호 : " + str(num).zfill(3))
+
+"""
+대기번호 : 001
+대기번호 : 002
+대기번호 : 003
+...
+대기번호 : 020
+"""
+```
+
+---
+
+## 2. 다양한 형식으로 출력 - format()
+
+```py
+print("{0}".format(500))  # {0} 위치에 값 500 출력
+
+print("{0}".format(500))
+# 빈칸으로 두기, 오른쪽 정렬, 공간 10칸 확보
+print("{0: >10}".format(500))
+
+# 빈칸으로 두기, 오른쪽 정렬, + 기호 붙이기, 공간 10칸 확보
+print("{0: >+10}".format(500))
+print("{0: >+10}".format(-500))  # 음수일 때
+
+print("{0:_<10}".format(500))  # 빈칸을 _로 채우기, 왼쪽 정렬, 공간 10칸 확보
+
+print("{0:,}".format(100000000000))  # 3자리마다 쉼표 찍기
+print("{0:+,}".format(100000000000))  # + 기호 붙이기, 3자리마다 쉼표 찍기
+print("{0:+,}".format(-100000000000))  # 음수일 때, 3자리마다 쉼표 찍기
+
+# 빈칸을 ^로 채우기, 왼쪽 정렬, + 기호 붙이기, 공간 30칸 확보, 3자리마다 쉼표 찍기
+print("{0:^<+30,}".format(100000000000))
+
+print("{0}".format(5 / 3))
+
+print("{0:f}".format(5 / 3))
+
+print("{0:.2f}".format(5 / 3))  # 소수점 이하 둘째 자리까지 출력
+```
+
+---
+
+## 3. 파일 입출력
+
+### 3.1 open-w-쓰기
+
+```py
+score_file = open("score.txt", "w", encoding="utf8")  # score.txt 파일을 쓰기 모드로 열기
+print("수학 : 0", file=score_file)  # score.txt 파일에 내용 쓰기
+print("영어 : 50", file=score_file)  # score.txt 파일에 내용 쓰기
+score_file.close()  # score.txt 파일 닫기
+```
+
+---
+
+### 3.2 open-a-이어쓰기
+
+```py
+score_file = open("score.txt", "a", encoding="utf8")  # score.txt 파일에 이어 쓰기 모드로 열기
+score_file.write("과학 : 80\n")
+# write() 함수는 줄 바꿈이 없으므로 \n 추가
+score_file.write("코딩 : 100\n")
+score_file.close()
+```
+
+---
+
+### 3.3 open-r-읽기
+
+```py
+score_file = open("score.txt", "r", encoding="utf8")  # score.txt 파일을 읽기 모드로 열기
+print(score_file.read())  # 파일 전체 읽어 오기
+score_file.close()
+
+
+score_file = open("score.txt", "r", encoding="utf8")
+
+while True:
+    line = score_file.readline()
+    if not line:  # 더 이상 읽어 올 내용이 없을 때
+        break  # 반복문 탈출
+    print(line, end="")  # 읽어 온 내용 출력
+
+score_file.close()
+
+
+score_file = open("score.txt", "r", encoding="utf8")
+lines = score_file.readlines()  # 파일에서 모든 줄을 읽어와 리스트 형태로 저장
+
+for line in lines:  # lines에 내용이 있을 때까지
+    print(line, end="")  # 읽어 온 내용 출력
+
+score_file.close()
+
+
+score_file = open("score.txt", "r", encoding="utf8")  # score.txt 파일을 읽기 모드로 열기
+print(score_file.readline(), end="")  # 한 줄씩 읽어 오고 커서는 다음 줄로 이동
+print(score_file.readline(), end="")  # end 값을 설정해 줄 바꿈 중복 수행 방지
+print(score_file.readline(), end="")
+print(score_file.readline(), end="")
+score_file.close()
+```
+
+---
+
+## 4. 데이터를 파일로 저장-pickle모듈
+
+```py
+import pickle  # pickle 모듈 가져다 쓰기
+
+profile_file = open("profile.pickle", "wb")  # 바이너리 형태로 저장(wb)
+profile = {"이름": "스누피", "나이": 30, "취미": ["축구", "골프", "코딩"]}
+print(profile)
+
+pickle.dump(profile, profile_file)  # profile 데이터를 파일에 저장
+profile_file.close()  # 파일 닫기
+
+profile_file = open("profile.pickle", "rb")  # 읽어 올 때도 바이너리 형태 명시
+profile = pickle.load(profile_file)  # 파일에 있는 정보를 불러와서 profile에 저장
+
+print(profile)
+profile_file.close()
+```
+
+---
+
+## 5. 파일 한번에 열고닫기 - with문
+
+```py
+import pickle
+
+with open("profile.pickle", "rb") as profile_file:
+    print(pickle.load(profile_file))
+
+import pickle
+
+with open("study.txt", "w", encoding="utf8") as study_file:  # 새로운 파일 생성
+    study_file.write("파이썬을 열심히 공부하고 있어요.")
+
+with open("study.txt", "r", encoding="utf8") as study_file:
+    print(study_file.read())
+```
+
+---
+
+## 6. 퀴즈. 보고서 파일 만들기
+
+```py
+"""
+Quiz) 회사에서 매주 1회 작성해야 하는 보고서가 있습니다.
+보고서는 항상 아래와 같은 형태로 출력되어야 합니다.
+
+- x 주차 주간보고 -
+부서 :
+이름 :
+업무 요약 :
+
+1부차부터 50주차까지의 보고서 파일을 만드는 프로그램을 작성하시오.
+
+조건 : 파일명은 '1주차.txt', '2주차.txt', ...와 같이 만듭니다.
+"""
+for i in range(1, 51):  # 숫자 1~50
+    # 파일 열기
+    with open(str(i) + "주차.txt", "w", encoding="utf8") as report_file:
+        report_file.write("- {0}주차 주간보고 -".format(i))
+        report_file.write("\n부서 : ")  # 줄 바꿈 처리
+        report_file.write("\n이름 : ")
+        report_file.write("\n업무 요약 : ")
+```

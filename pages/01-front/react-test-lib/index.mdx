@@ -1,0 +1,77 @@
+---
+title: 'React Test Library 개요'
+date: 2024/04/07
+---
+
+## 1. React Testing Library
+
+Create React App로 리액트 앱을 생성하면 기본적으로 테스팅 할 때, React Testing Library를 사용합니다.
+
+- Airbnb에서 만든 Enzyme을 대처하는 솔루션
+  - cf. `Enzyme` : 다른 테스트 솔루션 , 구성 요소의 세부 정보를 테스트
+  - 차이점
+    - `Enzyme` : 구현 주도 테스트 (Implementation Driven Test)
+    - `React Testing Library` : 행위 주도 테스트 (Behavior Driven Test)
+- React 구성 요소 작업을 위한 API를 추가하여 DOM Testing Library 위에 구축
+- DOM Testing Library란 Dom 노드(Node)를 테스트하기 위한 가벼운 솔루션
+- **Create React App으로 생성된 프로젝트는 React Testing Library를 지원**
+- 그렇지 않은 경우 npm으로 추가
+  - `npm install --save-dev @testing-library/react`
+- cf. [React Testing Library 공식문서](https://testing-library.com/docs/react-testing-library/intro/)
+
+---
+
+## 2. CRA에서 eslint
+
+cf. 리액트 개발할 떄, Create React App에서는기본 eslint가 설정있음
+
+- 하지만, VS Code에서 바로 에러 확인할 수 없고,
+- 앱을 시작했을 때 터미널 상에서 볼 수 있음
+
+대신 `package.json`에 **eslintConfig 부분 지우고**
+
+- `.eslintrc.json` 파일 생성하면,
+- PROBELMS 탭에서 ESLint에서 주는 기본적인 경고들을 확인 가능
+
+```json
+// .eslintrc.json
+{
+  "extends": ["react-app", "react-app/jest"]
+}
+```
+
+---
+
+### 2.1 eslint 플러그인
+
+eslint에서 기본으로 제공하지 않는 다양한 규칙을 플러그인을 통해 사용 가능
+
+- e.g. react에 관련된 린트설정을 위해서는 eslintplugin-react를 사용
+- e.g. react hooks에 관련 규칙을 적용하려면 eslint-plugin-react-hooks를 사용
+- `eslint-plugin-testing-library`
+  - render로 Dom 그리는 부분
+- `eslint-plugin-jest-dom`
+  - expect-matcher로 테스트
+
+```sh
+npm install eslint-plugin-testing-library eslint-plugin-jest-dom
+```
+
+---
+
+#### 2.1.1 내부 설정
+
+```json
+// .eslintrc.json
+{
+  "plugins": ["testing-library", "jest-dom"],
+  "extends": ["react-app", "react-app/jest", "plugin:testing-library/react", "plugin:jest-dom/recommend"]
+}
+```
+
+- `plugins 항목 `
+  - 플러그인 추가 추가할 때, eslint-plugin- 부분 생략가능
+- `extends 항목`
+  - 플러그인을 추가한 후에 규칙을 정해줘야 사용가능
+  - extends 항목에 사용하고자 하는 규칙을 설정
+  - vue, angular, react 중 react를 위한 규칙 recommended는 추천이 되는 걸 사용

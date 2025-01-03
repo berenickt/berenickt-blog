@@ -1,0 +1,192 @@
+---
+title: '04-Service'
+date: 2023/12/25
+---
+
+## 1. Service 파일의 역할
+
+```
+유저(client)가 요청 --> controller ---> service
+```
+
+- `controller` : 가장 맨 앞에서 클라이언트의 요청을 받는 역할
+  - 받은 요청을 service에서 작성한 함수로 라우팅만 해주는 역할
+  - controller는 요청을 처리하기 위해 많은 것들이 필요하기에,
+    - 이 많은것들을 모두 controller에서 구현하기 보다, 그 기능 하나하나를 쪼개서 service 단위로 분할한다.
+  - 분할된 서비스나 리포지토리, 팩토리, 헬퍼 등을 Provider라고 하며, **NestJS에서는 service를 Provider로 사용한다.**
+    - 이런 Provider들을 controller에서 사용할 수 있게 의존성을 주입해서 사용한다.
+    - Provider는 module파일에서 등록 후 사용이 가능히디.
+- `module` : module은 밀접하게 관련된 기능의 집합
+  - 일반적으로 module은 기능별로 만들어짐 (e.g. user, chat, order, ...)
+  - 같은 기능에 해당하는 것들은 하나의 module 폴더 안에 넣어서 사용
+    - UserController, UserService, UserEntity ...같은 것은 User에 관한 기능이기에 userModule 안에 넣어줌
+  - module은 기본적으로 싱글 톤이므로 여러 모듈간에 쉽게 자원을 공유할 수 있음
+- `service` : 각 요청의 기능들의 논리를 작성하는 부분
+  - e.g. DB안에서 데이터를 가져오거나, 새로운 데이터 생성 시, 생성한 게시판 정보를 넣어주는 등의 로직을 처리
+
+---
+
+## 2. Service로 모든 로직 옮기기
+
+```ts posts.controller.ts
+import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common'
+import { PostsService } from './posts.service'
+
+@Controller('posts')
+export class PostsController {
+  constructor(private readonly postsService: PostsService) {}
+
+  /*** 1) GET /posts
+   * 모든 post를 다 가져온다
+   */
+  @Get()
+  getPosts() {
+    return this.postsService.getAllPosts()
+  }
+
+  /*** 2) GET /posts/:id
+   * id에 해당하는 post를 가져온다
+   * e.g. 11이라는 ID를 갖고있는 Post 하나를 가져온다.
+   */
+  // @Param('id') 뜻 : 가져오는 파라미터의 이름은 id이다
+  @Get(':id')
+  getPost(@Param('id') id: string) {
+    return this.postsService.getPostById(+id)
+  }
+
+  /*** 3) POST /posts
+   * post를 생성한다
+   */
+  @Post()
+  postPosts(
+    @Body('author') author: string, //
+    @Body('title') title: string,
+    @Body('content') content: string,
+  ) {
+    return this.postsService.createPost(author, title, content)
+  }
+
+  /*** 4) PATCH /posts/:id
+   * id에 해당하는 post를 부분 변경한다
+   */
+  @Patch(':id')
+  putPost(
+    @Param('id') id: string, //
+    @Body('author') author?: string, //
+    @Body('title') title?: string,
+    @Body('content') content?: string,
+  ) {
+    return this.postsService.updatePost(+id, author, title, content)
+  }
+
+  /*** 5) DELETE /posts/:id
+   * id에 해당하는 post를 삭제한다
+   */
+  @Delete(':id')
+  deletePost(@Param('id') id: string) {
+    return this.postsService.deletePost(+id)
+  }
+}
+```
+
+```ts posts.service.ts
+import { Injectable, NotFoundException } from '@nestjs/common'
+
+export interface PostModel {
+  id: number
+  author: string
+  title: string
+  content: string
+  likeCount: number
+  commentCount: number
+}
+
+let posts: PostModel[] = [
+  {
+    id: 1,
+    author: 'newjeans_official',
+    title: '뉴진스 민지',
+    content: '메이크업 고치고 있는 민지',
+    likeCount: 100000,
+    commentCount: 999999,
+  },
+  {
+    id: 2,
+    author: 'newjeans_official',
+    title: '뉴진스 혜린',
+    content: '노래 연습하고 있는 혜린',
+    likeCount: 100000,
+    commentCount: 999999,
+  },
+  {
+    id: 3,
+    author: 'blackpink_official',
+    title: '블랙핑크 로제',
+    content: '공연중인 로제',
+    likeCount: 100000,
+    commentCount: 999999,
+  },
+]
+
+@Injectable()
+export class PostsService {
+  getAllPosts() {
+    return posts
+  }
+
+  getPostById(id: number) {
+    const post = posts.find(post => post.id === +id)
+
+    if (!post) {
+      throw new NotFoundException()
+    }
+
+    return post
+  }
+
+  createPost(author: string, title: string, content: string) {
+    const post = {
+      id: posts[posts.length - 1].id + 1,
+      author,
+      title,
+      content,
+      likeCount: 0,
+      commentCount: 0,
+    }
+
+    posts = [...posts, post]
+
+    return post
+  }
+
+  updatePost(postId: number, author: string, title: string, content: string) {
+    const post = posts.find(post => post.id === postId)
+
+    if (!post) {
+      throw new NotFoundException()
+    }
+    if (author) {
+      post.author = author
+    }
+    if (title) {
+      post.title = title
+    }
+    if (content) {
+      post.content = content
+    }
+    posts = posts.map(prevPost => (prevPost.id === postId ? post : prevPost))
+
+    return post
+  }
+
+  deletePost(postId: number) {
+    const post = posts.find(post => post.id === postId)
+    if (!post) {
+      throw new NotFoundException()
+    }
+
+    posts = posts.filter(post => post.id !== postId)
+    return postId
+  }
+}
+```

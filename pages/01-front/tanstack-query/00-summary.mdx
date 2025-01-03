@@ -1,0 +1,741 @@
+---
+title: '00-요약'
+date: 2023/12/14
+---
+
+## 1. React Query란?
+
+- `React Query`: React 애플리케이션에서 데이터를 관리하고 캐시하는 데 사용되는 강력한 라이브러리
+- 비동기 데이터를 가져오고 관리하면서 간단하고 일관된 API를 제공하여 상태 관리를 간소화할 수 있음
+- `간단하고 일관된 API`: React Query로 데이터 가져오기, 업데이트, 캐싱, 재로드 등을 통합적으로 처리할 수 있음
+- `캐싱 및 자동 리프레시`: 자동으로 데이터를 캐싱하고 관리하며, 유효성을 검사하여 필요에 따라 자동으로 리프레시
+- `인터랙티브한 DevTools`: React Query DevTools를 사용하면 개발 중에 현재 데이터 상태를 시각적으로 이해하고 디버그할 수 있음
+- `쿼리 기반 데이터 관리`: 쿼리는 데이터를 가져오고 관리하기 위한 중심적인 추상화로서, 다양한 데이터 소스 및 엔드포 인트에 적용될 수 있음
+- `비동기 데이터 요청 관리`: 비동기 데이터를 효과적으로 관리하며, 여러 요청이 동시에 진행될 때도 쉽게 처리할 수 있음
+
+> cf. 공식 문서: https://tanstack.com/query/v3/docs/react/overview
+
+---
+
+### 1.1 React Query 주요 개념
+
+```tsx
+function Todos() {
+  const { isLoading, isError, data, error } = useQuery('todos', fetchTodoList)
+
+  if (isLoading) {
+    return <span>로딩중</span>
+  }
+
+  if (isError) {
+    return <span>에러 : {error.message}</span>
+  }
+
+  return (
+    <ul>
+      {data.map(todo => (
+        <li key={todo.id}>{todo.title}</li>
+      ))}
+    </ul>
+  )
+}
+```
+
+- 데이터를 가져오기 위해서는 useQuery 훅을 사용
+- `queryKey`: 쿼리를 고유하게 식별하는 문자열 키 (캐싱 및 데이터 관리)
+- `Fetch 함수`: 데이터를 가져오는 비동기 함수 서 버에서 데이터 요청 & 반환
+- `isLoading`: 데이터 가져오는 중인지 여부
+- `isError`: 데이터 가져오는 중 에러 발생 여부
+- `data`: 성공적으로 데이터를 가져온 경우, 데이 터가 포함된 변수
+- `error`: 데이터 가져오는 중 발생한 에러 정보
+
+---
+
+### 1.2 React Query 주요 기능
+
+```tsx
+import { useQuery } from 'react-query'
+
+export default function ExampleComponent() {
+  // 데이터 가져오기 (자동 캐싱)
+  const { data, error, isLoading } = useQuery('exampleQueryKey', fetchData)
+
+  // 5초마다 자동 리프레시
+  const { data, error, isLoading } = useQuery('exampleQueryKey', fetchData, {
+    refetchInterval: 5000,
+  })
+
+  // 뮤테이션으로 데이터 수정
+  const { mutate, data, error, isLoading } = useMutation(postData)
+
+  // 뮤테이션 호출하는 핸들러
+  const handleButtonClick = () => {
+    // ...
+    mutate(newData)
+  }
+}
+```
+
+- `데이터 가져오기와 캐싱`: useQuery 함수를 사용하여 데이터 불러오기, 자동 캐싱, 중복 요청 방지 가능
+- `자동 리페치`: 데이터를 주기적으로 업데이트해야 하는 경우, refetchInterval 옵션을 사용해서 설정 가능
+- `뮤테이션`: 데이터 변경 작업 (생성, 수정, 삭제)를 간단하게 수행할 때 사용 가능
+
+---
+
+### 1.3 React Query 캐싱
+
+```tsx
+import { useQuery } from 'react-query'
+
+export default function ExampleComponent() {
+  // 10초 동안 캐싱된 데이터를 사용 (stale 상태)
+  const { data, error, isLoading } = useQuery('exampleQueryKey', fetchData, {
+    staleTime: 10000,
+  })
+}
+```
+
+- `React Query 캐싱`:
+  - 데이터를 가져와서 처음 한 번 캐싱하면,
+  - 이후 동일한 데이터에 대한 요청은 네트워크 요청을 보내지 않고 캐시된 데이터를 사용
+- `staleTime 옵션`: React Query에서 사용되는 중요한 옵션 중 하나로,
+  - 캐시된 데이터의 "잘못된" 상태(stale state)를 얼마 동안 허용할지 설정하는 데 사용
+- `잘못된 상태`란? 데이터가 업데이트되었지만, 이전에 캐싱된 데이터가 여전히 사용 가능한 상태
+- staleTime은 기본적으로 0으로, 데이터가 한 번 불러와지면 다음 요청 시에는 항상 새로운 데이터를 가져옴
+
+---
+
+## 2. 설치 및 설정
+
+```bash
+yarn add react-query
+```
+
+설치 후 최상단 파일 (해당 프로젝트의 경우 app/provider)에 QueryClientProvider로 애플리케이션 감싸기
+
+```tsx
+// app/provider.tsx
+import { QueryClient, QueryClientProvider } from 'react-query'
+import { ReactQueryDevtools } from 'react-query/devtools'
+
+// react query client 생성
+const queryClient = new QueryClient()
+
+export const NextProvider = ({ children }: Props) => {
+  return (
+    // 전체 앱에 client 적용
+    <QueryClientProvider client={queryClient}>
+      {children}
+      <ReactQueryDevtools />
+    </QueryClientProvider>
+  )
+}
+```
+
+- cf. https://tanstack.com/query/latest/docs/framework/react/installation
+
+---
+
+## 3. React Query 주요 함수
+
+### 3.1 useQuery
+
+```tsx
+import { useQuery } from 'react-query'
+
+export default function MyComponent() {
+  const { isLoading, isError, data, error } = useQuery('profile', fetchData)
+
+  if (isLoading) return <p>로딩중...</p>
+  if (isError) return <p>에러 : {error.message}</p>
+}
+```
+
+- 데이터를 가져올 때 사용하는 함수.
+- 데이터를 캐싱하고 자동으로 리페칭 관리. 로딩, 에러, 데이터 등을 처리할 수 있는 옵션 제공
+  - `isLoading`: 데이터 가져오는 중인지 여부
+  - `isError`: 데이터 가져오는 중 에러 발생 여부
+  - `data`: 성공적으로 데이터를 가져온 경우, 데이터가 포함된 변수
+  - `error`: 데이터 가져오는 중 발생한 에러 정보
+
+---
+
+### 3.2 useQueryClient
+
+```tsx
+import { useQuery, useQueryClient } from 'react-query'
+
+export default function MyComponent() {
+  const queryClient = useQueryClient()
+
+  const { data: todos } = useQuery('todos', fetchTodos)
+
+  const handleUpdateTodo = (id, text) => {
+    // Todo 업데이트 API 호출
+
+    // 다른 쿼리 갱신 : 'todos' 쿼리 다시 로드
+    queryClient.invalidateQueries('todos')
+  }
+}
+```
+
+- 리액트 쿼리 클라이언트에 접근해서 다양한 작업 수행 가능 - (캐시 조작, 캐시 데이터 작업 등)
+
+---
+
+### 3.3 useMutation
+
+```tsx
+import { useMutation, useQueryClient } from 'react-query'
+
+export default function MyComponent() {
+  const queryClient = useQueryClient()
+
+  const mutation = useMutation({
+    mutationFn: postTodo,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['todos'] })
+    },
+  })
+
+  return (
+    <button
+      onClick={() => {
+        mutation.mutate({
+          id: Date.now(),
+          title: 'Do Laundry',
+        })
+      }}
+    >
+      Todo 추가
+    </button>
+  )
+}
+```
+
+- 데이터 변경 작업 수행에 사용.
+- useMutation 호출하여 mutation 객체 생성. 해당 객체에 함께 사용할 함수 정의
+- 성공 / 실패 여부 처리 가능. 데이터 업데이트 후 리페치 관리
+
+---
+
+## 4. React Query 세팅 방법 & 예시
+
+```tsx
+import { QueryClient, QueryClientProvider } from 'react-query'
+
+const queryClient = new QueryClient()
+
+export default function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <Todos />
+    </QueryClientProvider>
+  )
+}
+```
+
+최상단 파일(`_app.tsx`)에 QueryClientProvider로 애플리케이션을 감싸고, queryClient 설정
+
+---
+
+### 4.1 React Query와 Next.js
+
+```tsx
+import { useQuery } from 'react-query'
+
+export default async function getStaticProps() {
+  const posts = await getPosts()
+  return { props: { posts } }
+}
+
+function Posts(props) {
+  const { data } = useQuery({
+    queryKey: ['posts'],
+    queryFn: getPosts,
+    initialData: props.posts,
+  })
+}
+```
+
+- React Query는 Next.js 프로젝트에도 유용하게 적용할 수 있음
+- SSR를 사용하는 경우,
+  - getServerSideProps 혹은 SSG를 사용하는 경우,
+  - getStaticProps와 함께 리액트 쿼리를 사용할 수 있음
+- React Query로 데이터를 미리 가져와 페이지를 서버에서 렌더링 가능
+
+> cf. https://tanstack.com/query/v4/docs/framework/react/guides/ssr#using-nextjs
+
+---
+
+## 5. Axios란?
+
+- Axios: HTTP 클라이언트 라이브러리로, Next.js 프로젝트와 함께 사용하여 데이터를 서버에서 가져오는데 유용
+- 또한, React Query와 Axiox를 함께 사용하면 더욱 편리하게 데이터를 캐싱하고 관리할 수 있음
+- 설치 방법: yarn add axios
+- 기본 fetch API 보다 HTTP 요청 및 응답 처리, 설정, 요청 취소 등의 부분에서 더 풍부한 기능을 제공
+
+---
+
+### 5.1 지원하는 요청 메소드
+
+- Axios API 문서: https://axios-http.com/kr/docs/api_intro
+- 지원하는 모든 요청 메소드의 명령어를 제공
+  - axios.request(config)
+  - axios.get(url[, config])
+  - axios.delete(url[, config])
+  - axios.head(url[, config])
+  - axios.options(url[, config])
+  - axios.post(url[, data[, config]])
+  - axios.put(url[, data[, config]])
+  - axios.patch(url[, data[, config]])
+
+---
+
+## 6 React Query 로 데이터 가져오기
+
+```tsx
+function Todos() {
+  const { isLoading, isError, data, error } = useQuery('todos', fetchTodoList)
+
+  if (isLoading) {
+    return <span>Loading...</span>
+  }
+
+  if (isError) {
+    return <span>Error: {error.message}</span>
+  }
+
+  // We can assume by this point that `isSuccess === true`
+  return (
+    <ul>
+      {data.map(todo => (
+        <li key={todo.id}>{todo.title}</li>
+      ))}
+    </ul>
+  )
+}
+```
+
+- 데이터를 가져오기 위해서는 useQuery 훅을 사용
+- `queryKey`: 쿼리를 고유하게 식별하는 문자열 키 (캐싱 및 데이터 관리 )
+- `Fetch 함수`: 데이터를 가져오는 비동기 함수. 서버에서 데이터 요청 & 반환
+- `isLoading`: 데이터 가져오는 중인지 여부
+- `isError`: 데이터 가져오는 중 에러 발생 여부
+- `data`: 성공적으로 데이터를 가져온 경우, 데이터가 포함된 변수
+- `error`: 데이터 가져오는 중 발생한 에러 정보
+- cf. 공식문서 : https://tanstack.com/query/v3/docs/framework/react/guides/queries
+
+---
+
+### 6.1 React Query로 리스트 페이지 가져오기
+
+```tsx
+const config = {
+  url: '/api/stores',
+}
+
+const { data: stores, isFetching } = useQuery({
+  queryKey: ['stores'],
+  queryFn: async () => {
+    const { data } = await axios(config)
+    return data as StoreType[]
+  },
+})
+```
+
+- `/stores/index.tsx`에서 useQuery와 axios로 데이터 가져오기
+- 기존에 사용한 getServerSideProps 삭제
+- `/data/store_data.json` 삭제 (불필요)
+
+---
+
+## 7. Pagination 구현
+
+- Pagination: 웹 애플리케이션에서 긴 목록을 여러 페이지로 나누어 보여주는 기술
+- 하나의 페이지에 모든 항목을 표시하면 사용자 경험이 좋지 않기 때문에, 긴 목록을 여러 페이지로 나누어
+- 보여주면 사용자가 쉽게 정보를 찾을 수 있음
+- Pagination은 주로 검색 결과, 게시물 목록, 제품 목록 등 다양한 웹 애플리케이션에서 사용됨
+- Pagination은 서버에서 클라이언트로 데이터를 나누어 전송하므로, 대용량 데이터를 다룰 때 유용
+
+---
+
+### 7.1 무한 스크롤이란?
+
+- `무한 스크롤 (infinite scroll)`:
+  - 사용자 경험을 개선하기 위해 페이지 로딩 없이 스크롤을 통해 추가 데이터를 로드하는 기법
+  - 페이지의 하단에 도달할 때 새로운 데이터를 가져와서 보여줌
+  - 사용자가 스크롤을 위아래로 움직일 때 이벤트를 감지하고 추가 데이터를 가져오는 로직을 수행
+- React Query의 Infinite Queries를 사용해서 무한 스크롤을 구현할 수 있음
+- 공식 도큐: https://tanstack.com/query/v4/docs/react/guides/infinite-queries
+
+---
+
+## 8. React Query의 infiniteQuery란?
+
+```tsx
+const {
+  data,
+  error,
+  fetchNextPage,
+  fetchPreviousPage,
+  hasNextPage,
+  hasPreviousPage,
+  isFetching,
+  isFetchingNextPage,
+  isFetchingPreviousPage,
+  status,
+  ...result
+} = useInfiniteQuery({
+  queryKey: ['projects'],
+  queryFn: ({ pageParam = 1 }) => fetchPage(pageParam),
+  getNextPageParam: (lastPage, allPages) => lastPage.nextCursor,
+  getPreviousPageParam: (firstPage, allPages) => firstPage.prevCursor,
+})
+```
+
+- `무한 스크롤`: 웹 애플리케이션에서 여러 페이지의 데이터를 동적으로 로드하는 기술
+- `React Query의 Infinite Query`: 무한 스크롤을 지원하고,
+  - 화면 스크롤을 통해 추가 데이터를 자동으로 로드할 수 있는 강력한 기능
+- Pagination 작업을 간소화하고, 데이터를 무한으로 스크롤링할 때 필요한 다양한 도구와 기능을 제공
+- 사용자 경험을 향상시키며, 데이터를 효율적으로 로딩할 수 있음
+
+---
+
+### 8.1 React Query의 infiniteQuery 기능
+
+```tsx
+import { useInfiniteQuery } from 'react-query'
+
+const fetchPosts = async ({ pageParam = 1 }) => {
+  const response = await fetch(`/api/posts?page=${pageParam}`)
+  return response.json()
+}
+
+const { data, fetchNextPage, hasNextPage } = useInfiniteQuery(
+  'posts', // 고유한 쿼리 키
+  fetchPosts, // 데이터 가져오는 비동기 함수
+  // 다음 페이지 파라미터 추출
+  { getNextPageParam: (lastPage, pages) => lastPage.nextPage },
+)
+```
+
+- React Query가 설치된 프로젝트에서, 위 코드와 같이 React Query를 사용하여 Infinite Query를 생성
+- `fetchPosts`: 페이지별로 데이터를 가져오는 역할
+- `getNextPageParam`: 콜백 함수를 사용해서 다음 페이지를 정의
+
+---
+
+### 8.2 React Query의 infiniteQuery 사용법
+
+```tsx
+export default function Example() {
+  return (
+    <div>
+      {data.pages.map((page, pageIndex) => (
+        <div key={pageIndex}>
+          {page.posts.map(post => (
+            <div key={post.id}>{post.title}</div>
+          ))}
+        </div>
+      ))}
+
+      {hasNextPage ? (
+        <button onClick={() => fetchNextPage()} disabled={isFetching}>
+          {isFetching ? '로딩 중...' : '더 불러오기'}
+        </button>
+      ) : null}
+    </div>
+  )
+}
+```
+
+- 코드 예시: 데이터들을 사용해서 UI를 그리고, 무한 스크롤을 수동으로 제어할 수 있는 버튼 생성
+- `data.pages`를 통해 페이지별로 데이터를 렌더링
+- `fetchNextPage` 함수를 호출하여 다음 페이지의 데이터를 가져옴
+- `hasNextPage`와 `isFetching`를 사용하여 무한 스 크롤 버튼을 제어
+
+```tsx
+import useIntersectionObserver from '@/hooks/useIntersectionObserver'
+import { useEffect, useRef } from 'react'
+
+export default function Example() {
+  const listRef = useRef<HTMLDivElement | null>(null)
+  const listEnd = useIntersectionObserver(listRef, {})
+  const isEndPage = !!listEnd?.isIntersecting
+
+  useEffect(() => {
+    if (isEndPage && hasNextPage) {
+      fetchNextPage()
+    }
+  }, [fetchNextPage, hasNextPage, isEndPage])
+}
+```
+
+- Intersection Observer를 활용해서, 특정 영역에 도달했을 때 다음 페이지를 가져오는 무한 스크롤 구현
+- useIntersectionObserver 훅을 생성해서 리스트 하단에 도달했는지 (isIntersecting) 확인
+- 만약 페이지 하단에 도달하고, 다음 페이지가 있다면 리액트 쿼리의 fetchNextPage() 함수 호출
+- 마지막 페이지에 다다를 때 까지 위 단계들 반복
+
+---
+
+### 8.3 Infinite Queries 주요 개념
+
+- `data`: Infinite Query 결과 데이터
+- `data.pages`: 가져온 페이지들의 배열
+- `data.pageParams`: 페이지를 가져오기 위한 페이지 매개 변수. 배열의 형태.
+- `fetchNextPage, fetchPreviousPage`: 다음 페이지 및 이전 페이지의 데이터를 가져오는 함수
+- `getNextPageParam, getPreviousPageParam`: 다음 및 이전 페이지에 대한 매개 변수를 생성하는 함수
+- `hasNextPage, hasPreviousPage`: 다음 페이지 및 이전 페이지가 있는지 여부를 나타내는 불리언 값
+- `isFetchingNextPage, isFetchingPreviousPage`:
+  - 다음 페이지 또는 이전 페이지의 데이터를 가져오는 동안 로딩 상태를 나타내는 불리언 값
+- cf. https://tanstack.com/query/v4/docs/framework/react/guides/infinite-queries
+
+---
+
+## 9. Intersection Observer란?
+
+### 9.1 Javascript의 scroll 이벤트의 한계점
+
+```tsx
+// 빈 리스트 선택
+const listElem = document.querySelector('#infinite-list')
+
+// 20개의 아이템 추가 함수
+let nextItem = 1
+
+const loadMore = function () {
+  for (let i = 0; i < 20; i++) {
+    let item = document.createElement('li')
+    item.innerText = 'List Item #' + nextItem++
+    listElm.appendChild(item)
+  }
+}
+
+// ul 리스트 바닥까지 스크롤 했는지 확인
+listElm.addEventListener('scroll', function () {
+  if (listElm.scrollTop + listElm.clientHeight >= listElm.scrollHeight) {
+    LoadMore()
+  }
+})
+
+// 아이템 20개씩 더 가져오는 LoadMore함수 실행
+LoadMore()
+```
+
+Javascript에서 무한 스크롤 구현 방법:
+
+- addEventListener()에 scroll 이벤트 이용해서 구현
+- 또한, getBoundingClientRect() 메서드로 원하는 특정 위치에서 다음 페이지들을 가져오도록 구현
+  - 하지만, 위 코드는 성능 문제를 발생시킴.
+  - `scroll 이벤트`: 단시간에 수백번 호출이 되며 동기적으로 실행
+  - `getBoundingClientRect 메서드`: 계산을 할 때마다 리플로우 현상이 일어남
+- `해결방안`: Intersection Observer를 사용해 비동기적으로 교차점 관찰
+
+---
+
+### 9.2 Intersection Observer란?
+
+```tsx
+// IntersectionObserver
+const io = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    // 관찰 대상이 viewport 안에 들어온 경우 'active' 클래스 추가
+    if (entry.intersectionRatio > 0) {
+      entry.target.classList.add('active')
+    }
+    // 그 외의 경우 'active' 클래스 제거
+    else {
+      entry.target.classList.remove('active')
+    }
+  })
+})
+
+// 관찰할 대상을 선언하고, 해당 속성을 관찰
+const boxList = document.querySelectorAll('.box')
+boxList.forEach(el => {
+  io.observe(el)
+})
+```
+
+- `Intersection Observer`:
+  - 브라우저 viewport와 원하는 요소의 교차점을 관찰하며,
+  - **요소가 뷰포트에 포함되는지 아닌지 구별하는 기능**
+- 비동기적으로 실행되기 때문에, 메인 스레드에 영향을 주지 않으면서 요소들의 변경사항 관찰
+  - Scroll 및 getBoundingClientRect의 성능 문제를 해결
+- 또한, IntersectionObserverEntry 등의 속성을 활용해서 요소들의 위치를 알 수 있음
+- 여러 상황에서 Intersection Observer를 사용할 수 있음:
+  - 페이지 스크롤 되는 도중에 발생하는 이미지 지연 로딩
+  - 자동으로 페이지 하단에 스크롤 했을 때 무한스크롤 구현
+  - 광고 수익 계산을 위한 광고 가시성 보고
+
+---
+
+### 9.3 Intersection Observer 기본 문법
+
+```tsx
+// observer 초기화
+let io = new IntersectionObserver(callback, options)
+
+io.observe(element) // 관찰 대상 등록
+```
+
+- Intersection Observer API는 다음과 같은 상황에 콜백 함수를 호출:
+  1. 대상(target) 요소가 기기 뷰포트나 특정 요소(이 API에서 이를 root 요소 혹은 root로 칭함)와 교차할 때
+  2. 관찰자(observer)가 최초로 타겟을 관측하도록 요청받을 때
+- IntersectionObserver() 생성자는 2개의 인수 (callback, options)를 갖는다.
+  - `callback`: 관찰할 대상 (target)이 등록되거나, 가시성에 변화가 생기면 실행.
+    - 두 개의 인수 (entries, observer)를 갖는다.
+  - `Options`: 관찰이 시작되는 상황에 대한 옵션을 설정할 수 있음 (root, rootMargin, threshold)
+
+---
+
+### 9.4 Intersection Observer Callback: Entry 속성
+
+```tsx
+let callback = (entries, observer) => {
+  entries.forEach(entry => {
+    // target element:
+    //   entry.boundingClientRect
+    //   entry.intersectionRect
+    //   entry.intersectionRatio
+    //   entry.isIntersecting
+    //   entry.rootBounds
+    //   entry.target
+    //   entry.time
+  })
+}
+```
+
+- IntersectionObserverEntry는 읽기 전용의 여러가지 속성들을 포함
+- `boundingClientRect`: 관찰 대상의 경계 사각형을 DOMRectReadOnly로 반환
+  - 관찰 대상의 경계 사각형 정보를 반환한다 (reflow 없이 계산)
+  - 기존 JS의 getBoundingClientRect()를 사용해 동일한 값을 얻을 수 있으나,
+  - 해당 메서드는 reflow 일으킴
+- `intersectionRect`: 관찰 대상의 교차한 영역 정보를 DOMRectReadOnly로 반환
+  - 관찰 대상의 교차한 영역(사각형)에 대한 정보를 반환
+- `intersectionRatio`: 관찰 대상의 교차한 영역의 비율을 0.0과 1.0 사이의 숫자로 반환
+  - intersectionRect 영역에서 boundingClientRect 영역까지 비율
+- `isIntersecting`: 관찰 대상이 교차 상태인지 아닌지 반환(Boolean)
+  - 루트 요소와 교차되면 true, 아니라면 false를 반환한다
+- `rootBounds`: 지정한 루트 요소의 사각형 정보를 DOMRectReadOnly로 반환
+  - rootMargin 값으로 루트 요소의 크기를 변경할 수 있음
+- `target`: 관찰 대상 요소(Element) 반환
+- `time`: 변경이 발생한 시간 정보 (DOMHighResTimeStamp) 반환
+
+---
+
+### 9.5 Intersection Observer Options 알아보기
+
+```tsx
+let options = {
+  root: document.querySelector('#scrollArea'),
+  rootMargin: '0px',
+  threshold: 1.0,
+}
+
+let observer = new IntersectionObserver(callback, options)
+```
+
+- Intersection Observer는 Options를 통해 관찰이 시작되는 상황에 대한 옵션을 설정할 수 있음
+- `root`: 대상 객체(target)의 가시성을 확인할 때 사용되는 뷰포트 요소
+- `rootMargin`: root 가 가진 바깥 여백(Margin).
+  - margin 값을 이용해 root 범위를 확장 / 축소할 수 있음
+  - e.g. “10px 20px 30px 40px” (top, right, bottom, left). 기본값은 0
+- threshold: observer의 콜백이 실행될 대상 요소(target)의 가시성이 얼마나 필요한지 나타내는 값
+
+---
+
+### 9.6 Intersection Observer 메서드
+
+```tsx
+const io = new IntersectionObserver(callback, options)
+
+const div = document.querySelector('div')
+const li = document.querySelector('li')
+
+io.observe(div) // div 요소 관찰
+io.observe(li) // li 요소 관찰
+
+io.unobserve(div) // div 요소 관찰 중지
+io.unobserve(li) // li 요소 관찰 중지
+
+io.disconnect() // io가 관찰하는 모든 요소 (div, li) 관찰 중지
+```
+
+- `observe`: 대상 요소 (target)의 관찰을 시작할 때 사용
+- `unobserve`: 대상 요소의 관찰을 중지할 때 사용. 관찰을 중지할 하나의 대상 요소를 인수로 지정해야 함
+- `disconnect`: IntersectionObserver 인스턴스가 관찰하는 모든 요소의 관찰을 중지할 때 사용
+
+---
+
+### 9.7 Intersection Observer hook 예시
+
+```tsx
+import { RefObject, useEffect, useState } from 'react'
+
+interface Args extends IntersectionObserverInit {
+  freezeOnceVisible?: boolean
+}
+
+export function useIntersectionObserver(
+  elementRef: RefObject<Element>,
+  { threshold = 0, root = null, rootMargin = '0%', freezeOnceVisible = false }: Args,
+): IntersectionObserverEntry | undefined {
+  const [entry, setEntry] = useState<IntersectionObserverEntry>()
+
+  const frozen = entry?.isIntersecting && freezeOnceVisible
+
+  const updateEntry = ([entry]: IntersectionObserverEntry[]): void => {
+    setEntry(entry)
+  }
+
+  useEffect(() => {
+    const node = elementRef?.current // DOM Ref
+    const hasIOSupport = !!window.IntersectionObserver
+
+    if (!hasIOSupport || frozen || !node) return
+
+    const observerParams = { threshold, root, rootMargin }
+    const observer = new IntersectionObserver(updateEntry, observerParams)
+
+    observer.observe(node)
+
+    return () => observer.disconnect()
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [elementRef?.current, JSON.stringify(threshold), root, rootMargin, frozen])
+
+  return entry
+}
+```
+
+- elementRef, options 두 개의 인수를 받아,
+- Intersection Observer API를 사용하여 DOM 요소의 가시성을 감시하고 관찰 결과를 반환하는 훅
+- cf. https://usehooks-ts.com/react-hook/use-intersection-observer
+
+---
+
+## 10. react-intersection-observer
+
+```tsx
+/*** react-intersection-observer
+ * @see https://github.com/thebuilder/react-intersection-observer?tab=readme-ov-file#useinview-hook
+ * ref : 대상 요소를 참조하기 위한 React Ref 객체
+ * inView : 대상 요소가 화면에 보이는지 여부를 나타내는 boolean 값
+ * threshold : 대상 요소가 화면에 보이는 비율을 나타내는 값 (0 ~ 1)
+ */
+const { ref, inView } = useInView({ threshold: 1 })
+
+return (
+  <div>
+    {/* 무한 스크롤을 위해, 맨 밑에 의미없는 div를 놓고, 그 div가 보이면, 추가 데이터 로드 */}
+    {/* isLastPage가 true이거나, products가 비어있거나, products의 길이가 100개 이상이면, */}
+    {/* 더 이상 불러올 데이터가 없다고 판단한다 */}
+    {!isLastPage && !!products.length && products.length < 100 && <div ref={ref} />}
+  </div>
+)
+```
+
+- `Intersection Observer` : Viewport (사용자 화면에 보이는 영역)와 "대상 요소 사이"의 변화를 관찰하기 위해 사용하는 Browser API
+- `react-intersection-observer` : Intersection Observer를 사용하기 위한 React Hook 라이브러리

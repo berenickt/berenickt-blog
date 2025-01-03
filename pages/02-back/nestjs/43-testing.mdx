@@ -1,0 +1,1056 @@
+---
+title: '43-Testing'
+date: 2023/12/25
+---
+
+## 1. 테스팅
+
+`테스팅`은 **소프트웨어가 예상한대로 실행되는지 검증하고 확인하는 과정**이다
+
+테스팅의 중요성
+
+- `QA(Quality Assurance)` : 미리 버그를 발견해서 프로덕션 환경에서 문제가 생기는걸 방지한다
+- `더욱 빠른 리팩터링` : 변경한 코드가 기존 로직에서 문제를 일으킬경우 미리 알 수 있다
+- `다큐멘테이션 역할` : 테스트 자체가 코드가 어떻게 작동해야하는지 설명하는 하나의 문서 역할을 한다
+- `코드 로직 검증 자동화` : 테스트 코드를 실행해서 로직 검증을 자동화하여 직접 프로그램을 테스트할 필요가 없어진다
+
+---
+
+### 1.1 Testing의 중요성
+
+```ts
+import { Injectable } from '@nestjs/common'
+
+@Injectable()
+export class MathServerice {
+  add(a: number, b: number): number {
+    return a + b
+  }
+}
+```
+
+- 현재 우리의 지식으로 이 코드가 잘 작동하는지 테스트하려면,
+  - 이 코드가 실행되는 Controller를 통해 API 콜을 직접 하는 방법밖에 없다.
+- 너무 오래걸리고 일관성이 부족하다.
+- 이 코드를 작성하지 않은 사람은 어떻게 테스트 해야할지 알 수 없다. 어떤 값들까지 테스트 해야하는지 등
+- 정확한 로직의 바운더리를 알 수 없으니 다른 사람이 이 코드를 변경했을때,
+  - 내가 망가뜨린 로직이 없는지 쉽게 확인이 불가능하다.
+- 그래서 우리는 코드를 코드로 테스트하고, 테스트 코드라고 부른다.
+
+---
+
+### 1.2 Testing 예제
+
+```ts
+import { Test, TestingModule } from '@nestjs/testing'
+import { MathService } from './math.service'
+
+describe('MathService', () => {
+  let service: MathService
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [MathService],
+    }).compile()
+
+    service = module.get<MathService>(MathService)
+  })
+
+  it('should be defined', () => {
+    expect(service).toBeDefined() // service가 정의되어 있는지 확인
+  })
+
+  it('should return correct sum of two numbers', () => {
+    const result = service.add(2, 3)
+    expect(result).toEqual(5) // 인풋에 대한 아웃풋을 테스트
+  })
+
+  it('should handle negative numbers', () => {
+    const result = service.add(-1, 3)
+    expect(result).toEqual(-4) // 다양한 케이스를 테스트
+  })
+})
+```
+
+- 테스트 코드는 코드의 작동 로직을 검증하는 코드다.
+- 흔히 어떤 특정 값이 입력됐을때 어떤 값이 반환되는지 확인한다.
+- 다양한 값들을 입력 해볼 수 있다. 예제에서 처럼 양수 뿐 만 아니라 음수에 대한 덧셈도 테스트 해볼 수 있다.
+- 특정 기대치에 대한 assert가 가능하다.
+- expect()를 사용한 assert는 false를 반환할때 테스트가 실패한다.
+- 억지로 이상한 값을 넣어서 기대하는 에러가 발생하는지 확인 가능하다.
+- 가능하면 안되는 로직을 검증 할 수 있다.
+
+---
+
+### 1.3 Testing 결과
+
+```bash
+PASS src/math.service.spec.ts
+  MathService
+    √ should be defined (5 ms)
+    √ should return correct sum of two numbers (1 ms)
+    √ should handle negative numbers (1 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       3 passed, 3 total
+Snapshots:   0 total
+Time:        1.015 s
+```
+
+- `pnpm test` 커맨드를 사용해서 테스트를 실행하고 결과 값을 받아 볼 수 있다.
+- 어떤 테스트가 성공/실패 했는지와 함께 몇개의 테스트가 성공/실패 했는지,
+  - 실행하는데 얼마나 걸렸는지 등의 통계 를 받을 수 있다
+
+---
+
+## 2. Matcher 함수
+
+```ts
+test('two plus two is four', () => {
+  // expect() 함수의 아규먼트가
+  // toBe() 함수의 아규먼트와 같은지 확인한다
+  expect(2 + 2).toBe(4)
+})
+```
+
+---
+
+### 2.1 기본 Matcher
+
+- `toBe(value)` : 값이 같은지 확인한다.
+- `toEqual(value)` : 객체의 모든 값이 같은지 재귀적으로 확인한다.
+- `toBeNull()` : toBe(null)과 같다. Falsy일때 조금 더 명확한 에러 메세지가 발생한다.
+- `toBeUndefined()` : 값이 undefined인걸 확인한다.
+  - `toBe(undefined)`를 실행 할 수도 있지만 직접 코드에서 undefined를 레퍼런스 하는 지양해야한다.
+- `toBeDefined()` : toBeUndefined()의 반대다.
+- `toBeTruthy()` JS에서 인지하는 true 값을 반환하는지 확인한다.
+- `toBeFalsy()` : toBeTruthy()의 반대
+- `toBeNan()` : 숫자가 아님을 확인한다
+
+---
+
+#### 2.1.1 toEqual() vs toBe()
+
+```ts
+const can1 = {
+  flavor: 'grapefruit',
+  ounces: 12,
+}
+const can2 = {
+  flavor: 'grapefruit',
+  ounces: 12,
+}
+
+describe('Test', () => {
+  test('have all the same properties', () => {
+    expect(can1).toEqual(can2)
+  })
+  test('are the exact same can', () => {
+    expect(can1).not.toBe(can2)
+  })
+})
+```
+
+---
+
+### 2.2 숫자 Matcher
+
+- `toBeGreaterThan(number)` : 값이 더 큰지 확인한다.
+- `toBeGreaterThanOrEqual(number)` : 값이 더 크거나 같은지 확인한다.
+- `toBeLessThan(number)` : 값이 더 작은지 확인한다.
+- `toBeLessThanOrEqual(number)` : 값이 더 작거나 같은지 확인한다.
+- `toBeCloseTo(number, numDigits?)` : 특정 소수점까지 같은 값인지 확인한다
+
+---
+
+#### 2.2.1 toBeCloseTo()
+
+```ts
+test('adding works sanely with decimals', () => {
+  // Fall! (0.30000000000000004 !== 0.3)
+  expect(0.2 + 0.1).toBe(0.3)
+})
+```
+
+```ts
+test('adding works sanely with decimals', () => {
+  expect(0.2 + 0.1).toBeCloseTo(0.3, 5)
+})
+```
+
+---
+
+### 2.3 함수 Matcher
+
+- `toHaveBeenCalled()` : mock function이 호출되었는지 확인합니다.
+- `toHaveBeenCalledTimes(number)` : mock function이 지정된 횟수만큼 호출되었는지 확인한다.
+- `toHaveBeenCalledWith(arg1, arg2, …)` : mock function이 특정 파라미터와 함께 호출되었는지 확인한다.
+- `toHaveBeenLastCalledWith(value)` : mock function이 마지막으로 호출될 때 특정 파라미터와 함께 호출되었는지 확인한다.
+- `toHaveBeenNthCalledWith(nthCall, value)` : mock function이 n번째로 호출될 때 특정 파라미터와 함께 호출되었는지 확인한다.
+- `toHaveReturned()` : mock function이 값을 반환했는지 확인한다. (에러를 던지지 않음)
+- `toHaveReturnedTimes(number)` : mock function이 값을 지정된 횟수만큼 반환했는지 확인한다.
+- `toHaveReturnedWith(value)` : mock function이 특정 값을 반환했는지 확인한다.
+- `toHaveLastReturnedWith(value)` : mock function이 마지막으로 특정 값을 반환했는지 확인한다.
+- `toHaveNthReturnedWith(nthCall, value)` : mock function이 n번째로 특정 값을 반환했는지 확인한다
+
+---
+
+#### 2.3.1 toHaveBeenCalled()
+
+```ts
+function dringAll(callback, flavour) {
+  if (flavour !== 'octopus') {
+    callback(flavour)
+  }
+}
+
+describe('Test', () => {
+  test('drinks something lemon-flavoured', () => {
+    const drink = jest.fn()
+    dringAll(drink, 'lemon')
+    expect(drink).toHaveBeenCalled()
+  })
+
+  test('does not drink something octopus-flavoured', () => {
+    const drink = jest.fn()
+    dringAll(drink, 'octopus')
+    expect(drink).not.toHaveBeenCalled()
+  })
+})
+```
+
+---
+
+#### 2.3.2 toHaveNthReturnedWith()
+
+```ts
+test('drink returns expected nth calls', () => {
+  const beverage1 = { name: 'Lemon' }
+  const beverage2 = { name: 'Orange' }
+  const drink = jest.fn(beverage => beverage.name)
+
+  drink(beverage1)
+  drink(beverage2)
+
+  expect(drink).toHaveNthReturnedWith(1, 'Lemon')
+  expect(drink).toHaveNthReturnedWith(2, 'Orange')
+})
+```
+
+---
+
+### 2.4 배열 및 객체 Matcher
+
+- `toContain(item)` : 배열 또는 문자열에 특정 항목이 포함되어 있는지 확인한다.
+- `toContainEqual(item)` : 배열에 구조적으로 같은 항목이 포함되어 있는지 확인한다.
+- `toHaveLength(number)` : 배열, 문자열 또는 객체의 길이/크기가 특정 값과 일치하는지 확인한다.
+- `toHaveProperty(keyPath, value?)` : 객체에 특정 경로의 속성이 존재하고, 선택적으로 해당 속성의 값이 특정 값과 일치하는지 확인한다.
+- `toMatchObject(object)` : 객체가 특정 객체와 부분적으로 일치하는지 확인한다
+
+---
+
+#### 2.4.1 toContainEqual()
+
+```ts
+describe('my beverage', () => {
+  test('is delicious and not sour', () => {
+    const myBeverage = { delicious: true, sour: false }
+    expect([myBeverage, ...]).toContainEqual(myBeverage)
+  })
+})
+```
+
+---
+
+#### 2.4.2 toHaveProperty()
+
+```ts
+const houseForSale = {
+  bath: true,
+  bedrooms: 4,
+  kitchen: {
+    amenities: ['oven', 'stove', 'washer'],
+    area: 20,
+    wallColor: 'white',
+    'nice.oven': true,
+  },
+  liveingroomm: {
+    amenities: [
+      {
+        couch: [
+          ['large', { dimensions: [20, 20] }],
+          ['small', { dimensions: [10, 10] }],
+        ],
+      },
+    ],
+  },
+  'ceiling.height': 2,
+}
+```
+
+```ts
+test('this house has my desired features', () => {
+  expect(houseForSale).toHaveProperty('bath')
+  expect(houseForSale).toHaveProperty('bedrooms', 4)
+
+  expect(houseForSale).not.toHaveProperty('pool')
+
+  // '.'를 사용해서 깊게 레퍼런싱하기
+  expect(houseForSale).toHaveProperty('kitchen.area', 20)
+  expect(houseForSale).toHaveProperty('kitchen.amenities', ['oven', 'stove', 'washer'])
+
+  expect(houseForSale).not.toHaveProperty('kitchen.open')
+
+  // Array를 사용해서 깊게 레퍼런싱하기
+  expect(houseForSale).toHaveProperty(['kitchen', 'area'], 20)
+  expect(houseForSale).toHaveProperty(
+    ['kitchen', 'amenities'], //
+    ['oven', 'stove', 'washer'],
+  )
+  expect(houseForSale).toHaveProperty(['kitchen', 'amenities', 0], 'oven')
+  expect(houseForSale).toHaveProperty(
+    'liveingroomm.amenities[0].couch[0][1].dimensions[0]', //
+    20,
+  )
+  expect(houseForSale).toHaveProperty(['kitchen', 'nice.oven'])
+  expect(houseForSale).not.toHaveProperty(['kitchen', 'open'])
+
+  // 키값 자체에 '.'이 있는 경우 Array 사용
+  expect(houseForSale).toHaveProperty(['ceiling.height'], 'tall')
+})
+```
+
+---
+
+### 2.5 에러 Matcher
+
+- `toThrow(error?)` : 함수가 호출될 때 특정 오류를 던지는지 확인한다
+
+---
+
+#### 2.5.1 toThrow()
+
+```ts
+function drinkFlavor(flavor) {
+  if (flavor === 'octopus') {
+    throw new DisgustingFlavorError('으악 문어 노맛이야')
+  }
+}
+```
+
+```ts
+test('throws on octopus', () => {
+  function drinkOctopus() {
+    drinkFlavor('octopus')
+  }
+
+  // 에러메시지 어딘가에 '노맛'이라고 써져있는지 확인한다.
+  expect(drinkOctopus).toThrow(/노맛/)
+  expect(drinkOctopus).toThrow('노맛')
+
+  // 정확한 문장을 테스트한다.
+  expect(drinkOctopus).toThrow(/^으악 문어 노맛이야!$/)
+  expect(drinkOctopus).toThrow(new Error('으악 문어 노맛이야!'))
+
+  // DisgustingFlavorError 타입의 에러가 던져지는걸 확인한다.
+  expect(drinkOctopus).toThrow(DisgustingFlavorError)
+})
+```
+
+---
+
+### 2.6 기타 Matcher
+
+- `toStrictEqual(value)`: 객체가 구조적으로 완벽히 동일한지 확인한다 (프로토타입 및 비열거형 속성 포함).
+- `toBeInstanceOf(Class)`: 값이 특정 클래스의 인스턴스인지 확인한다.
+- `toMatch(regexp | string)`: 문자열이 정규 표현식 또는 문자열과 일치하는지 확인한다.
+- `expect.anything()`: 아무 값이나 허용하지만 null이나 undefined는 제외한다.
+- `expect.any(constructor)`: 특정 생성자의 인스턴스인지 확인한다.
+- `expect.arrayContaining(array)`: 입력된 array가 비교 대상 array의 subset인지 확인한다. (전부 포함하는지)
+- `expect.objectContaining(object)`: 입력된 객체가 비교 대상 객체의 subset인지 확인한다. (전부 포함하는지)
+- `expect.stringContaining(string)`: 특정 문자열이 포함 돼있는지 확인한다
+
+---
+
+#### 2.6.1 arrayContaining()
+
+```ts
+describe('arrayContaining', () => {
+  const expected = ['Alice', 'Bob']
+
+  it('matches even if received contains additional elements', () => {
+    expect(['Alice', 'Bob', 'Eve']).toEqual(expect.arrayContaining(expected))
+  })
+})
+```
+
+---
+
+## 3. Modifiers
+
+- `not` : 반대 테스트로 전환
+- `resolves` : Promise 정상 반환으로 전환
+- `rejects` : Promise 던지는 상황으로 전환
+
+---
+
+### 3.1 not
+
+```ts
+test('flavor is not coconut', () => {
+  expect('apple').not.toBe('coconut')
+})
+```
+
+---
+
+### 3.2 resolve
+
+```ts
+test('resolves to lemon', () => {
+  // make sure to add a return statement
+  return expect(Promise.resolve('lemon')).resolves.toBe('lemon')
+})
+```
+
+---
+
+### 3.3 reject
+
+```ts
+test('rejects to octopus', () => {
+  return expect(Promise.reject(new Error('octopus'))).rejects.toThrow('octopus')
+})
+```
+
+---
+
+## 4. Mock / Stub / Fake
+
+테스트할때 의존성(Dependency)를 해결하는 방법이 다양하게 존재한다.
+모든 의존성 (데이터베이스등)을 그대로 사용하는 테스트도 존재하지 만 그런 테스트는 너무 무겁고 오래걸린다.
+일반적으로 디펜던시를 각자 객체로 스왑 후 사용한다.
+
+- `Mock` : Mock은 상호작용을 검증하는 객체이다.
+- `Stub` : Stub은 함수나 객체의 간소화된 버전으로 미리 정의된 값을 반환한다.
+- `Fake` : Fake는 실제 객체를 간소하게 구현한 형태이다.
+  - 복잡한 실제 객체의 작동 방식을 최소화하여 구현한 형태이다.
+  - 실제 객체는 너무 헤비하지만 Stub 보다는 현실적인 작동이 필요할때 많이 사용된다.
+
+의존성 해결을 해주는 객체가 셋중 꼭 어느 하나에 속한다고 생각할 필요는 없다. Mock이면서 Stub일 수 있다.
+명칭은 위와 같이 정의하지만 일반 적으론 일괄적으로 Mock이라고 부른다.
+
+---
+
+### 4.1 Mock
+
+```ts
+import { Test, TestingModule } from '@nestjs/testing'
+import { UserService } from './user.service'
+import { UserRepository } from './user.repository'
+
+describe('UserService with Mock', () => {
+  let userService: UserService
+  let userRepositoryMock: { findById: jest.Mock }
+
+  beforeEach(async () => {
+    userRepositoryMock = { findById: jest.fn() } // Mock  생성하기
+
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        UserService,
+        {
+          provide: UserRepository,
+          useValue: userRepositoryMock, // Mock 주입하기
+        },
+      ],
+    }).compile()
+
+    userService = module.get<UserService>(UserService)
+  })
+
+  it('should call findById on UserRepository', () => {
+    const userId = '1'
+    userService.findUserById(userId)
+
+    // 실행된걸 확인
+    expect(userRepositoryMock.findById).toHaveBeenCalledWith(userId)
+
+    // 한번만 불린걸 확인
+    expect(userRepositoryMock.findById).toHaveBeenCalledTimes(1)
+  })
+})
+```
+
+---
+
+### 4.2 Stub
+
+```ts
+import { Test, TestingModule } from '@nestjs/testing'
+import { UserService } from './user.service'
+import { UserRepository } from './user.repository'
+
+describe('UserService with Stub', () => {
+  let userService: UserService
+
+  beforeEach(async () => {
+    const userRepositoryStub = {
+      findById: (id: string) => ({ id, name: 'Stubbed User' }), // Stub 생성하기
+    }
+
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        UserService,
+        {
+          provide: UserRepository,
+          useValue: userRepositoryStub, // Stub 주입하기
+        },
+      ],
+    }).compile()
+
+    userService = module.get<UserService>(UserService)
+  })
+
+  it('should return the stubbed user', () => {
+    const userId = '1'
+    const result = userService.findUserById(userId)
+
+    // 변환값 검증
+    expect(result).toEqual({ id: userId, name: 'Stubbed User' })
+  })
+})
+```
+
+---
+
+### 4.3 Fake
+
+```ts
+import { Test, TestingModule } from '@nestjs/testing'
+import { UserService } from './user.service'
+import { UserRepository } from './user.repository'
+
+// Faks 생성
+class FakeUserRepository {
+  private user = [{ id: '1', name: 'Fake User' }]
+
+  findById(id: string) {
+    return this.users.find(user => user.id === id) || null
+  }
+}
+
+describe('UserService with Fake', () => {
+  let userService: UserService
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        UserService,
+        {
+          provide: UserRepository,
+          useClass: FakeUserRepository, // Fake 주입하기
+        },
+      ],
+    }).compile()
+
+    userService = module.get<UserService>(UserService)
+  })
+
+  it('should return the fake user', () => {
+    const userId = '1'
+    const result = userService.findUserById(userId)
+
+    // 결과값 검증
+    expect(result).toEqual({ id: userId, name: 'Fake User' })
+  })
+
+  it('should return null if user not found', () => {
+    const userId = '2'
+    const result = userService.findUserById(userId)
+
+    // 결과값 검증
+    expect(result).toBeNull()
+  })
+})
+```
+
+---
+
+### 4.4 Mock vs Stub vs Fake
+
+|   항목    | Mock                                                    | Stub                                                        | Fake                                                         |
+| :-------: | ------------------------------------------------------- | ----------------------------------------------------------- | ------------------------------------------------------------ |
+|   목적    | 객체 간의 상호작용과 <br />동작을 검증한다              | 특정 로직을 테스트하기위해 <br />미리 정 의된 값을 반환한다 | 최소한의 기능을 갖은 <br />실제 객체를 시뮬레이션한다        |
+|   동작    | 메서드 호출, 파라미터 등을 확인                         | 정적이고 단순하고 <br />지정된 아웃풋을 반환                | 실제 객체의 동작을 모방                                      |
+|  복잡도   | 동적이며 다양한 설정을 통해 <br />복잡하게 만들 수 있다 | 더욱 간단하며 <br />정적인 응답을 제공한다                  | 스텁보다는 복잡하지만 <br />실제 객체보 다는 덜 복잡하다     |
+| 사용 예시 | 메서드가 테스트에서 올바르게 <br />호출됐는지 확인한다  | 특정 반환 값을 제공하여 <br />단위 테스트를 격리한다.       | 테스트를 위해 실제 종속성없이 <br />최소한의 구현을 제공한다 |
+
+---
+
+### 4.5 Mock Function
+
+```ts
+import { Test, TestingModule } from '@nestjs/testing'
+import { UserService } from './user.service'
+import { UserRepository } from './user.repository'
+
+describe('UserService with Mock', () => {
+  let userService: UserService
+  let userRepositoryMock: { findById: jest.Mock }
+
+  beforeEach(async () => {
+    userRepositoryMock = { findById: jest.fn() } // Mock  생성하기
+
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        UserService,
+        {
+          provide: UserRepository,
+          useValue: userRepositoryMock, // Mock 주입하기
+        },
+      ],
+    }).compile()
+
+    userService = module.get<UserService>(UserService)
+  })
+
+  it('should call findById on UserRepository', () => {
+    const userId = '1'
+    userService.findUserById(userId)
+
+    // 실행된걸 확인
+    expect(userRepositoryMock.findById).toHaveBeenCalledWith(userId)
+
+    // 한번만 불린걸 확인
+    expect(userRepositoryMock.findById).toHaveBeenCalledTimes(1)
+  })
+})
+```
+
+---
+
+### 4.6 Mock Function 속성 접근자
+
+- `mockFn.mock.calls`: mock function이 호출된 모든 파라미터들의 배열을 포함한다.
+- `mockFn.mock.results`: mock function의 각 호출이 반환한 값 또는 예외를 포함하는 객체의 배열이다.
+- `mockFn.mock.instances`: mock function이 호출될 때마다 생성된 this 인스턴스를 포함하는 배열이다
+
+---
+
+### 4.7 mock.instances
+
+```ts
+const mockFn = jest.fn()
+
+const a = new mockFn()
+const b = new mockFn()
+
+mockFn.mock.instances[0] === a // true
+mockFn.mock.instances[1] === b // true
+```
+
+---
+
+### 4.8 Mock Function 구현
+
+- `mockFn.mockImplementation(fn)` : mock function의 구현체를 변경한다. (실행할 함수)
+- `mockFn.mockImplementationOnce(fn)` : mockImplementation을 단 한번만 실행한다.
+  - 여러번 chaining 가능하다.
+- `mockFn.mockReturnThis()` : mock function이 호출될 때마다 this를 반환하도록 설정한다.
+- `mockFn.mockReturnValue(value)` : mock function이 호출될 때마다 특정 값을 반환하도록 설정한다.
+- `mockFn.mockReturnValueOnce(value)` : mockReturnValue를 단 한번만 실행한다.
+  - 여러번 chaining 가능하다.
+- `mockFn.mockResolvedValue(value)` : mock function이 호출될 때 Promise가 특정 값으로 Resolve 되도록 한다.
+- `mockFn.mockResolvedValueOnce(value)` : mockResolvedValue를 단 한번만 실행한다.
+  - 여러번 chaining 가능하다.
+- `mockFn.mockRejectedValue(value)` : mock function이 호출될 때 Promise가 특정 값으로 Reject 되도록 설정한다.
+- `mockFn.mockRejectedValueOnce(value)` : mock function의 다음 한 번의 호출에 대해 프로미스가 특정 값으로 거부되도록 설정한다
+
+---
+
+### 4.9 mockImplementation()
+
+```ts
+const mockFn = jest.fn(scalar => 42 + scalar)
+
+mockFn(0) // 42
+mockFn(1) // 43
+
+mockFn.mockImplementation(scalar => 36 + scalar)
+
+mockFn(2) // 38
+mockFn(3) // 39
+```
+
+---
+
+### 4.10 mockReturnThis()
+
+```ts
+jest.fn(function () {
+  return this
+})
+```
+
+---
+
+### 4.11 mockReturnValue()
+
+```ts
+jest.fn().mockImplementation(() => value)
+```
+
+---
+
+### 4.12 mockResolvedValue()
+
+```ts
+jest.fn().mockImplementation(() => Promise.resolve(value))
+```
+
+---
+
+### 4.13 mockRejectedValue()
+
+```ts
+jest.fn().mockImplementation(() => Promise.reject(value))
+```
+
+---
+
+### 4.14 Mock Function 구현
+
+- `mockFn.mockClear()`: mock function의 호출 기록과 반환 값들을 지운다 (상태 초기화).
+- `mockFn.mockReset()`: mockClear()의 기능을 모두 실행하고 mock 함수를 빈 함수로 대체한다.
+- `mockFn.mockRestore()`: mockReset()의 작업을 모두 진행하고 mock 함수를 원래 구현체로 복원한다
+
+---
+
+## 5. 테스팅의 종류
+
+![test-1_1](https://raw.githubusercontent.com/berenickt/image-server/refs/heads/main/nestjs/test-1_1.png)
+
+- `Unit Testing` : 함수나 클래스처럼 가장 작은 단위의 로직을 '독립적으로' 테스트한다
+- `Integration Testing` : 데이터베이스등 다양한 서비스의 요소들을 함께 실행 했을때 문제가 없는지 확인한다
+- `End to End Testing` : 사용자의 관점에서 서비스를 사용 했을때 프로그램이 정상적으로 작동하는지 확인한다
+
+---
+
+### 5.1 NestJS Testing 예제
+
+```ts
+import { CatsController } from './cats.controller'
+import { CatsService } from './cats.service'
+
+describe('CatsController', () => {
+  let catsController: CatsController
+  let catsService: CatsService
+
+  beforeEach(() => {
+    catsService = new CatsService()
+    catsController = new CatsController(catsService)
+  })
+
+  describe('findAll', () => {
+    it('should return an array of cats', async () => {
+      const result = ['test']
+      jest.spyOn(catsService, 'findAll').mockImplementation(() => result)
+
+      expect(await catsController.findAll()).toBe(result)
+    })
+  })
+})
+```
+
+```ts
+import { Test } from '@nestjs/testing'
+import { CatsController } from './cats.controller'
+import { CatsService } from './cats.service'
+
+describe('CatsController', () => {
+  let catsController: CatsController
+  let catsService: CatsService
+
+  beforeEach(async () => {
+    const module = await Test.createTestingModule({
+      controllers: [CatsController],
+      providers: [CatsService],
+    }).compile()
+
+    catsService = modulRef.get<CatsService>(CatsService)
+    catsController = moduleRef.get<CatsController>(CatsController)
+  })
+
+  describe('findAll', () => {
+    it('should return an array of cats', async () => {
+      const result = ['test']
+      jest.spyOn(catsService, 'findAll').mockImplementation(() => result)
+
+      expect(await catsController.findAll()).toBe(result)
+    })
+  })
+})
+```
+
+---
+
+### 5.2 Unit Testing 예제
+
+```ts
+@Controller('uesrs')
+export class UsersController {
+  constructor(private readonly usersService: UsersService) {}
+
+  @Get(':id')
+  async getUserById(@Param('id', ParseIntPipe) id: number): Promise<User> {
+    return this.usersService.findUserById(id)
+  }
+}
+```
+
+```ts
+@Injectable()
+export class UsersService {
+  constructor(
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
+  ) {}
+
+  async findUserById(id: number): Promise<User> {
+    if (id === '2') return null
+
+    return await this.userRepository.findOne({
+      where: { id },
+    })
+  }
+}
+```
+
+```ts
+describe('UserController', () => {
+  let usersController: UsersController
+  let usersService: UsersService
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      controllers: [UsersController],
+      providers: [
+        {
+          provide: UsersService,
+          useValue: {
+            findUserById: jest.fn(),
+          },
+        },
+      ],
+    }).compile()
+
+    usersService = module.get<UsersService>(UsersService)
+    usersController = module.get<UsersController>(UsersController)
+  })
+
+  it('should call UserService.findUserById with the correct parameter', async () => {
+    const id = '1'
+    const userServiceSpy = jest
+      .spyOn(usersService, 'findUserById') //
+      .mockResolvedValueOnce({ id, name: 'John Doe' })
+    const result = userController.getUserById(id)
+
+    expect(userServiceSpy).toHaveBeenCalledWith(id)
+    expect(result).toEqual({ id, name: 'John Doe' })
+  })
+})
+```
+
+---
+
+### 5.3 Integration Testing 예제
+
+```ts
+@Controller('users')
+export class UsersController {
+  constructor(private readonly usersService: UsersService) {}
+
+  @Get(':id')
+  async getUserById(@Param('id', ParseIntPipe) id: number): Promise<User> {
+    return this.usersService.findUserById(id)
+  }
+}
+```
+
+```ts
+@Injectable()
+export class UsersService {
+  constructor(
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
+  ) {}
+
+  async findUserById(id: number): Promise<User> {
+    if (id === '2') return null
+
+    return await this.userRepository.findOne({
+      where: { id },
+    })
+  }
+}
+```
+
+```ts
+describe('UserController (Integration)', () => {
+  let userController: UsersController
+  let usersService: UsersService
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      controllers: [UsersController],
+      providers: [UsersService],
+    }).compile()
+
+    userController = module.get<UsersController>(UsersController)
+    usersService = module.get<UsersService>(UsersService)
+  })
+
+  it('should return user data for a valid ID', () => {
+    const id = '1'
+    const result = userController.getUserById(id)
+    expect(result).toEqual({ id: '1', name: 'John Doe' })
+  })
+
+  it('should return null for an invalid ID', () => {
+    const id = '2'
+    const result = userController.getUserById(id)
+    expect(result).toBeNull()
+  })
+})
+```
+
+---
+
+### 5.4 End to End Testing 예제
+
+```ts
+describe('UserController (E2E)', () => {
+  let app: INestApplication
+
+  beforeAll(async () => {
+    const moduleFixture: TestingModule = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile()
+
+    app = moduleFixture.createNestApplication()
+    await app.init()
+  })
+
+  it('/users/:id (GET) - should return user data for a valid ID', async () => {
+    const id = '1'
+    const response = await request(app.getHttpServer()).get(`/users/${id}`).expect(200)
+
+    expect(response.body).toEqual({ id: '1', name: 'John Doe' })
+  })
+
+  it('/users/:id (GET) - should return 404 for an invalid ID', async () => {
+    const id = '2'
+    await request(app.getHttpServer()).get(`/users/${id}`).expect(404)
+  })
+
+  afterAll(async () => {
+    await app.close()
+  })
+})
+```
+
+---
+
+## 6. Coverage
+
+코드 커버리지는 소프트웨어 테스트에서 테스트가 소스 코드의 어느 부분을 얼마나 실행했는지를 측정하는 지표다.
+코드 커버리지는 테스트의 효과성을 평가하고, 테스트되지 않은 코드 영역을 식별하여 테스트 품질을 향상시키는 데 중요한 역할을 한다.
+
+코드 커버리지의 유형
+
+- `라인 커버리지(Line Coverage)`
+  - 코드의 각 라인이 테스트에 의해 실행되었는지를 측정한다.
+  - e.g. 전체 코드 라인 중 몇 퍼센트가 테스트되었는지.
+- `분기 커버리지(Branch Coverage)`
+  - 조건문(if, switch 등)의 각 분기가 테스트에 의해 실행되었는지를 측정한다.
+  - e.g. if-else 문에서 if와 else 각각이 테스트되었는지.
+- `함수 커버리지(Function Coverage)`
+  - 코드의 각 함수가 테스트에 의해 호출되었는지를 측정한다.
+  - e.g. 전체 함수 중 몇 퍼센트가 테스트되었는지.
+- `조건 커버리지(Condition Coverage)`
+  - 조건문 내의 각 개별 조건이 테스트에 의해 참과 거짓으로 평가되었는지를 측정한다.
+  - e.g. 복합 조건문에서 각 조건이 참과 거짓으로 테스트되었는지
+
+### 6.1 Coverage (Statement)
+
+```ts
+// Statement
+const sum = (a, b) => a + b
+// Statement
+console.log(sum(1, 2))
+```
+
+---
+
+### 6.2 Coverage (Branch)
+
+```ts
+if (x > 10) {
+  // 하나의 분기
+  console.log('x는 10보다 큽니다')
+} else {
+  // 하나의 분기
+  console.log('x는 10 이하입니다')
+}
+```
+
+---
+
+### 6.3 Coverage (Function)
+
+```ts
+function add(a, b) {
+  // 함수입니다.
+  return a + b
+}
+
+function subtract(a, b) {
+  // 함수입니다.
+  return a - b
+}
+```
+
+---
+
+### 6.4 Coverage (Line)
+
+```ts
+const multiply = (a, b) => {
+  // 라인입니다.
+  return a * b
+}
+
+// 라인
+console.log(multiply(2, 3))
+```
+
+---
+
+### 6.5 테스트 하지 않는것들
+
+- `프레임워크 기능`
+  - 근본적으로 프레임워크 자체적으로 유닛 테스트가 있을거란 가정을 한다.
+  - e.g. NestJS의 UseGuard Annotation이 잘 작동하는 지 테스트 하지 않는다.
+  - NestJS 프레임워크에서 테스트가 잘 됐을거라고 가정한다. 그럼에도 정말 하고싶다면 절대로 하면 안되는건 아니다.
+- `외부 디펜던시`
+  - 낮은 수준의 테스트일수록 (Unit Test, Integration Test) TypeORM, Logger등 외부 디펜던시가 잘 작동하는지 테스트 하지 않는다.
+  - 대신 Mock, Stub, Fake를 사용해서 기능을 모방하고 실제 내 코드상의 중요한 로직을 테스트한다.
+  - 근본적으로 내 코드가 아니면 테스 트 하지 않는다.
+- `퍼포먼스`
+  - 퍼포먼스 테스트는 보통 다른 로드테스트 툴을 사용해서 진행한다.
+  - Unit Test, Integration Test, End to End Test 등은 근본적으로 로직의 정상 작동 여부를 테스트한다.
+  - 퍼포먼스와 로드 테스트는 따로 진행하도록 한다.
+- `로직이 없는 코드`
+  - 초보자들이 coverage를 올리기 위해서 흔히 하는 실수다.
+  - NestJS를 예를들면 Dto나 Entity를 테스트 할 필요 없다. 그냥 ignore 리스트에 넣어버리자

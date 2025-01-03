@@ -1,0 +1,925 @@
+---
+title: 'Storybook 개요'
+date: 2024/04/04
+---
+
+## 1. Storybook
+
+- 효과적인 디자인 시스템 구성을 위해서는 표준화된 패턴 및 재사용 가능한 컴포넌트의 명세를 명확하게 확인할 수 있는 문서 필요
+- 애플리케이션과 구분된 샌드박스 개발 공간 필요
+- 프론트엔드 기술 스택 - UI 컴포넌트 테스트
+- `Storybook`
+  - 격리된 UI 컴포넌트 개발환경을 구성할 수 있게끔 도와주는 도구
+  - 프로젝트 내 디자인 시스템을 효율적으로 개발하고 테스트하기 위해 사용
+
+* cf. [emotion을 활용한 크몽 프론트엔드 스타일링 시스템 (brunch.co.kr)](https://brunch.co.kr/@kmongdev/17)
+* cf. [Storybook: Frontend workshop for UI development](https://storybook.js.org/)
+* cf. [@storybook/react - npm (npmjs.com)](https://www.npmjs.com/package/@storybook/react)
+
+---
+
+### 1.1 Storybook를 사용해야하는 이유
+
+- `컴포넌트 기반 개발 및 테스팅 용이성`: 각 컴포넌트를 독립적으로 개발하고 테스트할 수 있기 때문에 코드의 재사용성이 향상되고 개발자는 컴포넌트의 상태 및 다양한 사용 사례를 효과적으로 관리
+- `문서화 및 디자인 시스템 구축`: 컴포넌트의 사용법과 속성을 문서화하고 레퍼런스로 제공
+- `시각적 테스팅 및 디자인 시스템 검증`: 시각적 테스팅을 지원하여 UI 컴포넌트의 변경 사항을 빠르게 확인하고 디자인 시스템의 일관성을 유지
+- `빠른 개발 환경 제공`: 빠른 프로토타이핑 및 개발 환경을 제공
+- `컴포넌트 간의 상호작용 및 스토리 작성`: 컴포넌트 간의 상호작용을 보여주기 위해 스토리를 작성하는 기능을 제공
+
+---
+
+### 1.2 Storybook 주요 개념
+
+- `스토리 (Story)`: 하나 이상의 컴포넌트 상태를 보여주는 단위
+- `컴포넌트`: UI를 구성하는 독립적인 요소
+- `애드온(addon)`: Storybook에 추가 기 능을 제공하는 확장 기능
+- `Manager Area`: (좌측) 스토리 목록 및 다양한 작업을 수행할 수 있는 공간
+- `Preview Area`: (우측) 스토리의 시각 적인 결과물이 표시되는 영역
+
+---
+
+## 2. 설치 및 설정
+
+```bash
+npx storybook@latest init
+```
+
+1. `npx storybook@next init` 명령어로 Next.js 프로젝트를 위한 스토리북 세팅
+   - Next.js를 위한 여러가지 스토리북 파일들이 생성됨 (`.storybook/main.ts`, `.storybook/preview.ts`, `stories` 폴더 등)
+2. `storybook/main.ts` 파일에서 StorybookConfig에 `stories: [‘../app/**/*.stories.tsx']` 코드 추가
+   - 혹시나 `package.json`에 `sideEffects: true`로 설정되어있으면 제거
+3. `tailwind.config.js` 파일에 tailwind 적용을 위해서 `‘./stories//*.{js,ts,jsx,tsx,mdx}’` 코드 추가
+4. 원하는 컴포넌트의 스토리 작성 (e.g. `Button.stories.ts`)
+5. 스토리북을 다시 실행하고 싶다면 `yarn storybook` 명령어로 실행
+
+---
+
+### 2.1 tailwind 추가 설정
+
+```tsx .storybook/preview.ts
+import type { Preview } from '@storybook/react'
+import '../src/styles/globals.css' // Storybook에 tailwindcss 설정을 적용
+
+// React 컴포넌트의 미리보기
+const preview: Preview = {
+  parameters: {
+    // on으로 시작하고 대문자로 시작하는 이름을 가진 속성들을 찾는다.
+    actions: { argTypesRegex: '^on[A-Z].*' },
+    controls: {
+      // 컨트롤의 타입에 따라 일치하는 정규식을 정의
+      matchers: {
+        // color 타입의 컨트롤은 background 또는 color로 끝나는 속성 이름을 가질 수 있다.
+        color: /(background|color)$/i,
+        // date 타입의 컨트롤은 Date로 끝나는 속성 이름을 가질 수 있다.
+        date: /Date$/i,
+      },
+    },
+  },
+}
+
+export default preview
+```
+
+---
+
+### 2.2 storybook에 폰트 적용 예시
+
+```html preview-head.html
+<!-- 스토리북에 Google Material Symbols 적용 -->
+<!-- @see https://developers.google.com/fonts/docs/material_symbols?hl=ko#use_in_web -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+
+<!-- google font 적용 -->
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&display=swap" rel="stylesheet" />
+
+<link
+  href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@100;200;300;400;500;600;700;800;900&display=swap"
+  rel="stylesheet"
+/>
+```
+
+---
+
+### 2.3 Storybook 배포
+
+Chromatic: Storybook에 통합되어 시각적 테스팅과 디자인 시스템 관리를 위한 온라인 플랫폼
+
+1. Chromatic 설치: `yarn add —dev chromatic`
+2. Chromatic 계정 생성 및 프로젝트 추가 (https://www.chromatic.com/)
+3. Chromatic 사이트에서 프로젝트 생성 후, Publish 명령어 입력
+   - `npx chromatic —project-token=TOKEN_RANDOM`
+4. 스토리북 publishing이 완료되면, 터미널에 배포된 chromatic url에 들어가서 스토리 확인
+
+---
+
+## 3. 버튼 컴포넌트 스토리 예시
+
+### 3.1 index.tsx
+
+![버튼 props](https://raw.githubusercontent.com/berenickt/image-server/main/img/03-03-storybook-button.png)
+
+위 그림과 같이 주석 자체가 그대로 문서화된다. 이게 가능한 이유는 stories.ts에 `tags: ['autodocs']`를 추가해줬기 때문.
+
+```tsx
+import classNames from 'classnames'
+
+import Spinner from '../Spinner'
+
+/**
+ * React.ComponentPropsWithoutRef<'button'>은 button 요소의 ref을 제외한 모든 속성을 상속받는다.
+ */
+interface Props extends React.ComponentPropsWithoutRef<'button'> {
+  /**
+   * 버튼 크기를 지정합니다 (기본값: 'md')
+   */
+  size?: 'xs' | 'sm' | 'md'
+  /**
+   * 버튼 색상을 지정합니다 (기본값: 'black')
+   */
+  color?: 'black' | 'grey' | 'orange' | 'red'
+  /**
+   * 버튼 내부 색상이 칠해져 있는지 여부를 지정합니다
+   */
+  outline?: boolean
+  /**
+   * 사용자 인터렉션이 진행되고 있는지 여부를 지정합니다
+   */
+  isLoading?: boolean
+  /**
+   * 버튼이 width: 100%여야 하는 경우 사용합니다
+   */
+  fullWidth?: boolean
+}
+
+/**
+ * 버튼을 표시하기 위한 컴포넌트
+ */
+export default function Button({
+  color = 'black',
+  size = 'md',
+  outline,
+  fullWidth,
+  isLoading,
+  children,
+  ...props // 나머지 모든 속성을 props로 전달
+}: Props) {
+  return (
+    <button
+      {...props}
+      disabled={isLoading || props.disabled} // 로딩 중이면, disabled 속성을 추가
+      className={classNames(
+        props.className, // 다른 클래스 이름이 있다면 그것도 포함
+        'disabled:opacity-50 relative', // disabled 속성이 있을 때, 투명도를 50%로 변경
+        size === 'xs' && 'text-xs px-2',
+        size === 'sm' && 'text-sm px-3 py-1',
+        size === 'md' && 'text-base px-5 py-2',
+        fullWidth && 'w-full',
+        outline === true
+          ? {
+              'text-black': true,
+              border: true,
+              'border-black': color === 'black',
+              'border-slate-300': color === 'grey',
+              'border-orange-500': color === 'orange',
+              'border-red-700': color === 'red',
+            }
+          : {
+              'text-white': true,
+              'bg-black': color === 'black',
+              'bg-slate-300': color === 'grey',
+              'bg-orange-500': color === 'orange',
+              'bg-red-500': color === 'red',
+            },
+      )}
+    >
+      {isLoading ? (
+        <>
+          {/* absolute : 요소를 절대위치로 띄움 */}
+          <div className="absolute top-0 left-0 h-full w-full flex justify-center items-center">
+            <Spinner size={size} />
+          </div>
+          {/* opacity-0 : 요소를 화면에만 숨겨서, 너비를 그대로 함  */}
+          <div className="opacity-0">{children}</div>
+        </>
+      ) : (
+        children
+      )}
+    </button>
+  )
+}
+```
+
+---
+
+### 3.2 index.stories.ts
+
+```tsx
+import type { Meta, StoryObj } from '@storybook/react'
+
+import Button from '.'
+
+const meta = {
+  title: 'Button',
+  component: Button,
+  tags: ['autodocs'], // "autodocs" tags를 추가하면, 컴포넌트 문서 작성 가능
+  args: {
+    children: 'Hello World!', // 컴포넌트의 기본 텍스트
+  },
+} satisfies Meta<typeof Button>
+
+/**
+ * StoryObj 타입 : Storybook의 스토리 객체를 나타냄
+ */
+export default meta
+type Story = StoryObj<typeof meta>
+
+export const DefaultButton: Story = {
+  args: {},
+}
+```
+
+---
+
+## 4. input 컴포넌트 스토리 예시
+
+### 4.1 index.tsx
+
+```tsx
+import classNames from 'classnames'
+import { ForwardedRef, forwardRef } from 'react'
+
+interface Props extends React.ComponentPropsWithoutRef<'input'> {}
+
+/**
+ * Input 요소를 처리하기 위한 컴포넌트
+ * @description forwardRef : ref를 전달하기 위한 함수
+ * @see https://ko.react.dev/reference/react/forwardRef
+ */
+const Input = forwardRef(function Input(
+  { ...props }: Props, // 나머지 모든 속성을 props로 전달
+  ref: ForwardedRef<HTMLInputElement>,
+) {
+  return (
+    <input
+      {...props}
+      ref={ref} // ref를 전달
+      className={classNames(props.className, 'border text-base p-2 outline-none text-black disabled:opacity-50')}
+    />
+  )
+})
+
+export default Input
+```
+
+---
+
+### 4.2 index.stories.ts
+
+```tsx
+import type { Meta, StoryObj } from '@storybook/react'
+
+import Input from '.'
+
+const meta = {
+  title: 'Input',
+  component: Input,
+  tags: ['autodocs'], // "autodocs" tags를 추가하면, 컴포넌트 문서 작성 가능
+  args: {
+    value: 'Hello World!', // 컴포넌트의 기본 텍스트
+    disabled: false,
+  },
+} satisfies Meta<typeof Input>
+
+/**
+ * StoryObj 타입 : Storybook의 스토리 객체를 나타냄
+ */
+export default meta
+type Story = StoryObj<typeof meta>
+
+export const DefaultInput: Story = {
+  args: {},
+}
+```
+
+---
+
+## 5. text 컴포넌트 스토리 예시
+
+### 5.1 index.tsx
+
+```tsx
+import classNames from 'classnames'
+
+/***
+ * React.ComponentPropsWithoutRef<'span'>은 span 요소의 ref을 제외한 모든 속성을 상속받는다.
+ */
+interface Props extends React.ComponentPropsWithoutRef<'span'> {
+  /**
+   * 텍스트의 크기를 설정합니다. (기본값: md)
+   */
+  size?: '4xl' | '3xl' | '2xl' | 'xl' | 'lg' | 'md' | 'sm' | 'xs'
+  /**
+   * 텍스트의 색상을 설정합니다. (기본값: black)
+   */
+  color?: 'black' | 'grey' | 'red' | 'white'
+  /**
+   * 텍스트의 굵기를 설정합니다. (기본값: normal)
+   */
+  weight?: 'light' | 'normal' | 'bold'
+}
+
+/**
+ * 일반적인 텍스트를 표시하기 위한 컴포넌트
+ */
+export default function Text({
+  size = 'md',
+  color = 'black',
+  weight = 'normal',
+  ...props // 나머지 모든 속성을 props로 전달
+}: Props) {
+  return (
+    <span
+      {...props}
+      className={classNames(
+        props.className, // 다른 클래스 이름이 있다면 그것도 포함
+        {
+          'text-4xl': size === '4xl',
+          'text-3xl': size === '3xl',
+          'text-2xl': size === '2xl',
+          'text-xl': size === 'xl',
+          'text-lg': size === 'lg',
+          'text-base': size === 'md',
+          'text-sm': size === 'sm',
+          'text-xs': size === 'xs',
+        },
+        {
+          'text-black': color === 'black',
+          'text-zinc-400': color === 'grey',
+          'text-red-500': color === 'red',
+          'text-white': color === 'white',
+        },
+        {
+          'font-light': weight === 'light',
+          'font-normal': weight === 'normal',
+          'font-bold': weight === 'bold',
+        },
+      )}
+    />
+  )
+}
+```
+
+---
+
+### 5.2 index.stories.ts
+
+```tsx
+import type { Meta, StoryObj } from '@storybook/react'
+
+import Text from '.'
+
+const meta = {
+  title: 'Text',
+  component: Text,
+  tags: ['autodocs'],
+  args: {
+    children: 'Hello World!', // 컴포넌트의 기본 텍스트
+  },
+} satisfies Meta<typeof Text>
+
+/**
+ * StoryObj 타입 : Storybook의 스토리 객체를 나타냄
+ */
+export default meta
+type Story = StoryObj<typeof meta>
+
+export const DefaultText: Story = {
+  args: {},
+}
+
+export const SizedText: Story = {
+  args: { size: '4xl' },
+}
+
+export const ColoredText: Story = {
+  args: { color: 'red' },
+}
+
+export const WeightedText: Story = {
+  args: { weight: 'bold' },
+}
+```
+
+---
+
+## 6. Spiner 컴포넌트 스토리 예시
+
+### 6.1 index.tsx
+
+```tsx
+interface Props {
+  /**
+   * 스피너의 크기를 지정합니다 (기본값: 'md')
+   */
+  size?: 'xs' | 'sm' | 'md'
+}
+
+/**
+ * 스피너를 표시하기 위한 컴포넌트
+ * @see https://tailwindcss.com/docs/animation#spin
+ */
+export default function Spinner({ size = 'md' }: Props) {
+  return (
+    <span
+      className="material-symbols-outlined animate-spin"
+      style={{
+        fontSize: size === 'md' ? '1rem' : size === 'sm' ? '0.875rem' : '0.75rem',
+      }}
+    >
+      progress_activity
+    </span>
+  )
+}
+```
+
+---
+
+### 6.2 index.stories.ts
+
+```tsx
+import type { Meta, StoryObj } from '@storybook/react'
+
+import Spinner from '.'
+
+const meta = {
+  title: 'Spinner',
+  component: Spinner,
+  tags: ['autodocs'],
+} satisfies Meta<typeof Spinner>
+
+/**
+ * StoryObj 타입 : Storybook의 스토리 객체를 나타냄
+ */
+export default meta
+type Story = StoryObj<typeof meta>
+
+export const DefaultSpinner: Story = {
+  args: {},
+}
+```
+
+---
+
+## 7. Product 컴포넌트 스토리 예시
+
+### 7.1 index.tsx
+
+```tsx
+import dayjs from 'dayjs'
+import relativeTime from 'dayjs/plugin/relativeTime'
+import 'dayjs/locale/ko'
+
+import Text from '../Text'
+
+interface Props {
+  /** 상품 이름 */
+  title: string
+  /** 상품 가격 */
+  price: number
+  /** 상품 등록 시간 */
+  createdAt: string
+  /** 상품 대표 이미지 주소 */
+  imageUrl: string
+  /** 상품 판매 여부 */
+  isSoldOut?: boolean
+}
+
+/***
+ * @see https://day.js.org/docs/en/plugin/relative-time#docsNav
+ */
+dayjs.extend(relativeTime).locale('ko')
+
+/**
+ * 상품 미리보기 컴포넌트
+ * @returns
+ */
+export default function Product({ title, price, createdAt, imageUrl, isSoldOut }: Props) {
+  return (
+    <div className="flex flex-col border border-slate-300 relative">
+      {/* 판매 완료 시 투명도 및 판매 완료 문구 표시 */}
+      {isSoldOut && (
+        <div className="absolute top-0 left-0 w-full h-full bg-slate-900 opacity-70 flex justify-center items-center">
+          <Text color="white">판매 완료</Text>
+        </div>
+      )}
+      {/* 이미지 */}
+      <div className="h-36 bg-cover bg-center" style={{ backgroundImage: `url(${imageUrl})` }} />
+      {/* 설명 */}
+      <div className="h-20 flex flex-col px-3 justify-center">
+        {/* 제품명 */}
+        {/* 텍스트가 너무 길어서 한 줄로 표시되지 않을 때, 넘치는 부분을 ...으로 표시 */}
+        <Text className="text-ellipsis overflow-hidden whitespace-nowrap block">{title}</Text>
+        <div className="flex justify-between items-center flex-wrap">
+          {/* 가격 */}
+          {/* @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/toLocaleString#using_tolocalestring */}
+          <div>
+            <Text weight="bold"> {price.toLocaleString()} </Text>
+            <Text weight="bold" size="sm">
+              원
+            </Text>
+          </div>
+          {/* 날짜 */}
+          {/* @see https://day.js.org/docs/en/display/from-now#docsNav */}
+          <Text weight="light" color="grey" size="sm">
+            {dayjs(createdAt).fromNow()}
+          </Text>
+        </div>
+      </div>
+    </div>
+  )
+}
+```
+
+---
+
+### 7.2 index.stories.ts
+
+```tsx
+import { faker } from '@faker-js/faker'
+import type { Meta, StoryObj } from '@storybook/react'
+
+import Product from '.'
+
+const meta = {
+  title: 'Product',
+  component: Product,
+  tags: ['autodocs'], // "autodocs" tags를 추가하면, 컴포넌트 문서 작성 가능
+  args: {},
+  // decorators : 추가적인 값을 부여할 수 있는 옵션
+  decorators: [
+    // Story 하나 하나를 그릴 떄, 데코레이터로 감싸져서 그려짐
+    // 여기서는 가로 사이즈를 52로 고정하는 데코레이터를 추가
+    Story => (
+      <div className="w-52">
+        <Story />
+      </div>
+    ),
+  ],
+} satisfies Meta<typeof Product>
+
+/**
+ * StoryObj 타입 : Storybook의 스토리 객체를 나타냄
+ */
+export default meta
+type Story = StoryObj<typeof meta>
+
+export const DefaultProduct: Story = {
+  args: {
+    title: '샘플 제품',
+    price: 50_000,
+    createdAt: '2021-01-01',
+    imageUrl: faker.image.dataUri(), // Faker 랜덤 이미지 주소 생성
+  },
+}
+
+export const SoldOutProduct: Story = {
+  args: {
+    title: '샘플 제품',
+    price: 50_000,
+    createdAt: '2021-01-01',
+    imageUrl: faker.image.dataUri(), // Faker 랜덤 이미지 주소 생성
+    isSoldOut: true,
+  },
+}
+```
+
+---
+
+## 8. ShopProfileImage 컴포넌트 스토리 예시
+
+### 8.1 index.tsx
+
+```tsx
+import classNames from 'classnames'
+
+interface Props {
+  /** 상점 프로필 이미지 주소 */
+  imageUrl?: string
+  /** 추가 ClassName 부여가 필요한 경우 사용할 Props */
+  className?: string
+}
+
+/**
+ * 상점 프로필 이미지 컴포넌트.
+ * ImageUrl Props를 넘기지 않으면 기본 상점 아이콘을 화면에 보여준다.
+ * */
+export default function ShopProfileImage({ imageUrl, className }: Props) {
+  // 이미지가 없는 경우
+  if (!imageUrl) {
+    return (
+      <div className={classNames(className, 'rounded-full bg-slate-200 w-14 h-14 flex justify-center items-center')}>
+        <span className="material-symbols-outlined text-slate-500">storefront</span>
+      </div>
+    )
+  }
+
+  // 이미지가 있는 경우
+  return (
+    <div
+      className={classNames(className, 'rounded-full w-14 h-14 bg-cover bg-center')}
+      style={{ backgroundImage: `url(${imageUrl})` }}
+    />
+  )
+}
+```
+
+---
+
+### 8.2 index.stories.ts
+
+```tsx
+import { faker } from '@faker-js/faker'
+import type { Meta, StoryObj } from '@storybook/react'
+
+import ShopProfileImage from '.'
+
+const meta = {
+  title: 'ShopProfileImage',
+  component: ShopProfileImage,
+  tags: ['autodocs'], // "autodocs" tags를 추가하면, 컴포넌트 문서 작성 가능
+  args: {},
+} satisfies Meta<typeof ShopProfileImage>
+
+/**
+ * StoryObj 타입 : Storybook의 스토리 객체를 나타냄
+ */
+export default meta
+type Story = StoryObj<typeof meta>
+
+export const DefaultShopProfileImage: Story = {
+  args: {},
+}
+
+export const ImagedShopProfileImage: Story = {
+  args: {
+    imageUrl: faker.image.dataUri(), // Faker 랜덤 이미지 주소 생성
+  },
+}
+```
+
+---
+
+## 9. Shop 컴포넌트 스토리 예시
+
+### 9.1 index.tsx
+
+```tsx
+import classNames from 'classnames'
+
+import ShopProfileImage from '../ShopProfileImage'
+import Text from '../Text'
+
+interface Props {
+  /** 상점 이름 */
+  name: string
+  /** 상점 프로필 이미지 주소 */
+  profileImageUrl?: string
+  /** 상점에 등록된 상품 수 */
+  productCount: number
+  /** 상점을 팔로우 하는 팔로워 수 */
+  followerCount: number
+  /** 상점 컴포넌트 뷰 타입 */
+  type?: 'row' | 'column'
+  /** 상점 타이틀 영역 클릭시 동작할 콜백 함수 */
+  handleClickTitle?: () => void
+  /** 상점 프로필 이미지 영역 클릭시 동작할 콜백 함수 */
+  handleClickProfileImage?: () => void
+  /** ProductCount 영역 클릭시 동작할 콜백 함수 */
+  handleClickProductCount?: () => void
+  /** FollowerCount 영역 클릭시 동작할 콜백 함수 */
+  handleClickFollowerCount?: () => void
+}
+
+export default function Shop({
+  name,
+  profileImageUrl,
+  productCount,
+  followerCount,
+  handleClickTitle,
+  handleClickProfileImage,
+  handleClickProductCount,
+  handleClickFollowerCount,
+  type = 'row',
+}: Props) {
+  return (
+    <div
+      className={classNames(
+        'flex',
+        // row, column에 따라 다른 flex 스타일 적용
+        {
+          'flex-row': type === 'row',
+          'flex-col': type === 'column',
+        },
+        type === 'column' && 'gap-1 items-center',
+      )}
+    >
+      {/* 상점 이미지 영역 */}
+      <div
+        className={classNames('w-14', handleClickProfileImage && 'cursor-pointer')}
+        onClick={handleClickProfileImage}
+      >
+        <ShopProfileImage imageUrl={profileImageUrl} />
+      </div>
+      {/* 상정 설명 영역 */}
+      <div
+        className={classNames(
+          'flex flex-col overflow-hidden', // overflow-hidden : 요소 밖으로 삐져나오는 컨텐츠를 숨김
+          type === 'row' && 'ml-3 justify-around',
+          type === 'column' && 'w-full', // column 타입일 때 가로폭 100%
+        )}
+      >
+        {/* 상점 설명 - 제목 */}
+        <div
+          className={classNames(
+            'truncate', // 글자가 너무 길면 ...으로 표시
+            type === 'column' && 'text-center',
+            handleClickTitle && 'cursor-pointer',
+          )}
+          onClick={handleClickTitle}
+        >
+          <Text>{name}</Text>
+        </div>
+        {/* 상점 설명 - 상품 수, 팔로워 수 */}
+        <Text
+          size="sm"
+          color={type === 'row' ? 'grey' : 'black'}
+          className={classNames('flex gap-2', type === 'column' && 'justify-center')}
+        >
+          {/* 상품 수 */}
+          <div
+            className={classNames('text-center', handleClickProductCount && 'cursor-pointer')}
+            onClick={handleClickProductCount}
+          >
+            상품 {productCount.toLocaleString()}
+          </div>
+          |{/* 팔로워 수 */}
+          <div
+            className={classNames('text-center', handleClickFollowerCount && 'cursor-pointer')}
+            onClick={handleClickFollowerCount}
+          >
+            팔로워 {followerCount.toLocaleString()}
+          </div>
+        </Text>
+      </div>
+    </div>
+  )
+}
+```
+
+---
+
+### 9.2 index.stories.ts
+
+```tsx
+import { faker } from '@faker-js/faker'
+import type { Meta, StoryObj } from '@storybook/react'
+
+import Shop from '.'
+
+const meta = {
+  title: 'Shop',
+  component: Shop,
+  tags: ['autodocs'],
+  args: {},
+  // decorators : 추가적인 값을 부여할 수 있는 옵션
+  decorators: [
+    // Story 하나 하나를 그릴 떄, 데코레이터로 감싸져서 그려짐
+    Story => (
+      <div className="border p-2" style={{ width: 300 }}>
+        <Story />
+      </div>
+    ),
+  ],
+} satisfies Meta<typeof Shop>
+
+/**
+ * StoryObj 타입 : Storybook의 스토리 객체를 나타냄
+ */
+export default meta
+type Story = StoryObj<typeof meta>
+
+export const DefaultShop: Story = {
+  args: {
+    name: '상점',
+    productCount: 999,
+    followerCount: 999,
+    type: 'row',
+  },
+}
+
+export const ImagedShop: Story = {
+  args: {
+    name: '상점',
+    productCount: 999,
+    followerCount: 999,
+    type: 'row',
+    profileImageUrl: faker.image.dataUri(), // Faker 랜덤 이미지 주소 생성
+  },
+}
+```
+
+---
+
+## 10. Pagination 컴포넌트 스토리 예시
+
+### 10.1 index.tsx
+
+```tsx
+type Props = {
+  /** 현재 사용자가 보고 있는 페이지 */
+  currentPage: number
+  /** 전체 항목의 갯수 (단, 한 페이지는 10개의 항목을 가지고 있어야 한다) */
+  count: number
+  /** 사용자가 페이지를 변경하였을때 호출할 콜백 함수 */
+  handlePageChange: (pageNumber: number) => void
+}
+
+const btnClassName =
+  'border border-slate-300 px-2 py-2 flex justify-center items-center leading-none disabled:opacity-30 hover:bg-slate-200'
+
+/**
+ * 페이지네이션을 표시하기 위한 컴포넌트
+ */
+export default function Pagination({ currentPage, count, handlePageChange }: Props) {
+  const totalPage = Math.ceil(count / 10) // 한 페이지에 10개의 항목이 있다고 가정, 올림 처리
+
+  // max함수를 이용해 1보다 작은 값이 나오지 않도록 처리
+  const startPageIndex = Math.max(
+    1, // 1부터 시작하도록
+    // 5개의 페이지의 시작페이지가 1이 되고, 현재 페이지가 중앙에 위치하도록 3인 경우 1이 나오도록
+    Math.min(totalPage - 4, currentPage - 2),
+  )
+  // 마지막 페이지가 1인 경우 4를 더하고, 전체 페이지 중 최소값
+  const endPageIndex = Math.min(startPageIndex + 4, totalPage)
+
+  if (totalPage < 2) return null
+
+  return (
+    <div className="flex gap-1 my-3">
+      {/* 이전 버튼 */}
+      <button className={btnClassName} disabled={currentPage === 1} onClick={() => handlePageChange(currentPage - 1)}>
+        이전
+      </button>
+      {/* 페이지 버튼 */}
+      {Array.from({ length: endPageIndex - startPageIndex + 1 }).map((_, idx) => {
+        const pageIndex = startPageIndex + idx
+        return (
+          <button
+            className={btnClassName}
+            key={pageIndex}
+            disabled={pageIndex === currentPage}
+            onClick={() => handlePageChange(pageIndex)}
+          >
+            {pageIndex}
+          </button>
+        )
+      })}
+      {/* 다음 버튼 */}
+      <button
+        className={btnClassName}
+        disabled={currentPage === totalPage}
+        onClick={() => handlePageChange(currentPage + 1)}
+      >
+        다음
+      </button>
+    </div>
+  )
+}
+```
+
+---
+
+### 10.2 index.stories.ts
+
+```tsx
+import type { Meta, StoryObj } from '@storybook/react'
+
+import Pagination from '.'
+
+const meta = {
+  title: 'Pagination',
+  component: Pagination,
+  tags: ['autodocs'],
+  args: {},
+} satisfies Meta<typeof Pagination>
+
+export default meta
+type Story = StoryObj<typeof meta>
+
+export const DefaultProduct: Story = {
+  args: {
+    currentPage: 1,
+    count: 100,
+  },
+}
+```

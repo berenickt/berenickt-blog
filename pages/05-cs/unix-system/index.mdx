@@ -1,0 +1,966 @@
+---
+title: '터미널-정리'
+date: 2024/04/28
+---
+
+## 1. 터미널
+
+- `터미널(Termianl)`은 본래 **통신에서 시작과 끝을 의미**하는 용어였다.
+  - e.g. 버스 터미널 : 버스를 탈 떄, 버스가 출발하는 곳
+  - 버스 터미널과 같이 **PC로 들어가는 진입점 역할을 하는 것**이 `터미널`이다.
+- `컴퓨터에서 터미널`은 원래 하드웨어에 연결하는 장비를 의미했었다.
+  - 현재는 **운영체제를 통해 컴퓨터와 상호작용하는 프로그램**을 `터미널`이라 부른다.
+
+CLI 방식은 명령어를 입력하고 결과를 출력하는 2개의 작업만 있기 때문에, 자동화를 훨씬 편하다.
+
+- 명령어로 작업 → 언제든지 재사용 가능 → 자동화에 용이
+- 입력해야 되는 명령어만 잘 정리해두면, 여러 가지 작업들을 편리하게 실행할 수 있습니다.
+  - 이런 명령어들을 프로그램을 개발하듯이 만든 파일을 `쉘스크립트`라고 부름.
+
+---
+
+## 2. 실습환경
+
+### 2.1 MacOS
+
+iTerm2 설치
+
+1. https://iterm2.com 에서 iTerm2 다운로드 다운로드 받은 iTerm 을 응용프로그램으로 이동 후 실행
+2. https://brew.sh 에 접속하여 설치 명령어 복사, iTerm2 터미널에서 실행
+   - `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`
+3. homebrew 설치 후 터미널에서 tree 설치, where tree 명령으로 잘 설치되었는지 확인
+
+```bash
+$ brew install tree
+$ where tree
+/opt/homebrew/bin/tree
+/opt/homebrew/bin/tree
+```
+
+---
+
+## 3. 파일 시스템
+
+- 현재 위치를 확인하는 `pwd`
+- 디렉터리를 만드는 `mkdir`
+- 디렉터리의 파일 리스트를 조회하는 `ls`
+- 디렉터리를 이동하는 `cd`
+- 디렉터리의 구조를 확인하는 `tree`
+- 디렉터리/파일을 복사하는 `cp`
+- 디렉터리/파일을 이동하는 `mv`
+- 디렉터리/파일을 삭제하는 `rm`
+
+---
+
+### 3.1 pwd
+
+- 현재 위치를 확인하는 `pwd`
+- `print working directory`의 약자
+
+```bash
+$ pwd
+```
+
+---
+
+### 3.2 mkdir
+
+- 디렉터리를 만드는 `mkdir [생성할디렉터리명]`
+- `make directory`의 약자
+
+```bash
+$ cd ~
+$ mkdir easylinux
+```
+
+---
+
+### 3.3 cd
+
+- 디렉터리를 이동하는 `cd`
+  - 디렉터리 이동: `cd [이동할 디렉터리명]`
+  - 홈 디렉터리 이동: `cd ~`
+  - 상위 디렉터리 이동: `cd ..`
+- `change directory`의 약자
+
+```bash
+# easy~~ 같은 동일한 이름을 가진 여러 폴더가 있다면,
+# easy까지 치고, tab을 2번 누르면 이동가능한 모든 폴더 목록이 뜬다.
+$ cd easylinux
+
+$ mkdir alpha beta gamma delta
+$ cd alpha
+$ pwd
+/Users/사용자/easylinux
+$ cd ..
+$ pwd
+/Users/사용자/
+```
+
+---
+
+### 3.4 ls
+
+- 디렉터리의 파일 리스트를 조회하는 `ls`
+  - 현재 위치 기준 디렉터리 조회: `ls`
+  - 특정 디렉터리 조회:`ls [디렉터리 위치]`
+  - 숨김 파일 및 파일 사이즈도 함께 조회: `ls -al`
+    - `al`은 all의 약자
+- `list`의 약자
+
+```bash
+$ ls ~/easylinux
+alpha beta delta gamma
+
+$ cd ~/easylinux/alpha
+$ touch	alphafile1
+
+# ".파일명"은 숨긴 폴더를 의미
+$ touch	.alphafile2
+$ ls
+alphafile1
+
+$ ls -al
+total 0
+drwxr-xr-x@ 4 sw  staff  128  4 28 19:17 .
+drwxr-xr-x@ 6 sw  staff  192  4 28 19:13 ..
+-rw-r--r--@ 1 sw  staff    0  4 28 19:17 .alphafile2
+-rw-r--r--@ 1 sw  staff    0  4 28 19:17 alphafile1
+
+# 위 구조에서 맨 앞에 D가 붙어있으면 디렉토리를 의미, 없으면 파일을 의미
+## 나머지 9글자는 파일과 디렉토리의 권한을 의미
+# 다음에 나오는 숫자는 디렉터리에 퐇마되어 있는 파일과 디렉토리의 개수를 의미
+# 그 다음 필드는 파일과 디렉토리의 소유자와 소유 그룹을 의미
+# 그 다음 필드는 파일과 디렉토리의 사이즈와 생성일자를 의미
+
+$ ls -al ~/easylinux
+total 0
+drwxr-xr-x@  6 sw  staff   192  4 28 19:13 .
+drwxr-x---+ 47 sw  staff  1504  4 28 19:18 ..
+drwxr-xr-x@  4 sw  staff   128  4 28 19:17 alpha
+drwxr-xr-x@  2 sw  staff    64  4 28 19:13 beta
+drwxr-xr-x@  2 sw  staff    64  4 28 19:13 delta
+drwxr-xr-x@  2 sw  staff    64  4 28 19:13 gamma
+```
+
+---
+
+### 3.5 tree
+
+- 디렉터리/파일의 구조를 확인하는 `tree`
+  - 일반 조회: `tree`
+  - 디렉터리만 조회: `tree -d`
+  - 숨김파일까지 조회: `tree -a`
+  - 깊이 지정 조회: `tree -L {깊이}`
+
+```bash
+$ cd ~/easylinux
+$ tree
+.
+├── alpha
+│   └── alphafile1
+├── beta
+├── delta
+└── gamma
+
+$ tree -d
+.
+├── alpha
+├── beta
+├── delta
+└── gamma
+
+$ tree -a
+.
+├── alpha
+│   ├── .alphafile2
+│   └── alphafile1
+├── beta
+├── delta
+└── gamma
+
+$ tree -L 1 /etc
+# /etc	아래의 1단계 까지만 조회
+```
+
+---
+
+### 3.6 cp
+
+- 디렉터리/파일을 복사하는 `cp`
+  - 파일 복사: `cp [원본 파일] [대상 위치]`
+  - 다른이름으로 복사: `cp [원본 파일] [위치와 파일명]`
+  - 디렉터리 복사: `cp -r [원본 위치] [대상 위치]`
+  - 현재 디렉터리로 복사: `cp -r [원본 위치] .`
+- `copy`의 약자
+
+```bash
+$ cd ~/easylinux/beta
+$ touch betafile1 && touch betafile2
+$ tree -a ~/easylinux
+├── alpha
+│   ├── .alphafile2
+│   └── alphafile1
+├── beta
+│   ├── betafile1
+│   └── betafile2
+├── delta
+└── gamma
+
+$ cp betafile2 ../delta
+$ ls ../delta
+betafile2
+
+$ cp betafile2 ../delta/filefrombeta
+$ ls ../delta
+betafile2 filefrombeta
+
+$ cp -r ~/easylinux/alpha ~/easylinux/alphacopy
+$ tree –a ~/easylinux
+├── alpha
+│   └── alphafile1
+├── alphacopy
+│   └── alphafile1
+├── beta
+│   ├── betafile1
+│   └── betafile2
+├── delta
+│   ├── betafile2
+│   └── filefrombeta
+└── gamma
+
+$ cp ../alpha/alphafile1 .
+$ cp ../alpha/alphafile1 ./filefromalpha
+```
+
+---
+
+### 3.7 mv
+
+- 디렉터리/파일을 이동하는 `mv`
+  - 파일/디렉터리 이동: `mv [원본 위치] [새 위치]`
+- `move`의 약자
+
+```bash
+$ cd ~/easylinux
+$ ls
+alpha     alphacopy beta      delta     gamma
+
+$ mv delta/filefrombeta gamma
+$ ls gamma
+filefrombeta
+
+$ mv alphacopy/alphafile1 gamma/filefromalpha
+$ ls gamma
+filefromalpha filefrombeta
+
+$ tree -a ~/easylinux/
+
+# beta 디렉터리의 모든 파일을 gamma 디렉터리로 이동
+$ mv beta/* gamma
+
+$ mv gamma/betafile1 gamma/gammafile1
+$ mv gamma/betafile2 gamma/gammafile2
+$ ls gamma
+alphafile1    filefromalpha filefrombeta  gammafile1    gammafile2
+
+$ mv alphacopy alphamove
+$ ls
+alpha     alphamove beta      delta     gamma
+```
+
+---
+
+### 3.8 find
+
+- 디렉터리/파일을 찾는 `find`
+  - `find [찾을 위치] -name [파일/디렉터리명]`
+
+```bash
+$ cd ~/easylinux
+$ tree
+
+$ find ~/easylinux -name gammafile1
+/Users/easylinux/gamma/gammafile1
+$ find ~/easylinux/beta -name gammafile1
+# 아무것도 없기 떄문에 그냥 넘어감
+```
+
+---
+
+### 3.9 rm
+
+- 디렉터리/파일을 삭제하는 rm
+  - 파일 삭제: `rm [삭제할 파일 위치]`
+  - 디렉터리 삭제: `rm -r [삭제할 디렉터리 위치]`
+  - 파일 강제 삭제(\*주의): `rm -rf [삭제할 파일 위치]`
+
+```bash
+$ cd ~/easylinux
+$ ls
+alpha     alphamove beta      delta     gamma
+
+$ rm alpha
+rm: alpha: is a directory
+
+$ rm -r alpha
+$ ls
+alphamove beta      delta     gamma
+
+$ cd gamma
+$ ls
+alphafile1    filefromalpha filefrombeta  gammafile1    gammafile2
+
+$ rm -rf gammafile1 gammafile2
+$ ls
+alphafile1    filefromalpha filefrombeta
+
+$ rm -rf filefrom*
+$ ls
+alphafile1
+$ cd ..
+$ ls
+alphamove beta      delta     gamma
+
+$ rm -rf *
+zsh: sure you want to delete all 4 files in /Users/sw/easylinux [yn]? y
+
+$ ls
+```
+
+---
+
+## 4. 파일 작성 및 수정
+
+vi 편집기 사용하기
+
+- 파일의 내용을 확인하는 `cat`
+- 출력 내용을 검색하는 `grep`
+- 출력 결과를 저장하는 리다이렉션 `>, >>`
+- 큰 파일을 읽을때는 `less`
+- 아카이브로 묶는 `tar`
+
+---
+
+### 4.1 vi 편집기
+
+- `INSERT 모드(i)`: 문자를 편집할 수 있습니다.
+- `COMMAND 모드(esc)`: 복사/붙여넣기, 파일 저장/종료 등 다양한 작업을 할 수 있습니다
+
+#### 4.1.1 COMMAND 모드 (기본)
+
+- 종료(quit) `:q 입력 후 enter`
+- 저장(write) 및 종료 `:wq 입력 후 enter`
+- 저장 및 강제종료 (!) `:wq! 입력 후 enter`
+- cf. **커맨드모드에서는 영문만 사용 가능**
+
+```bash
+$ cd ~/easylinux
+$ vi myfirstfile
+--------myfirstfile (i를 입력해 입력모드로 변경)
+Hello Vi!
+--------:wq
+
+$ ls
+myfirstfile
+```
+
+---
+
+#### 4.1.2 COMMAND 모드 (활용)
+
+- 줄삭제(delete) `dd`
+- 복사(copy) `yy`
+- 붙여넣기(paste) `p`
+- 되돌리기(undo) `u`
+
+```bash
+$ cd ~/easylinux
+$ vi Dockerfile
+---------Dockerfile (i를 입력해 입력모드로 변경)
+FROM nginx:latest
+LABEL maintainer="yourname@example.com"
+EXPOSE 80
+COPY . /usr/share/nginx/html
+CMD ["nginx", "-g", "daemon off;"]
+--------:wq
+
+$ vi Dockerfile
+# 커맨드모드에서 4번쨰 라인에서 dd를 눌러 한 줄 제거
+# u를 입력해 지웠던 4번쨰줄 되돌리기
+# 3번쟤 라인에서 숫자 2를 누르고, yy를 누른 후,
+## 맨 아래 라인에서 p를 입력하면, 2줄 복사가 됨
+# :q!를 눌러 파일을 저장하지 않고 종료
+```
+
+---
+
+#### 4.1.2 COMMAND 모드 (고급)
+
+- 라인 보기 `:set number`
+- 텍스트 찾기 `/검색어 후 n 으로 탐색`
+- 텍스트 대체 `:%s/원본/대체/g`
+
+```bash
+$ vi nginx.conf
+
+--------nginx.conf (i를 입력해 입력모드로 변경)
+http {
+    include /etc/nginx/mime.types;
+    default_type application/octet-stream;
+
+    sendfile on;
+    tcp_nopush on;
+    tcp_nodelay on;
+
+    keepalive_timeout 65;
+
+    gzip on;
+    gzip_disable "msie6";
+
+    server {
+        listen 80;
+        server_name example.com www.example.com;
+
+        root /var/www/html;
+
+        index index.html index.htm;
+
+        access_log /var/log/nginx/access.log;
+        error_log /var/log/nginx/error.log;
+
+        location / {
+            try_files $uri $uri/ =404;
+        }
+
+        error_page 404 /404.html;
+
+        error_page 500 502 503 504 /50x.html;
+        location = /50x.html {
+            root /usr/share/nginx/html;
+        }
+
+        location ~* \.(jpg|jpeg|png|gif|ico|css|js)$ {
+            expires 30d;
+            access_log off;
+        }
+    }
+}
+--------:wq
+
+# 커맨드 모드에서 :set number를 입력해 화면에 라인을 표시
+# /html 눌러 html 검색, n키를 눌러 검색 결과를 이동할 수 있음
+# ":%s/example.com/devwiki.com/g"를 입력해,
+## 파일 내 example.com 텍스트를 모두 devwiki.com으로 수정
+# :wq로 저장하고 나가기
+```
+
+---
+
+### 4.2 cat
+
+- **파일의 내용을 확인**하는 cat
+- `concatenate(연결하다)`약자
+
+```bash
+$ cat	myfirstfile
+...(myfirstfile의 내용 출력)
+
+$ cat	Dockerfile
+...(Dockerfile의 내용 출력)
+
+$ cat	nginx.conf
+...(nginx의 내용 출력)
+```
+
+---
+
+### 4.3 grep
+
+- **출력 내용을 검색**하는 `grep`
+  - 파이프 ' | ' 과 함께 사용
+  - `[이전 명령어] | [이후 명령어]`
+  - 명령어의 출력을 다음 명령으로 전달
+- `[출력명령어] | grep [검색어]`
+  - 파일의 내용 검색: `cat [파일명] | grep [검색어]`
+  - 이전 n라인 출력: `grep -B n [검색어]`
+  - 이후 n라인 출력: `grep -A n [검색어]`
+  - 대소문자 구분 없이 검색: `grep -i [검색어]`
+- cf. 검색어에 공백이 있을 경우 '검색어' 로 묶어서 입력
+
+```bash
+# Dockerfile의 내용 중 CMD 검색
+$ cat Dockerfile | grep CMD
+CMD ["nginx", "-g", "daemon off;"]
+
+# nginx.conf의 내용 중 location 검색
+$ cat nginx.conf | grep location
+location / {
+location = /50x.html {
+location ~* \.(jpg|jpeg|png|gif|ico|css|js)$ {
+
+# Dockerfile의 내용 중 대소문자 구분없이 cmd 검색, 검색 결과의 이전 2줄까지 포함하여 출력
+$ cat Dockerfile | grep -i -B 2 cmd
+EXPOSE 80
+COPY . /usr/share/nginx/html
+CMD ["nginx", "-g", "daemon off;"]
+
+# nginx.conf의 내용 중 대소문자 구분해서 access_log	off 검색, 이후 2라인, 이전 3까지 포함하여 출력
+$ cat nginx.conf | grep -A 2 -B 3 'access_log off'
+
+        location ~* \.(jpg|jpeg|png|gif|ico|css|js)$ {
+            expires 30d;
+            access_log off;
+        }
+    }
+```
+
+---
+
+### 4.4 \>, >>
+
+- 출력 결과를 저장하는 리다이렉션 `>, >>`
+- `[이전 명령어] > 파일명` : 이전 명령어의 출력을 파일로 저장
+- `>` : 기존 파일이 있을경우 덮어쓰기
+- `>>` : 기존 파일이 있을경우 내용추가
+
+```bash
+$ cd ~/easylinux
+
+# tree /etc 명령어 결과 중 sh 검색
+$ tree /etc | grep sh
+
+# tree /etc 명령어 결과 중 sh 검색된 결과를 파일로 저장
+$ tree /etc | grep sh > tree_result.txt
+
+# tree /etc 명령어 결과 내용 출력
+$ cat tree_result.txt
+
+# nginx.conf 파일 내용 출력
+$ cat nginx.conf
+
+# nginx.conf 파일의 내용을 tree_result에다 덮어쓰기
+$ cat nginx.conf > tree_result.txt
+
+# nginx.conf 내용이 덮어씌워진 파일 내용 출력
+$ cat tree_result.txt
+
+$ tree /etc >> tree_result.txt
+
+# nginx.conf 내용에 tree 명령이 결과가 추가된 내용 출력
+$ cat tree_result.txt
+```
+
+---
+
+### 4.5 less
+
+큰 파일을 읽을때는 less
+
+```bash
+# 내용이 많은 tree_result.txt 파일 읽기
+$ less tree_result.txt
+# Enter	및 Space로 탐색
+# q로 종료
+```
+
+---
+
+### 4.6 tar
+
+#### 4.6.1 파일을 아카이빙
+
+- 아카이브로 묶는 tar
+  - `아카이브(tar)` : 여러 파일이나 디렉터리를 하나의 파일로 묶음
+  - `압축 (zip, gz..)` : 데이터를 더 작은 크기로 줄이는 과정 포함
+- 파일이나 디렉터리 아카이브: `tar -cvf [결과파일.tar] [디렉터리또는파일]`
+- 파일이나 디렉터리 아카이브 해제: `tar -xvf [결과파일.tar]`
+
+```bash
+$ cd ~/easylinux
+$ ls
+Dockerfile      myfirstfile     nginx.conf      tree_result.txt
+
+# 현재 경로의 4개의 파일을 하나의 tar파일로 아카이브
+$ tar -cvf easylinux.tar .
+a ./Dockerfile
+a ./tree_result.txt
+a ./nginx.conf
+a ./myfirstfile
+
+$ ls
+Dockerfile easylinux.tar myfirstfile nginx.conf tree_result.txt
+
+$ mkdir easylinux_tar
+$ cd easylinux_tar
+
+# 상위 디렉토리에 있는 파일을 현재 경로로 이동
+$ mv ../easylinux.tar .
+$ ls
+easylinux.tar
+
+# 현재경로에서 easylinux.tar 아카이브 해제
+$ tar -xvf easylinux.tar
+x ./
+x ./Dockerfile
+x ./tree_result.txt
+x ./nginx.conf
+x ./myfirstfile
+
+$ ls
+Dockerfile myfirstfile tree_result.txt easylinux.tar nginx.conf
+
+```
+
+---
+
+#### 4.6.2 파일을 압축
+
+- 아카이브를 압축하는 tar
+  - `아카이브(tar)` : 여러 파일이나 디렉터리를 하나의 파일로 묶음
+  - `압축 (zip, gz..)` : 데이터를 더 작은 크기로 줄이는 과정 포함
+- 파일이나 디렉터리 압축: `tar -czvf [압축파일.tar.gz] [디렉터리또는파일]`
+- 파일이나 디렉터리 압축 해제: `tar -xzvf [압축파일.tar.gz]`
+- cf. 아카이빙과 다른점은 `z옵션` 추가와 `tar.gz 확장자명`이다.
+
+---
+
+## 5. 시스템 관리 기본
+
+- IP확인 `ifconfig`
+- 실행 권한이 없을때는 `chmod +x`
+- 실행 중인 프로세스를 조회하는 `ps -al`
+- 실행 중인 프로세스를 종료하는 `kill`
+
+---
+
+### 5.1 IP 확인
+
+```bash
+# Windows
+$ ipconfig
+
+# Mac/Linux
+$ ifconfig
+# 보통 MacOS에서는 en0라는 인터페이스가 메인 인터페이스로 사용된다.
+# en0쪽 inet으로 표시되어 있는 부분이 PC에 할당되어 있는 IP주소이다.
+------
+en0: flags=8863<UP,BROADCAST,SMART,RUNNING,SIMPLEX,MULTICAST> mtu 1500
+	options=50b<RXCSUM,TXCSUM,VLAN_HWTAGGING,AV,CHANNEL_IO>
+	ether a4:77:f3:02:ce:a2
+	inet6 fe80::108e:5d52:87c0:1d8c%en0 prefixlen 64 secured scopeid 0x6
+	inet 192.168.75.213 netmask 0xffffff00 broadcast 192.168.75.255
+	nd6 options=201<PERFORMNUD,DAD>
+	media: autoselect (1000baseT <full-duplex>)
+	status: active
+...
+--------
+```
+
+---
+
+### 5.2 프로세스 실행 및 확인
+
+- 프로세스를 실행하기 위한 `chmod +x`
+- 프로세스 상태를 확인하는 `ps -al`
+
+```bash
+$ cd ~/easylinux
+# 실습용 프로그램을 easylinux 폴더에 다운로드 후 압축풀기
+# 맥OS: go-web-application-macos
+# Windows OS: go-web-application-windows.exe
+
+# 실행권한 주기
+# chmod +x go-web-application-macos
+$ chmod +x (다운로드받은 파일명)
+
+# 프로그램 실행
+# ./go-web-application-macos
+$ ./(다운로드받은 파일명)
+$ 새로운 터미널 실행 후 ps -al
+# 새로운 프로세스가 실행된 것을 확인
+```
+
+---
+
+### 5.3 프로세스 종료
+
+- 실행 중인 프로세스를 종료하는 `kill`
+
+```bash
+# 프로세스 PID확인
+$ ps -al
+
+# 특정 번호의 PID 프로세스 종료
+# e.g. kill 21640
+$ kill PID
+$ ps -al
+
+# & 표시는 프로세스를 백그라운드에서 실행하겠다는 의미
+# ./go-web-application-macos &
+$ ./(다운로드받은 파일명) &
+# 초기 로그가 출력되고 Enter를 입력하면 다시 터미널로 돌아오며, 프로세스는 계속 돌아간다.
+$ ps -al
+
+# -9는 강제종료 옵션, 백그라운드로 실행중인 프로세스를 종료하기
+# e.g. kill -9 21784
+$ kill -9 PID
+$ ps -al
+```
+
+---
+
+## 6. 터미널 활용
+
+- 주기적으로 명령어를 실행하는 `watch`
+- 환경변수를 지정하는 `export`
+- 명령어를 단축어로 지정하는 `alias`
+- 명령어 환경 설정
+
+---
+
+### 6.1 expot
+
+- 환경변수를 지정하는 `export`
+- `export 변수명=변수값`
+
+```bash
+export environment=dev
+# os 환경변수 environment가 dev일 때, 개발모드로 실행
+# os 환경변수 environment가 prod 일 때, 운영모드로 실행
+```
+
+---
+
+### 6.2 watch
+
+- 주기적으로 명령어를 실행하는 `watch`
+- `watch –n [주기(초)] [실행할 명령어]`
+
+```bash
+#### 터미널 창을 2개를 띄워준다.
+### Mac에서는 watch 명령어를 brew를 통해 설치해줘야 한다.
+### brew install watch
+
+# 1초간격 으로 터미널 실행
+$ watch -n 1 ps -al
+
+### 2번쨰 터미널
+$ cd ~/easylinux
+
+# 환경변수 설정
+$ export WEBAPP_VAR=devwiki
+$ cd ~/easylinux
+
+# ./go-web-application-macos
+$ ./(다운로드받은 파일명)
+
+# watch 명령어에서 빠져나오려면 "Ctrl + C" 입력
+```
+
+---
+
+### 6.3 alias
+
+- 명령어를 단축어로 지정하는 alias
+- `alias [새로운명령]=[기존명령어조합]`
+- e.g.) mktar이라는 새로운 단축명령어 생성 : `alias mktar='tar –cvf`
+
+```bash
+$ cd ~/easylinux
+# 새 커스텀 단축어 생성
+$ alias mktar='tar -cvf'
+$ mkdir tartest
+$ cd tartest
+$ touch file1
+$ touch file2
+
+# 새 커스텀 단축어로 tar 아카이브
+$ mktar test.tar .
+$ ls
+file1    file2    test.tar
+```
+
+---
+
+### 6.4 명령어 환경 설정 (zsh, bash)
+
+- 사용자의 홈 디렉터리에 `.zshrc`, `.bashrc` 파일 수정
+  - Mac환경의 iTerm2 경우에는 `.zshrc`
+  - Windows 환경의 git bash나 Linux 환경에서는 `.bashrc`
+- 파일의 명령어들은 쉘 세션 시작 시 자동으로 실행
+  - 그래서 이 파일 안에 export나 alias같은 환경 설정과 관련된 내용을 넣어 놓으면,
+  - 터미널을 껐다 키더라도 설정이 남아있다.
+- 기존에 열려있던 터미널이 있으시면 껐다가 켠다.
+
+```bash
+# OS 환경변수 중 SHELL변수의 값 출력
+$ echo $SHELL
+
+
+# Windows/Linux인 경우 .bashrc 파일 수정
+$ vi ~/.bashrc
+# MAC인 경우, .zshrc 파일 수정
+$ vi ~/.zshrc
+
+------------.zshrc
+export WEBAPP_VAR=devwiki
+alias mktar='tar -cvf'
+...
+------------:wq
+
+# 변경된 내용을 적용하기 위해서는 터미널을 껏다가 다시 켜거나,
+# 다음 영령어로 수정한 파일을 반영하기
+$ source ~/.zshrc
+$ echo $WEBAPP_VAR
+devwiki
+```
+
+---
+
+## 7. 실습
+
+(1) ~/easylinux 디렉터리로 이동하세요. 디렉터리가 없으면 새로 생성하세요.
+디렉터리에 go-web-application 이 있는지 확인하세요.
+
+```bash
+cd ~/easylinux
+ls
+```
+
+---
+
+(2) 환경변수 WEBAPP_VAR 를 development 로 설정하세요.
+
+```bash
+export WEBAPP_VAR=development
+```
+
+---
+
+(3) alias와 실습 애플리케이션의 절대 경로를 사용해 애플리케이션을 실행할 수 있도록 execwebapp 명령어를 만드세요.
+
+```bash
+alias execwebapp='애플리케이션의경로'
+```
+
+---
+
+(4) 2, 3에서 실행한 명령을 터미널을 재시작해도 적용되도록 설정하세요. 터미널을 재시작하세요.
+
+- vi ~/.zshrc 또는 vi ~/.bashrc에 2, 3에서 작성한 명령어 복사
+
+---
+
+(5) execwebapp 명령을 사용해 실습 프로그램을 실행하세요
+
+```bash
+chmod +x 애플리케이션명
+execwebapp
+```
+
+---
+
+(6) 로그 또는 localhost:8080 으로 접속해 환경 변수가 잘 적용되었는지 확인하세요
+
+(7) 새로운 터미널을 실행하고, 출력 로그를 드래그해서 복사한 후 파일로 저장하세요.
+(디렉터리: easylinux, 파일명: webapp.log)
+
+```bash
+vi ~/easylinux/webapp.log
+# 로그 복사 및 붙여넣기
+```
+
+---
+
+(8) 실행한 프로세스의 PID를 조회하고 프로세스를 종료하세요
+
+```bash
+ps -a 명령으로 PID확인
+kill -9 {PID}
+```
+
+---
+
+(9) ~/easylinux/practice 디렉터리를 생성하고 이동하세요.
+
+```bash
+mkdir ~/easylinux/practice
+cd ~/easylinux/practice
+```
+
+---
+
+(10) 새로 만든 디렉터리에 webapp.log 파일을 이동하세요.
+
+```bash
+mv ../webapp.log .
+```
+
+---
+
+(11) 저장된 파일에서 'info' 가 포함된 라인만 파일로 practice 에 저장하세요. (파일명: webapp-info.log)
+
+```bash
+cat webapp.log | grep -i info > webapp-info.log
+cat webapp-info.log
+```
+
+---
+
+(12) practice 디렉터리를 복사하여 같은 경로에 practice_backup 로 저장하세요.
+
+```bash
+cp -r ../practice ../practice_backup
+```
+
+---
+
+(13) practice_backup 디렉터리의 이름을 practice_bak으로 변경하세요.
+
+```bash
+mv ~/easylinux/practice_backup ~/easylinux/practice_bak
+```
+
+(14) ~/easylinux/practice 디렉터리의 파일들을 practice.tar 아카이브로 만드세요.
+
+```bash
+tar -cvf practice.tar .
+```
+
+---
+
+(15) practice.tar 파일을 easylinux 디렉터리로 이동하세요.
+
+```bash
+mv practice.tar ../
+```
+
+---
+
+(16) ~/easylinux/practice 디렉터리를 삭제하세요.
+
+```bash
+cd ../
+rm -rf practice
+```
+
+---
+
+(17) ~/easylinux/practice_tar 디렉터리를 생성한 후 practice.tar 아카이브를 해제하세요.
+
+```bash
+mkdir practice_tar
+mv practice.tar practice_tar
+cd practice.tar
+tar –xvf practice.tar
+```
+
+---
+
+(18) ~/easylinux 디렉터리를 삭제하세요
+
+```bash
+cd ~
+rm -rf ~/easylinux
+```

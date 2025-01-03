@@ -1,0 +1,375 @@
+---
+title: '01-소개 및 개발환경-M1'
+date: 2024/01/10
+---
+
+## 1. intro
+
+- 페이스북에서 만든 오픈소스 모바일 응용 프로그램
+- 네이티브 앱 개발을 위한 자바스크립트 프레임 워크
+- 크로스 플랫폼
+- 하나의 코드 개발을 통해 IOS 와 안드로이드에서 동일하게 동작시킬 수 있는 API
+- 자바스크립트를 기본 언어로 사용
+- Java, Kotlin 언어에 의존하는 안드로이드 네이티브 앱,
+  - 혹은 Swift 언어에 의존하는 ios 네이티브 앱 개발보다 진입 장벽이 낮고, 훨씬 쉽다는 장점이 있다.
+
+> html, css, 자바스크립트, ES6, 리액트의 선수 지식이 도움이 됨
+
+---
+
+## 2. React Native 기본 원리
+
+![](https://images.velog.io/images/everytime79/post/7d3ae855-33bf-40b6-b8a3-45ed3ea6fd9a/%E1%84%89%E1%85%B3%E1%84%8F%E1%85%B3%E1%84%85%E1%85%B5%E1%86%AB%E1%84%89%E1%85%A3%E1%86%BA%202021-01-03%2014.58.03.png)
+
+---
+
+## 3. Expo CLI vs React Native CLI
+
+### 3.1 Expo CLI
+
+- Pros
+  - 개발 환경 구축 용이
+  - 실제 개발이 쉽고 편함
+- Cons
+  - OS Layer와 직접 상호작용 불가능 (Java, Kotlin, Obj-C, Swift 로 추가 작성 불가)
+  - Expo에서 제공해주는 모듈만 사용 가능
+  - Expo Client에서는 잘 동작하지만, 실제 Simulator & 단말기에서 동작하지 않을 수 있음
+  - 개발 관점에서의 자유도 낮음
+
+---
+
+### 3.2 React Native CLI
+
+- Pros
+  - Expo로는 접근하지 못하는 Native 기능에 접근 가능 (Native 모듈 사용 자유도 높음)
+  - 원하는 언어로 추가 작성 가능 (Custom Native 모듈 사용 가능)
+  - 필요한 기능이 있는 경우 모듈을 직접 제작 가능
+  - OS Layer와 직접적인 상호작용 가능
+- Cons
+  - 초기 개발환경 구축 및 실제 앱 개발 시, 다소 시간이 소요
+  - 단, Mac 환경일 경우에만, IOS & Android 시뮬 지원
+    - (윈도우에서는 IOS 시뮬을 지원하지 않음)
+
+간단한 앱 실행 목적이라면 Expo, 본격적으로 앱 개발을 하신다면 React-Native가 적절하다.
+
+---
+
+## 4. CLI 환경설정 (Mac M1 - 24.03 기준)
+
+- 공식문서 참고 : https://reactnative.dev/docs/environment-setup?guide=native
+- Node, Watchman, React Native CLI, JDK 및 Android Studio가 필요하다.
+
+---
+
+### 4.1 Homebrew 설치
+
+```bash
+# 설치
+$ /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+##### .zshrc에 homebrew path 추가
+echo 'export PATH=/opt/homebrew/bin:$PATH'
+#####
+
+# zshrc 반영
+$ source ~/.zshrc
+
+# homebrew 버전확인
+$ brew --version
+```
+
+- `Homebrew` : MAC/Linux에서 패키지를 설치하고 관리할 수 있는 맥용 패키지 관리자
+- https://brew.sh/
+
+---
+
+### 4.2 Node
+
+```bash
+$ brew install nvm
+
+
+##### ~/.bash_profile에 아래 코드 추가
+export NVM_DIR="$HOME/.nvm"
+[ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && \. "/opt/homebrew/opt/nvm/nvm.sh"  # This loads nvm
+[ -s "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm" ] && \. "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm"  # This loads nvm bash_completion
+#####
+
+# nvm 버전 확인
+$ nvm -v
+
+# nvm 설치가능한 버전 확인
+$ nvm ls
+
+# 원하는 node 버전 설치
+$ nvm install 18.19.1
+
+# 버전 변경
+nvm use 18.19.1
+
+# yarn 설치
+npm install --global yarn
+yarn --version
+```
+
+- Homebrew를 사용하여 Node 및 Watchman을 설치합니다.
+- 이미 node가 설치되어있는 경우 node version이 14 이상인지 확인.
+- `~/.zshrc` 파일을 열어서 `export PATH=~/.npm/bin:$PATH`를 추가하고 `source ~/.zshrc` 입력 후 엔터.
+  - (이렇게 하면 npm 패키지를 globlal로 설치시에 sudo를 사용하지 않아도 된다)
+
+---
+
+### 4.3 Watchman
+
+```bash
+# watchman 설치
+brew install watchman
+
+# watchman 설치 확인
+watchman --version
+```
+
+- watchman은 파일 시스템의 변경 사항을 관찰하기 위한 Facebook 도구
+- react native에서 코드를 수정했을 때 바로 적용할 수 있게끔 해준다.
+
+---
+
+### 4.4 CocoaPods & Ruby
+
+```bash
+# 루비 버전 관리도구 설치
+$ brew install rbenv ruby-build
+
+# 2.7.6 버전 루비 설치
+$ rbenv install 2.7.6
+$ rbenv global 2.7.6
+
+# ruby 버전이 바뀌지 않는 경우, 환경설정이 필요
+$ rbenv init
+$ code ~/.zshrc
+
+# 파일 맨 끝에 복사한 eval "$(rbenv init - zsh)" 를 붙여넣고, 저장
+$ ruby --version
+# ruby 2.7.6p219 (2022-04-12 revision c9c2245c0a) [arm64-darwin23]
+
+# CocoaPods 설치
+$ sudo gem install cocoapods
+$ pod --version
+```
+
+- 코코아팟은 오브젝트C나 스위프트로 개발된 오픈 라이브러리들을 프로젝트 내에 간편하게 확장시킬 수 있도록 도와주는 iOS용 프로그램
+- CocoaPods는 Ruby로 구축되어있으며 gem을 사용하여 cocoapods를 설치해야 하는데,
+  - 이 경우 sudo(관리자 권한)으로 설치해주어야 한다.
+  - ios 개발에 사용되는 의존성관리자. Ruby 기반이라 **Ruby 버전에 따라 설치 안될 수 있음**
+
+---
+
+### 4.5 Xcode
+
+1. Mac App Store에서 Xcode를 다운.
+   - Xcode를 설치하면 iOS Simulator와 앱 빌드에 필요한 모든 tool들이 설치된다.
+2. 설치 후 실행한 뒤 Preference > Location > Command Line Tools
+   - 경로에 CLT 가 설정되어있는지 확인한다.
+3. 시뮬레이터 설치
+   - Locations 바로 옆 Platforms에 시뮬레이터 목록이 있다.
+   - 밑에 +버튼을 눌러 최신 버전으로 다운로드하면 된다.
+
+➡️ 아이폰 **iOS16**버전 이상에서 빌드를 돌리고 싶다면, Xcode는 iOS16을 지원하는 14버전 이상으로 받아준다.
+
+✅ Xcode > Preferences > Locations > Command Line Tools 선택
+
+✅Cocoapods을 이용하는 Xcode Project의 경우 pod 명령어를 기본 터미널로 바로 사용할 경우 정상적으로 동작되지 않는다.
+
+- 이때 아래와 같이 터미널에 Rosetta로 실행되도록 설정해 주어야 한다.
+- **'Rosetta를 사용하여 열기' 항목에 체크**를 해준다.
+- application > 터미널 우클릭 > 정보가져오기에서 로제타로 실행을 클릭
+- application > iTerm2 우클릭 > 정보가져오기에서 로제타로 실행을 클릭
+- `Intel`과 `Apple Silicon`간에 소통을 도와주는 `로제타(Rosetta)`를 사용하기 위해서
+
+---
+
+### 4.6 JDK
+
+```bash
+# JDK(Java Development Kit) 설치
+brew tap homebrew/cask-versions
+brew install --cask zulu11
+
+# 자바 버전 확인
+java --version
+javac -version
+```
+
+- React Native 공식문서에 따르면, Homebrew로 Azul Zulu OpenJDK 설치를 권장한다.
+
+  - 이는 Intel칩, M1칩 맥북 모두 지원한다. **11버전 이상** 설치를 권장함.
+  - 이전에 다른 버전의 자바가 깔려있었다면 환경변수 수정해주기
+  - Homebrew를 사용하여 Azul Zulu 라는 OpenJDK 배포판을 설치
+
+- Zulu OpenJDK 배포판은 Intel 및 M1 Mac 용 JDK를 제공한다.
+- 시스템이 이미 JDK가 설치되어 있는 경우 JDK 11 이상인지 확인.
+
+---
+
+### 4.7 Android Studio
+
+Android Studio 설치 시 아래 세 가지 요소는 반드시 설치해야 한다.
+
+1. Android SDK
+2. Android SDK Platform
+3. Android Virtual Device
+
+https://developer.android.com/studio
+
+- Android Developer 페이지에 접속해, Android Studio의 설치파일을 다운로드
+- M1 Mac 사용 시 Mac with Apple chip을 선택
+- Intel Mac 사용 시 Mac with Intel chip을 선택
+
+다운받은 dmg 파일을 더블 클릭, Android Studio -> Applications로 옮긴 뒤에 실행한다.
+
+- Do not import settings 선택
+- Welcome 페이지에서 Next →
+  - Standard 선택 후 Next →
+  - UI Theme 선택 후 Next →
+  - Finish →
+  - Downloading Components →
+  - 완료되면 Finish
+
+---
+
+#### 4.7.1 Android SDK 설치
+
+Android Studio는 기본적으로 최신 Android SDK를 설치한다.
+
+- 그러나 네이티브 코드로 React Native 앱을 빌드하려면 `Android 11 (R)` SDK가 필요하다.
+- Android Studio의 SDK Manager를 통해 추가 Android SDK를 설치할 수 있다.
+
+Android Studio를 열고 [More Action] 버튼을 클릭한 다음 [SDK Manager]를 선택
+
+1. Android 11.0(R) version을 사용.
+   1. 하단의 `Show Package Detail` → 아래 설치할 항목들을 클릭하여 체크 표시
+   2. `Android SDK Platform 30`
+   3. `Intel x86 Atom_64 System Image` or `Google APIs Intel x86 Atom System Image`
+   4. `Google Play Intel x86 Atom System Image`
+2. 체크로 선택한 후 아래 Apply - OK를 눌러 설치한다.
+
+Virtual Device Manager를 눌러 들어가서 Create Device로 에뮬레이터를 선택한다.
+
+- 원하는 픽셀 크기와 타겟팅할 API를 선택해준다.
+- 요즘 플레이스토어는 무조건 33 이상을 타겟팅하도록 하고 있으니 에뮬레이터도 맞춰서 설정해주면 좋다.
+
+---
+
+#### 4.7.2 ANDROID_SDK_ROOT 환경 변수 구성
+
+React Native 도구는 네이티브 코드로 앱을 빌드하기 위해 몇 가지 환경 변수를 설정해야 한다.
+
+- `$HOME/.bash_profile`또는 `$HOME/.bashrc`( `z-shell` 을 사용하는 경우
+- `~/.zprofile`또는 `~/.zshrc`) 구성 파일에 다음 줄을 추가한다.
+
+```bash
+vi ~/.zshrc # 명령어로 파일 열기
+
+# .zshrc 파일 내에 다음 내용 추가======================
+# 위에서 복사해둔 Android SDK Location
+export ANDROID_HOME=/Users/(유저명)/Library/Android/sdk
+export PATH=$PATH:$ANDROID_HOME/emulator
+export PATH=$PATH:$ANDROID_HOME/tools
+export PATH=$PATH:$ANDROID_HOME/tools/bin
+export PATH=$PATH:$ANDROID_HOME/platform-tools
+# ================================================
+
+$ source ~/.zshrc # 변경 내용 바로 적용
+$ echo PATH
+```
+
+Android의 SDK Manager의 위치를 확인하고,
+
+- 이 경로가 ~/.zshrc의 ANDROID_SDK_ROOT의 경로와 일치해야 한다.
+
+`source $HOME/.bash_profilefor bash`또는 `source $HOME/.zprofile`하여 현재 셸에 구성을 로드힌다.
+
+- `echo $ANDROID_SDK_ROOT`를 실행하여 ANDROID_SDK_ROOT가 설정되었는지 확인하고,
+- `echo $PATH`를 실행하여 적절한 디렉토리가 경로에 추가 되었는지 확인한다 .
+
+> 💡 올바른 Android SDK 경로를 사용하고 있는지 확인
+>
+> - Appearance & Behavior → System Settings → Android SDK 아래의
+> - Android Studio "Preferences" 대화 상자에서 SDK의 실제 위치를 찾을 수 있다.
+
+---
+
+### 4.8 React Native CLI
+
+- React Native CLI(Command Line Interface) 설치
+
+```bash
+# npm
+npm install -g react-native-cli
+
+## 버전확인
+$ react-native -v
+react-native-cli: 2.0.1
+react-native: 0.61.5
+```
+
+---
+
+## 5. CLI 프로젝트 설치 & 시뮬레이터 구동
+
+설치가 완료됐다면,
+시작할 프로젝트를 생성할 디렉토리의 위치에 새 React-Native 프로젝트를 만들어준다.
+
+```bash
+# 프로젝트 생성
+$ npx react-native init 프로젝트명
+
+# 버전 명시할 경우
+$ npx react-native init --version 버전 프로젝트명
+```
+
+---
+
+### 5.1 IOS 시뮬레이터 구동
+
+터미널 창을 2개를 띄워줘야 한다.
+
+```bash
+# Metro 시작하기 (번들러 도구)
+$ npx react-native start
+```
+
+```bash
+# ios 시뮬레이터
+npx react-native run-ios
+
+# 위 명령어 실행 후, Metro를 띄운 창에서 번들링이 끝나면, react-native 프로젝트가 실행된다.
+```
+
+---
+
+### 5.2 Android 시뮬레이터 구동
+
+---
+
+## 6. 환경설정 점검
+
+```bash
+npx @react-native-community/cli doctor
+```
+
+**react-native doctor라는 명령어로 환경설정이 잘 됐는지 확인해볼 수 있다.**
+
+---
+
+## 7. Expo 프로젝트 설치 & 시뮬레이터 구동
+
+- https://docs.expo.dev/get-started/installation/#expo-cli
+
+```bash
+# expo 프로젝트 생성
+$ npx create-expo-app 프로젝트명
+
+$ npx expo start
+# 원하는 기기를 i나 a 등을 눌러서 열기
+```

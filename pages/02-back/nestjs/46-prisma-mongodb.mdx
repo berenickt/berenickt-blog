@@ -1,0 +1,876 @@
+---
+title: '46-Prisma Mongodb'
+date: 2023/12/25
+---
+
+## 1. Prisma ORM
+
+- Prisma ORM은 데이터베이스 작업을 단순화하는 오픈소스 ORM이다.
+- 타입 안전성 (type safe)을 갖춘 쿼리 생성 및 스키마 마이그레이션을 지원한다.
+- PostgreSQL, MySQL, SQLite등 인기 데이터베이스를 지원한다.
+- Prisma Schema Langauge라는 표준화된 언어로 데이터베이스 정의를 매핑 할 수 있다.
+  - `Data Source`: 데이터베이스와의 연결을 정의한다.
+  - `Generator`: 어떤 툴이 생성될지 정의한다. (Prisma Client 등)
+  - `Models`: 데이터베이스 테이블의 칼럼들을 정의한다. TypeORM의 Entity같은 정의라고 볼 수 있다.
+  - `Enums`: 특정 필드의 허가되는 값들을 정의한다.
+  - `Relations`: 모델간 관계를 설정 할 수 있다. (One to One, Many to Many등)
+
+---
+
+### 1.1 Prisma Schema Langauge
+
+#### 1.1.1 DataSource
+
+```ts
+datasource db {
+  provider = "postgresql"
+  url      = "postgresql://johndoe:mypassword@localhost:5432/mydb?schema=public"
+}
+```
+
+- provider는 데이터베이스 타입을 정의한다. postgresql, mysql, sqlite등
+- url은 연결 URL을 정의한다.
+  - `{db_type}://{username}:{password}@{host}:{port}/{db_name}?schema={schema}`
+
+---
+
+#### 1.1.2 Generator
+
+```ts
+generator client {
+  provider = 'prisma-client-js'
+  output   = './generated/prisma-client-js'
+}
+```
+
+- provider는 제너레이터 툴을 정의한다.
+- output은 API 파일을 생성할 위치를 정의한다
+
+---
+
+#### 1.1.3 Model
+
+```ts
+model Comment {
+  id      Int      @id @default(autoincrement())
+  title   String
+  content String
+}
+
+model Tag {
+  name String @id
+}
+```
+
+- Model은 테이블 정보를 정의한다.
+- Scalar, Relation, Type Modifier 등을 사용해서 테이블을 정의할 수 있다
+
+---
+
+#### 1.1.4 Enum
+
+```ts
+model User {
+  id    Int     @id @default(autoincrement())
+  email String  @unique
+  name  String?
+  role  Role    @default(USER)
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+```
+
+- TypeORM에서 다뤘던 enum 개념과 같다고 생각하면 된다.
+- 특정 값만 입력되도록 유도 할 수 있다
+
+---
+
+#### 1.1.5 Relations
+
+```ts
+model User {
+  id    Int     @id @default(autoincrement())
+  name  String
+  posts Post[]
+}
+
+model Post {
+  id      Int      @id @default(autoincrement())
+  title   String
+  userId  Int
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+```
+
+- Relation은 One to One, One to Many, Many to Many Relationship을 형성할때 사용된다.
+- fields에 레퍼런스로 사용할 자신의 칼럼을 입력하고 references에 상대 칼럼을 입력한다.
+- onDelete, onUpdate등 attribute 정의도 가능하다
+
+---
+
+### 1.2 Scalar Types
+
+|   타입   |      Scalar 타입       |
+| :------: | :--------------------: |
+|  String  |          Text          |
+| Boolean  |        Boolean         |
+|   Int    |        Integer         |
+|  BigInt  |         BigInt         |
+|  Float   | Real/Double Precision  |
+| Decimal  |        Numeric         |
+| DateTime | Timestamp/ Timestamptz |
+|   Json   |       JSON/JSONB       |
+|  Bytes   |         BYTEA          |
+
+---
+
+### 1.3 Attributes
+
+|    속성    |            설명             |
+| :--------: | :-------------------------: |
+|    @id     |         Primary Key         |
+|  @default  |           기본값            |
+|  @unique   |     유니크/유일무이 값      |
+| @relation  |        모델 간 관계         |
+|    @map    | 테이블의 다른 칼럼으로 매핑 |
+| @updatedAt | 업데이트 순간 DateTime 기록 |
+|    @@id    |    Composite Primary Key    |
+|  @@unique  |    Composite Unique Key     |
+|  @@index   |         Index Keys          |
+
+---
+
+### 1.4 Prisma Client
+
+```ts
+genreator client {
+  provider = 'prisma-client-js'
+}
+```
+
+```bash
+$ npm install @prisma/client
+$ prisma generate
+```
+
+- generator에 prisma client 정의
+- @prisma/client 설치
+- prisma generate 실행 (@prisma/client 설치시 자동 실행)
+
+---
+
+#### 1.4.1 Prisma Client 작업 플로우
+
+![nestjs-fastcam_46-1](https://raw.githubusercontent.com/berenickt/image-server/refs/heads/main/nestjs/nestjs-fastcam_46-1.png)
+
+---
+
+#### 1.4.2 Prisma Client 작동 방식
+
+![nestjs-fastcam_46-2](https://raw.githubusercontent.com/berenickt/image-server/refs/heads/main/nestjs/nestjs-fastcam_46-2.png)
+
+---
+
+#### 1.4.3 Prisma Create
+
+```ts
+const user = await prisma.user.create({
+  data: {
+    email: 'admin@codefactory.ai',
+    name: 'Code Factory',
+  },
+})
+```
+
+```ts
+const createMany = await prisma.user.createMany({
+  data: [
+    { email: '민지', email: 'minji@codefactory.ai' },
+    { email: '슬기', email: 'seulgi@codefactory.ai' },
+    { email: '원영', email: 'minji@codefactory.ai' }, // 중복 키
+    { email: '다미', email: 'dami@codefactory.ai' },
+  ],
+  skipDuplicates: true, // 원영 스킵됨
+})
+```
+
+---
+
+#### 1.4.4 Prisma Read (1)
+
+```ts
+const user = await prisma.user.findUniquye({
+  where: { email: 'minji@codefactory.ai' },
+})
+```
+
+```ts
+const result = await prisma.user.findFirst({
+  where: {
+    email: { endsWith: 'codefactory.ai' },
+  },
+})
+```
+
+---
+
+#### 1.4.5 Prisma Read (2)
+
+```ts
+const user = await prisma.user.findMany({
+  where: {
+    email: { endsWith: 'codefactory.ai' },
+  },
+})
+```
+
+```ts
+const users = await prisma.user.findMany({
+  where: {
+    OR: [
+      { name: { startsWith: 'E' } },
+      {
+        AND: {
+          profileViews: { gt: 0 },
+          role: { equals: 'ADMIN' },
+        },
+      },
+    ],
+  },
+})
+```
+
+---
+
+### 1.5 Prisma Operators
+
+|   속성    |          설명           |
+| :-------: | :---------------------: |
+|  equals   |         같은 값         |
+|    not    |         아닌 값         |
+|    in     |       포함하는 값       |
+|   notin   |    포함하지 않는 값     |
+|    lt     |         적은 값         |
+|    lte    |     적거나 같은 값      |
+|    gt     |          큰 값          |
+|    gte    |     크거나 같은 값      |
+| contains  |       포함하는 값       |
+|  search   | 검색 (Full Text Search) |
+| startWith |       시작하는 값       |
+| endsWith  |        끝나는 값        |
+|    AND    |           &&            |
+|    OR     |          \|\|           |
+|    NOT    |         아닌 값         |
+
+---
+
+#### 1.5.1 Prisma Read 필드 선택하기
+
+```ts
+const getUser = await prisma.user.findUnique({
+  where: { id: 22 },
+  select: {
+    email: true,
+    name: true,
+  },
+})
+```
+
+email과 name 칼럼만 선택
+
+---
+
+#### 1.5.2 Prisma Read Relation 포함하기
+
+```ts
+const users = await prisma.user.findMany({
+  include: {
+    posts: {
+      select: { title: true },
+    },
+  },
+})
+```
+
+user 값에 post 관계 포함해서 반환
+
+---
+
+#### 1.5.3 Relation Filtering Some
+
+```ts
+const result = await prisma.user.findMany({
+  where: {
+    post: {
+      some: {
+        content: { contains: 'Code Factory' },
+      },
+    },
+  },
+})
+```
+
+Code Factory를 content에 포함하고 있는 post가 존재하는 user를 모두 가져옴
+
+---
+
+#### 1.5.4 Relation Filtering Every
+
+```ts
+const result = await prisma.user.findMany({
+  where: {
+    post: {
+      every: { published: true },
+    },
+  },
+})
+```
+
+관련된 post의 published가 모두 true인 user를 모두 가져옴
+
+---
+
+#### 1.5.5 Relation Filtering None
+
+```ts
+const result = await prisma.user.findMany({
+  where: {
+    post: {
+      none: { published: true },
+    },
+  },
+})
+```
+
+관련된 post의 published가 모두 true가 아닌 User를 모두 가져옴
+
+---
+
+#### 1.5.6 Relation Filtering Is
+
+```ts
+const result = await prisma.user.findMany({
+  where: {
+    user: {
+      is: { name: 'Code Factory' },
+    },
+  },
+})
+```
+
+name 필드가 Code Factory인 post를 모두 가져옴
+
+---
+
+#### 1.5.7 Relation Filtering IsNot
+
+```ts
+const result = await prisma.user.findMany({
+  where: {
+    user: {
+      isNot: { name: 'Code Factory' },
+    },
+  },
+})
+```
+
+name 필드가 Code Factory가 아닌 User를 모두 가져옴
+
+---
+
+#### 1.5.8 Update
+
+```ts
+const updateUser = await prisma.user.update({
+  where: { email: 'test@codefactory.ai' },
+  data: { name: '민지' },
+})
+```
+
+사용자의 name 필드를 ‘민지’로 변경
+
+---
+
+#### 1.5.9 Delete
+
+```ts
+const deleteUser = await prisma.user.delete({
+  where: { email: 'test@codefactory.ai' },
+})
+```
+
+email이 `test@codefactory.ai`인 사용자를 삭제
+
+---
+
+#### 1.5.10 Relationship One to One
+
+```ts
+model User {
+  id        Int     @id @default(autoincrement())
+  profile   Profile @relation(fields: [profileId], references: [id])
+  profileId Int     @unique // 필수 (1:1이니까ㅣ 당연히)
+}
+
+model Profile {
+  id    Int    @id @default(autoincrement())
+  user  User?  // nullable만 가능
+}
+```
+
+```ts
+model User {
+  id        Int      @id @default(autoincrement())
+  profile   Profile? @relation(fields: [profileId], references: [id])
+  profileId Int?     @unique // Optional 생성 가능
+}
+
+model Profile {
+  id    Int    @id @default(autoincrement())
+  user  User?
+}
+```
+
+---
+
+#### 1.5.11 Relationship One to Many
+
+```ts
+model User {
+  id       Int      @id @default(autoincrement())
+  posts    Post[]
+}
+
+model Post {
+  id        Int    @id @default(autoincrement())
+  author    User   @relation(fields: [authorId], references: [id])
+  authorId  Int
+}
+```
+
+---
+
+#### 1.5.12 Relationship Many to Many
+
+```ts
+model Post {
+  id          Int                 @id @default(autoincrement())
+  title       String
+  categories  CategoriesOnPosts[]
+}
+
+model Category {
+  id          Int                 @id @default(autoincrement())
+  name        String
+  posts       CategoriesOnPosts[]
+}
+
+model CategoriesOnPosts {
+  post        Post      @relation(fields: [postId], references: [id])
+  postId      Int
+  category    Category  @relation(fields: [categoryId], references: [id])
+  categoryId  Int
+  assignedAt  DateTime   @default(now())
+  assignedBy  String
+  @@id([postId, categoryId])
+}
+```
+
+```ts
+model Post {
+  id          Int         @id @default(autoincrement())
+  title       String
+  categories  Category[]
+}
+
+model Category {
+  id          Int         @id @default(autoincrement())
+  name        String
+  posts       Post[]
+}
+```
+
+---
+
+## 1.6 Aggregate Function
+
+|   함수   |  설명   |
+| :------: | :-----: |
+|  `_avg`  |  평균   |
+| `_count` |  갯수   |
+|  `_sum`  |  합계   |
+|  `_min`  | 최소 값 |
+|  `_max`  | 최대 값 |
+
+---
+
+#### 1.6.1 Aggregate
+
+```ts
+const aggregations = await prisma.user.aggregate({
+  _avg: { age: true },
+})
+```
+
+---
+
+#### 1.6.2 Raw Query
+
+```ts
+const result = await prisma.$queryRaw('SELECT * FROM User')
+```
+
+---
+
+#### 1.6.3 Migration
+
+```bash
+# prisma migrate dev > 마이그레이션 파일 생성 (자동)
+prisma migrate dev --name "add-new-field"
+```
+
+```bash
+# prisma migrate deploy > 마이그레이션 진행
+prisma migrate deploy
+```
+
+---
+
+## 2. Mongodb
+
+### 2.1 NoSQL vs SQL
+
+- SQL 데이터베이스는 미리 정의된 구조화된 Table과 Column, Row를 사용한다.
+- NoSQL은 구조를 미리 정의할 필요가 없다.
+  - Document, Key-Value Pair 또는 Graph 형태로 모든 값을 원하는 형태로 저장 할 수 있다.
+- NoSQL 데이터베이스의 종류
+  - Document → Mongodb
+  - Key Value → Redis
+  - Column → Cassandra
+  - Graph → Neo4J
+- NoSQL을 사용해야하는 이유?
+  - NoSQL은 SQL에 비해 매우 유연하고 수평적 스케일링 (Horizontal Scaling)에 매우 유리하다.
+  - 대량의 데이터를 다루기위해 설계됐다.
+  - 지속적으로 구조가 변화는 데이터를 다룰때 매우 유리하다
+
+---
+
+### 2.2 MongoDB
+
+- MongoDB란?
+  - MongoDB는 Document 기반의 NoSQL 데이터베이스다.
+  - JSON과 유사한 구조 (BSON) 구조로 데이터를 저장한다.
+  - 스케일링이 쉽고 유연하고 사용성이 편리하다.
+- MongoDB의 데이터 구조
+  - Document 형식으로 데이터를 저장한다. SQL에서의 Row와 같은 단위다.
+  - Collection에 비슷한 Document들을 보관한다. SQL에서의 Table과 같은 단위다
+
+```json
+{
+  "name": "John Doe",
+  "age": 30,
+  "email": "john@example.com",
+  "interests": ["hiking", "coding"]
+}
+```
+
+---
+
+### 2.3 기본 MongoDB CRUD 작업
+
+- `데이터 생성 (Create)`
+  - `insertOne()` : 한개의 Document를 생성
+  - `insertMany()` : 여러개의 Document를 생성
+- `데이터 조회 (Read)`
+  - `find()` : 여러개의 Document 조회
+  - `findOne()` : 한개의 Document 조회
+- `데이터 업데이트 (Update)`
+  - `updateOne()` : 한개의 Document 업데이트
+  - `updateMany()` : 여러개의 Document 업데이트
+- `데이터 삭제 (Delete)`
+  - `deleteOne()` : 한개의 Document 삭제
+  - `deleteMany()` : 여러개의 Document 삭제
+
+---
+
+### 2.4 Mongoose (ODM)
+
+Prisma, TypeORM같은 Javascript SQL ORM이 존재하는 것처럼 MongoDB도 Mongoose라는 ODM이 존재한다.
+
+- `기본기` : 연결하기, CRUD, Populate
+- `고급기능` : Middleware (Hook), VirtualProperty
+- `Relationship` : One to Many, Many to Many
+- `Transaction`
+
+---
+
+#### 2.4.1 Mongoose (연결하기)
+
+```ts
+const mongoose = require('mongoose')
+
+async function connectDB() {
+  try {
+    await mongoose.connect('mongodb://localhost:27017/mydb')
+    console.log('MongoDB Connected')
+  } catch (err) {
+    console.error('Connection Error:', err)
+  }
+}
+
+connectDB()
+```
+
+---
+
+#### 2.4.2 Mongoose (Schema 정의하기)
+
+```ts
+const userSchema = new mongoose.Schema({
+  name: String,
+  age: Number,
+  email: String,
+  interests: [String],
+})
+
+const User = mongoose.model('User', userSchema)
+
+const newUser = new User({
+  name: 'Code Factory',
+  age: 25,
+  email: 'admin@codefactory.ai',
+  interests: ['reading', 'music'],
+})
+```
+
+---
+
+#### 2.4.3 Mongoose (Create 작업하기)
+
+```ts
+async function createUser() {
+  try {
+    const user = await User.create({
+      name: '민지',
+      age: 21,
+      email: 'minji@codefactory.ai',
+      interests: ['dancing', 'singing'],
+    })
+    console.log('User created:', user)
+  } catch (err) {
+    console.error('Error creating user:', err)
+  }
+}
+```
+
+---
+
+#### 2.4.4 Mongoose (Read 작업하기)
+
+```ts
+async function findAllUsers() {
+  try {
+    const users = await User.find({})
+    console.log('User found:', users)
+  } catch (err) {
+    console.error('Error finding users:', err)
+  }
+}
+```
+
+---
+
+#### 2.4.5 Mongoose (Update 작업하기)
+
+```ts
+async function updateUser() {
+  try {
+    const updateUser = await User.updateOne(
+      { email: '민지' }, //
+      { $set: { age: 22 } },
+    )
+    console.log('User updated:', updateUser)
+  } catch (err) {
+    console.error('Error updating user:', err)
+  }
+}
+```
+
+---
+
+#### 2.4.6 Mongoose (Delete 작업하기)
+
+```ts
+async function deleteUser() {
+  try {
+    const deleteUser = await User.deleteOne({ name: '민지' })
+    console.log('User deleted:', deleteUser)
+  } catch (err) {
+    console.error('Error deleting user:', err)
+  }
+}
+```
+
+---
+
+#### 2.4.7 Mongoose (Populate 유사 Join)
+
+```ts
+const userSchema = new mongoose.Schema({
+  name: String,
+  age: Number,
+  email: String,
+  interests: [String],
+})
+
+const postSchema = new mongoose.Schema({
+  title: String,
+  author: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+  },
+})
+
+async function findPostsWithAuthors() {
+  try {
+    const posts = await Post.find().populate('author').exec()
+    console.log('Posts & authors:', posts)
+  } catch (err) {
+    console.error('Error : ', err)
+  }
+}
+```
+
+---
+
+#### 2.4.8 Mongoose (Middleware Hook)
+
+```ts
+userSchema.pre('save', function (next) {
+  console.log('Saving user:', this.name)
+  next()
+})
+
+const User = mongoose.model('User', userSchema)
+```
+
+- pre → 이벤트 실행 전 / pos → 이벤트 실행 후
+- `Document Middleware` : save, validate, remove등 이벤트 실행시 실행
+- `Query Middleware` :
+  - updateOne, deleteOne, findOneAndUpdate등 특정 함수 실행시 실행 (Query Middleware)
+
+---
+
+## 2.5 Mongoose Relationships
+
+### 2.5.1 One to One
+
+```ts
+const mongoose = require('mongoose')
+
+const profileSchema = new mongoose.Schema({
+  bio: String,
+  website: String,
+  location: String,
+})
+
+const userSchema = new mongoose.Schema({
+  name: String,
+  email: String,
+  profile: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Profile',
+  },
+})
+```
+
+```ts
+const userSchema = new mongoose.Schema({
+  name: String,
+  email: String,
+  profile: {
+    bio: String,
+    website: String,
+    location: String,
+  },
+})
+```
+
+---
+
+### 2.5.2 One to Many
+
+```ts
+const commentSchema = new mongoose.Schema({
+  body: String,
+  date: Date,
+  postId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Post',
+  },
+})
+
+const postSchema = new mongoose.Schema({
+  title: String,
+  content: String,
+  comments: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Comment',
+    },
+  ],
+})
+```
+
+---
+
+### 2.5.3 Many to Many
+
+```ts
+const roleSchema = new mongoose.Schema({
+  name: String,
+  users: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+    },
+  ],
+})
+
+const userSchema = new mongoose.Schema({
+  name: String,
+  roles: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Role',
+    },
+  ],
+})
+```
+
+---
+
+### 2.5.4 Mongoose (Transaction)
+
+```ts
+const session = await mongoose.startSession()
+session.startTransaction()
+
+try {
+  const user = new User({ name: '민지', email: 'minji@codefactory.ai' })
+  await user.save({ session })
+
+  const post = new Post({ title: "Minji's Post", author: user._id })
+  await post.save({ session })
+
+  await session.commitTransaction() // 커밋
+  session.endSession() // 세션 종료
+} catch (error) {
+  await session.abortTransaction() // 롤백
+  session.endSession()
+  throw error
+}
+```

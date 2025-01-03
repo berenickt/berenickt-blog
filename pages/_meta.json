@@ -1,0 +1,38 @@
+{
+  "01-front": {
+    "title": "Front",
+    "type": "page"
+  },
+  "02-back": {
+    "title": "Back",
+    "type": "page"
+  },
+  "03-devops": {
+    "title": "DevOps",
+    "type": "page"
+  },
+  "04-mobile": {
+    "title": "Mobile",
+    "type": "page"
+  },
+  "05-cs": {
+    "title": "CS",
+    "type": "page"
+  },
+  "06-lang": {
+    "title": "Lang",
+    "type": "page"
+  },
+  "07-memo": {
+    "title": "Memo",
+    "type": "page"
+  },
+  "index": {
+    "title": "About",
+    "display": "hidden",
+    "type": "page",
+    "theme": {
+      "typesetting": "article"
+    }
+  }
+}
